@@ -16,13 +16,14 @@ use winit::{
 mod old;
 
 pub fn main() {
-    // Winit event loop & our time tracking initialization
+    // Winit event loop
     let event_loop = EventLoop::new();
 
     // Create renderer for our scene & ui
     let window_size = [1280, 720];
     let mut renderer = Renderer::new(&event_loop, window_size, PresentMode::Mailbox, "Wholesome");
 
+    // Vulkano & Winit & egui integration
     let mut gui = Gui::new(renderer.surface(), renderer.queue(), false);
 
     let mut gui_state = GuiWasabiWindow::new(&mut gui);
@@ -47,21 +48,16 @@ pub fn main() {
                 }
             }
             Event::RedrawRequested(window_id) if window_id == window_id => {
-                // Set immediate UI in redraw here
-                // It's a closure giving access to egui context inside which you can call anything.
-                // Here we're calling the layout of our `gui_state`.
-
-                // Lastly we'll need to render our ui. You need to organize gui rendering to your needs
-                // We'll render gui last on our swapchain images (see function below)
                 renderer.render(|frame, future| {
+                    // Generate egui layouts
                     gui.immediate_ui(|gui| {
                         let ctx = gui.context();
                         gui_state.layout(ctx);
                     });
 
+                    // Render the layouts
                     gui.draw_on_image(future, frame.image.clone())
                 });
-                // Update fps & dt
             }
             Event::MainEventsCleared => {
                 renderer.window().request_redraw();

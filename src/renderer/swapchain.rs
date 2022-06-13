@@ -124,7 +124,7 @@ impl ManagedSwapchain {
         };
     }
 
-    pub fn previous_frame_end(&mut self) -> Option<Box<dyn GpuFuture>> {
+    pub fn take_previous_frame_end(&mut self) -> Option<Box<dyn GpuFuture>> {
         self.previous_frame_end.take()
     }
 

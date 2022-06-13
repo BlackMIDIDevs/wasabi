@@ -48,7 +48,7 @@ impl Renderer {
         })
         .expect("Failed to create instance");
 
-        // Get most performant device (physical)
+        // Get most performant physical device (device with most memory)
         let physical = PhysicalDevice::enumerate(&instance)
             .fold(None, |acc, val| {
                 if acc.is_none() {
@@ -97,16 +97,19 @@ impl Renderer {
             .queue_families()
             .find(|&q| q.supports_graphics() && q.supports_surface(&surface).unwrap_or(false))
             .expect("couldn't find a graphical queue family");
+
         // Add device extensions based on needs
         let device_extensions = DeviceExtensions {
             khr_swapchain: true,
             ..DeviceExtensions::none()
         };
+
         // Add device features
         let features = Features {
             geometry_shader: true,
             ..Features::none()
         };
+
         let (device, mut queues) = {
             Device::new(
                 physical,
@@ -119,6 +122,7 @@ impl Renderer {
             )
             .expect("failed to create device")
         };
+
         (device, queues.next().unwrap())
     }
 
@@ -138,18 +142,20 @@ impl Renderer {
         self.swap_chain.resize();
     }
 
-    /// Renders scene onto scene images using frame system and finally draws UI on final
-    /// swapchain images
     pub fn render(
         &mut self,
         draw: impl FnOnce(&SwapchainFrame, Box<dyn GpuFuture>) -> Box<dyn GpuFuture>,
     ) {
-        let previous_frame_future = self.swap_chain.previous_frame_end().unwrap();
+        // Get the previous frame before starting a new one
+        let previous_frame_future = self.swap_chain.take_previous_frame_end().unwrap();
 
+        // Start a new frame
         let (frame, acquire_future) = self.swap_chain.acquire_frame();
 
+        // Join the futures
         let future = previous_frame_future.join(acquire_future);
 
+        // Call the passed-in renderer
         let after_future = draw(&frame, Box::new(future));
 
         // Finish render
