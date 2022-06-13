@@ -83,7 +83,7 @@ impl FrameSystem {
         &mut self,
         before_future: impl GpuFuture + 'static,
         final_image: Arc<dyn ImageViewAbstract + 'static>,
-        render: impl FnOnce(DrawPass) -> (),
+        scb: impl SecondaryCommandBuffer + Send + Sync + 'static,
     ) -> Box<dyn GpuFuture> {
         let img_dims = final_image.image().dimensions().width_height();
         if self.depth_buffer.image().dimensions().width_height() != img_dims {
@@ -119,9 +119,7 @@ impl FrameSystem {
             )
             .unwrap();
 
-        render(DrawPass {
-            command_buffer_builder: &mut command_buffer_builder,
-        });
+        command_buffer_builder.execute_commands(scb).unwrap();
 
         command_buffer_builder.end_render_pass().unwrap();
         let command_buffer = command_buffer_builder.build().unwrap();
@@ -130,21 +128,5 @@ impl FrameSystem {
             .unwrap();
 
         Box::new(after_main_cb)
-    }
-}
-
-pub struct DrawPass<'a> {
-    command_buffer_builder: &'a mut AutoCommandBufferBuilder<PrimaryAutoCommandBuffer>,
-}
-
-impl<'a> DrawPass<'a> {
-    #[inline]
-    pub fn execute<C>(&mut self, command_buffer: C)
-    where
-        C: SecondaryCommandBuffer + Send + Sync + 'static,
-    {
-        self.command_buffer_builder
-            .execute_commands(command_buffer)
-            .unwrap();
     }
 }

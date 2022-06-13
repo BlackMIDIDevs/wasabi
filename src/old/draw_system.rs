@@ -34,6 +34,7 @@ pub struct ChikaraShaderTest {
     gfx_queue: Arc<Queue>,
     vertex_buffer: Arc<CpuAccessibleBuffer<[Vertex]>>,
     pipeline: Arc<GraphicsPipeline>,
+    frame: u32,
 }
 
 impl ChikaraShaderTest {
@@ -62,34 +63,61 @@ impl ChikaraShaderTest {
             )
             .expect("failed to create buffer")
         };
-        let pipeline = {
-            let vs = vs::load(gfx_queue.device().clone()).expect("failed to create shader module");
-            let fs = fs::load(gfx_queue.device().clone()).expect("failed to create shader module");
-            let gs = gs::load(gfx_queue.device().clone()).expect("failed to create shader module");
 
-            GraphicsPipeline::start()
-                .input_assembly_state(
-                    InputAssemblyState::new().topology(PrimitiveTopology::PointList),
-                )
-                .vertex_input_state(BuffersDefinition::new().vertex::<Vertex>())
-                .vertex_shader(vs.entry_point("main").unwrap(), ())
-                .geometry_shader(gs.entry_point("main").unwrap(), ())
-                .fragment_shader(fs.entry_point("main").unwrap(), ())
-                .viewport_state(ViewportState::viewport_dynamic_scissor_irrelevant())
-                .depth_stencil_state(DepthStencilState::simple_depth_test())
-                .render_pass(subpass)
-                .build(gfx_queue.device().clone())
-                .unwrap()
-        };
+        let vs = vs::load(gfx_queue.device().clone()).expect("failed to create shader module");
+        let fs = fs::load(gfx_queue.device().clone()).expect("failed to create shader module");
+        let gs = gs::load(gfx_queue.device().clone()).expect("failed to create shader module");
+
+        let pipeline = GraphicsPipeline::start()
+            .input_assembly_state(InputAssemblyState::new().topology(PrimitiveTopology::PointList))
+            .vertex_input_state(BuffersDefinition::new().vertex::<Vertex>())
+            .vertex_shader(vs.entry_point("main").unwrap(), ())
+            .geometry_shader(gs.entry_point("main").unwrap(), ())
+            .fragment_shader(fs.entry_point("main").unwrap(), ())
+            .viewport_state(ViewportState::viewport_dynamic_scissor_irrelevant())
+            .depth_stencil_state(DepthStencilState::simple_depth_test())
+            .render_pass(subpass)
+            .build(gfx_queue.device().clone())
+            .unwrap();
 
         ChikaraShaderTest {
             gfx_queue,
             vertex_buffer,
             pipeline,
+            frame: 0,
         }
     }
 
-    pub fn draw(&self, viewport_dimensions: [u32; 2]) -> SecondaryAutoCommandBuffer {
+    fn iter_verts(&mut self) -> impl Iterator<Item = Vertex> {
+        self.frame += 1;
+        let angle = self.frame as f32 * 0.01;
+
+        [
+            Vertex {
+                position: [angle.cos() * 0.5, angle.sin() * 0.5],
+                color: [1.0, 0.0, 0.0, 1.0],
+            },
+            Vertex {
+                position: [(angle + 0.25).cos() * 0.5, (angle + 0.25).sin() * 0.5],
+                color: [0.0, 1.0, 0.0, 1.0],
+            },
+            Vertex {
+                position: [(angle + 0.5).cos() * 0.5, (angle + 0.5).sin() * 0.5],
+                color: [0.0, 0.0, 1.0, 1.0],
+            },
+        ]
+        .into_iter()
+    }
+
+    pub fn draw(&mut self, viewport_dimensions: [u32; 2]) -> SecondaryAutoCommandBuffer {
+        {
+            let new_verts = self.iter_verts().enumerate();
+            let mut verts = self.vertex_buffer.write().unwrap();
+            for (i, v) in new_verts {
+                verts[i] = v;
+            }
+        }
+
         let mut builder = AutoCommandBufferBuilder::secondary_graphics(
             self.gfx_queue.device().clone(),
             self.gfx_queue.family(),

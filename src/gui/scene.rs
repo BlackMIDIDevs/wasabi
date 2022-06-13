@@ -41,14 +41,12 @@ impl GuiRenderScene {
 
         let future = sync::now(self.device.clone()).boxed();
 
+        let cb = self.draw_system.draw(size);
         let after_future = self.frame_system.draw_frame(
             future,
             // Notice that final image is now scene image
             scene_image.image.clone(),
-            |mut draw_pass| {
-                let cb = self.draw_system.draw(size);
-                draw_pass.execute(cb);
-            },
+            cb,
         );
 
         // Wait on our future

@@ -280,14 +280,13 @@ impl Renderer {
     pub fn render_scene(&mut self) {
         let future = sync::now(self.device.clone()).boxed();
 
+        let cb = self.scene.draw(self.scene_view_size);
+
         let after_future = self.frame_system.draw_frame(
             future,
             // Notice that final image is now scene image
             self.scene_images[self.image_num].clone(),
-            |mut draw_pass| {
-                let cb = self.scene.draw(self.scene_view_size);
-                draw_pass.execute(cb);
-            },
+            cb,
         );
 
         // Wait on our future
