@@ -1,11 +1,4 @@
-// Copyright (c) 2021 Okko Hakola
-// Licensed under the Apache License, Version 2.0
-// <LICENSE-APACHE or
-// https://www.apache.org/licenses/LICENSE-2.0> or the MIT
-// license <LICENSE-MIT or https://opensource.org/licenses/MIT>,
-// at your option. All files in the project carrying such
-// notice may not be copied, modified, or distributed except
-// according to those terms.
+mod swapchain;
 
 use std::sync::Arc;
 
@@ -17,7 +10,6 @@ use vulkano::{
     },
     image::{view::ImageView, AttachmentImage, ImageUsage, ImageViewAbstract, SwapchainImage},
     instance::{Instance, InstanceCreateInfo, InstanceExtensions},
-    swapchain,
     swapchain::{
         AcquireError, PresentMode, Surface, Swapchain, SwapchainCreateInfo, SwapchainCreationError,
     },
@@ -31,6 +23,8 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
+use self::swapchain::SwapchainState;
+
 pub struct Renderer {
     instance: Arc<Instance>,
     device: Arc<Device>,
@@ -41,6 +35,12 @@ pub struct Renderer {
     image_num: usize,
     recreate_swapchain: bool,
     previous_frame_end: Option<Box<dyn GpuFuture>>,
+}
+
+pub struct RenderState<'a> {
+    swapchain: SwapchainState,
+    selected_image: usize,
+    gui: &'a mut Gui,
 }
 
 impl Renderer {
@@ -181,6 +181,27 @@ impl Renderer {
         (swapchain, images)
     }
 
+    /// Swapchain is recreated when resized
+    fn recreate_swapchain(&mut self) {
+        let dimensions: [u32; 2] = self.surface.window().inner_size().into();
+        let (new_swapchain, new_images) = match self.swap_chain.recreate(SwapchainCreateInfo {
+            image_extent: dimensions,
+            ..self.swap_chain.create_info()
+        }) {
+            Ok(r) => r,
+            Err(SwapchainCreationError::ImageExtentNotSupported { .. }) => return,
+            Err(e) => panic!("Failed to recreate swapchain: {:?}", e),
+        };
+        self.swap_chain = new_swapchain;
+        let new_images = new_images
+            .into_iter()
+            .map(|image| ImageView::new_default(image).unwrap())
+            .collect::<Vec<_>>();
+        self.final_images = new_images;
+
+        self.recreate_swapchain = false;
+    }
+
     pub fn device(&self) -> Arc<Device> {
         self.device.clone()
     }
@@ -210,7 +231,7 @@ impl Renderer {
         }
         // Acquire next image in the swapchain and our image num index
         let (image_num, suboptimal, acquire_future) =
-            match swapchain::acquire_next_image(self.swap_chain.clone(), None) {
+            match vulkano::swapchain::acquire_next_image(self.swap_chain.clone(), None) {
                 Ok(r) => r,
                 Err(AcquireError::OutOfDate) => {
                     self.recreate_swapchain = true;
@@ -230,27 +251,6 @@ impl Renderer {
         let after_future = gui.draw_on_image(future, self.final_images[image_num].clone());
         // Finish render
         self.finish(after_future, image_num);
-    }
-
-    /// Swapchain is recreated when resized
-    fn recreate_swapchain(&mut self) {
-        let dimensions: [u32; 2] = self.surface.window().inner_size().into();
-        let (new_swapchain, new_images) = match self.swap_chain.recreate(SwapchainCreateInfo {
-            image_extent: dimensions,
-            ..self.swap_chain.create_info()
-        }) {
-            Ok(r) => r,
-            Err(SwapchainCreationError::ImageExtentNotSupported { .. }) => return,
-            Err(e) => panic!("Failed to recreate swapchain: {:?}", e),
-        };
-        self.swap_chain = new_swapchain;
-        let new_images = new_images
-            .into_iter()
-            .map(|image| ImageView::new_default(image).unwrap())
-            .collect::<Vec<_>>();
-        self.final_images = new_images;
-
-        self.recreate_swapchain = false;
     }
 
     /// Finishes render by presenting the swapchain
