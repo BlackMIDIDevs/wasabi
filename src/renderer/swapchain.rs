@@ -1,10 +1,14 @@
 use std::sync::Arc;
 
 use vulkano::{
-    device::{physical::PhysicalDevice, Device},
+    device::{physical::PhysicalDevice, Device, Queue},
     format::Format,
     image::{view::ImageView, ImageUsage, SwapchainImage},
-    swapchain::{PresentMode, Surface, Swapchain, SwapchainCreateInfo, SwapchainCreationError},
+    swapchain::{
+        AcquireError, PresentMode, Surface, Swapchain, SwapchainAcquireFuture, SwapchainCreateInfo,
+        SwapchainCreationError,
+    },
+    sync::{self, FlushError, GpuFuture},
 };
 use winit::window::Window;
 
@@ -23,6 +27,10 @@ pub struct ManagedSwapchain {
     state: SwapchainState,
     swap_chain: Arc<Swapchain<Window>>,
     image_views: Vec<Arc<ImageView<SwapchainImage<Window>>>>,
+    previous_frame_end: Option<Box<dyn GpuFuture>>,
+    surface: Arc<Surface<Window>>,
+    device: Arc<Device>,
+    recreate_on_next_frame: bool,
 }
 
 impl ManagedSwapchain {
@@ -44,8 +52,8 @@ impl ManagedSwapchain {
         let image_extent = surface.window().inner_size().into();
 
         let (swapchain, images) = Swapchain::new(
-            device,
-            surface,
+            device.clone(),
+            surface.clone(),
             SwapchainCreateInfo {
                 min_image_count: surface_capabilities.min_image_count,
                 image_format,
@@ -61,6 +69,7 @@ impl ManagedSwapchain {
             },
         )
         .unwrap();
+
         let images = images
             .into_iter()
             .map(|image| ImageView::new_default(image).unwrap())
@@ -76,11 +85,19 @@ impl ManagedSwapchain {
             },
             swap_chain: swapchain,
             image_views: images,
+            previous_frame_end: Some(sync::now(device.clone()).boxed()),
+            surface,
+            device,
+            recreate_on_next_frame: false,
         }
     }
 
-    pub fn recreate(&mut self, surface: Arc<Surface<Window>>) {
-        let dimensions: [u32; 2] = surface.window().inner_size().into();
+    pub fn resize(&mut self) {
+        self.recreate_on_next_frame = true;
+    }
+
+    pub fn recreate(&mut self) {
+        let dimensions: [u32; 2] = self.surface.window().inner_size().into();
         let (new_swapchain, new_images) = match self.swap_chain.recreate(SwapchainCreateInfo {
             image_extent: dimensions,
             ..self.swap_chain.create_info()
@@ -96,5 +113,99 @@ impl ManagedSwapchain {
             .collect::<Vec<_>>();
 
         self.image_views = new_images;
+    }
+
+    pub fn previous_frame_end(&mut self) -> Option<Box<dyn GpuFuture>> {
+        self.previous_frame_end.take()
+    }
+
+    pub fn acquire_frame(&mut self) -> (SwapchainFrame, SwapchainAcquireFuture<Window>) {
+        if self.recreate_on_next_frame {
+            self.recreate();
+            self.recreate_on_next_frame = false;
+        }
+
+        let mut tries = 0;
+        loop {
+            tries += 1;
+            if tries > 10 {
+                panic!("Failed to acquire next image after 10 tries");
+            }
+
+            let next = vulkano::swapchain::acquire_next_image(self.swap_chain.clone(), None);
+
+            let (image_num, suboptimal, acquire_future) = match next {
+                Ok(r) => r,
+                // TODO: Handle more errors, e.g. DeviceLost, by re-creating the entire graphics chain
+                Err(AcquireError::OutOfDate) => {
+                    self.recreate();
+                    continue;
+                }
+                Err(e) => panic!("Failed to acquire next image: {:?}", e),
+            };
+
+            if suboptimal {
+                self.recreate();
+                continue;
+            }
+
+            let frame = SwapchainFrame {
+                presented: false,
+                image_num,
+                image: self.image_views[image_num].clone(),
+                managed_swap_chain: self,
+            };
+
+            return (frame, acquire_future);
+        }
+    }
+}
+
+pub struct SwapchainFrame<'a> {
+    presented: bool,
+
+    pub image_num: usize,
+    pub image: Arc<ImageView<SwapchainImage<Window>>>,
+
+    managed_swap_chain: &'a mut ManagedSwapchain,
+}
+
+impl<'a> SwapchainFrame<'a> {
+    pub fn present(mut self, queue: &Arc<Queue>, after_future: Box<dyn GpuFuture>) {
+        self.presented = true;
+
+        let sc = &mut self.managed_swap_chain;
+
+        let future = after_future
+            .then_swapchain_present(queue.clone(), sc.swap_chain.clone(), self.image_num)
+            .then_signal_fence_and_flush();
+
+        match future {
+            Ok(future) => {
+                // FIXME: A hack to prevent OutOfMemory error on Nvidia
+                // https://github.com/vulkano-rs/vulkano/issues/627
+                match future.wait(None) {
+                    Ok(x) => x,
+                    Err(err) => println!("err: {:?}", err),
+                }
+                sc.previous_frame_end = Some(future.boxed());
+            }
+            Err(FlushError::OutOfDate) => {
+                sc.recreate_on_next_frame = true;
+                sc.previous_frame_end = Some(sync::now(sc.device.clone()).boxed());
+            }
+            Err(e) => {
+                println!("Failed to flush future: {:?}", e);
+                sc.previous_frame_end = Some(sync::now(sc.device.clone()).boxed());
+            }
+        }
+    }
+}
+
+impl<'a> std::ops::Drop for SwapchainFrame<'a> {
+    fn drop(&mut self) {
+        if !self.presented {
+            panic!("SwapchainFrame not presented.")
+        }
     }
 }

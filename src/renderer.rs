@@ -23,18 +23,15 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
-use self::swapchain::SwapchainState;
+use self::swapchain::{ManagedSwapchain, SwapchainState};
 
 pub struct Renderer {
     instance: Arc<Instance>,
     device: Arc<Device>,
     surface: Arc<Surface<Window>>,
     queue: Arc<Queue>,
-    swap_chain: Arc<Swapchain<Window>>,
-    final_images: Vec<Arc<ImageView<SwapchainImage<Window>>>>,
+    swap_chain: ManagedSwapchain,
     image_num: usize,
-    recreate_swapchain: bool,
-    previous_frame_end: Option<Box<dyn GpuFuture>>,
 }
 
 pub struct RenderState<'a> {
@@ -85,9 +82,9 @@ impl Renderer {
         // Create device
         let (device, queue) = Self::create_device(physical, surface.clone());
         // Create swap chain & frame(s) to which we'll render
-        let (swap_chain, images) =
-            Self::create_swap_chain(surface.clone(), physical, device.clone(), present_mode);
-        let previous_frame_end = Some(sync::now(device.clone()).boxed());
+
+        let swap_chain =
+            ManagedSwapchain::create(surface.clone(), physical, device.clone(), present_mode);
 
         Self {
             instance,
@@ -95,10 +92,7 @@ impl Renderer {
             surface,
             queue,
             swap_chain,
-            final_images: images,
             image_num: 0,
-            previous_frame_end,
-            recreate_swapchain: false,
         }
     }
 
@@ -181,27 +175,6 @@ impl Renderer {
         (swapchain, images)
     }
 
-    /// Swapchain is recreated when resized
-    fn recreate_swapchain(&mut self) {
-        let dimensions: [u32; 2] = self.surface.window().inner_size().into();
-        let (new_swapchain, new_images) = match self.swap_chain.recreate(SwapchainCreateInfo {
-            image_extent: dimensions,
-            ..self.swap_chain.create_info()
-        }) {
-            Ok(r) => r,
-            Err(SwapchainCreationError::ImageExtentNotSupported { .. }) => return,
-            Err(e) => panic!("Failed to recreate swapchain: {:?}", e),
-        };
-        self.swap_chain = new_swapchain;
-        let new_images = new_images
-            .into_iter()
-            .map(|image| ImageView::new_default(image).unwrap())
-            .collect::<Vec<_>>();
-        self.final_images = new_images;
-
-        self.recreate_swapchain = false;
-    }
-
     pub fn device(&self) -> Arc<Device> {
         self.device.clone()
     }
@@ -219,63 +192,23 @@ impl Renderer {
     }
 
     pub fn resize(&mut self) {
-        self.recreate_swapchain = true;
+        self.swap_chain.resize();
     }
 
     /// Renders scene onto scene images using frame system and finally draws UI on final
     /// swapchain images
     pub fn render(&mut self, gui: &mut Gui, layout: impl FnOnce(usize, &mut Gui) -> ()) {
-        // Recreate swap chain if needed (when resizing of window occurs or swapchain is outdated)
-        if self.recreate_swapchain {
-            self.recreate_swapchain();
-        }
-        // Acquire next image in the swapchain and our image num index
-        let (image_num, suboptimal, acquire_future) =
-            match vulkano::swapchain::acquire_next_image(self.swap_chain.clone(), None) {
-                Ok(r) => r,
-                Err(AcquireError::OutOfDate) => {
-                    self.recreate_swapchain = true;
-                    return;
-                }
-                Err(e) => panic!("Failed to acquire next image: {:?}", e),
-            };
-        if suboptimal {
-            self.recreate_swapchain = true;
-        }
-        self.image_num = image_num;
+        let previous_frame_future = self.swap_chain.previous_frame_end().unwrap();
 
-        layout(self.image_num, gui);
+        let (frame, acquire_future) = self.swap_chain.acquire_frame();
+
+        layout(frame.image_num, gui);
 
         // Finally render GUI on our swapchain color image attachments
-        let future = self.previous_frame_end.take().unwrap().join(acquire_future);
-        let after_future = gui.draw_on_image(future, self.final_images[image_num].clone());
+        let future = previous_frame_future.join(acquire_future);
+        let after_future = gui.draw_on_image(future, frame.image.clone());
         // Finish render
-        self.finish(after_future, image_num);
-    }
 
-    /// Finishes render by presenting the swapchain
-    fn finish(&mut self, after_future: Box<dyn GpuFuture>, image_num: usize) {
-        let future = after_future
-            .then_swapchain_present(self.queue.clone(), self.swap_chain.clone(), image_num)
-            .then_signal_fence_and_flush();
-        match future {
-            Ok(future) => {
-                // A hack to prevent OutOfMemory error on Nvidia :(
-                // https://github.com/vulkano-rs/vulkano/issues/627
-                match future.wait(None) {
-                    Ok(x) => x,
-                    Err(err) => println!("err: {:?}", err),
-                }
-                self.previous_frame_end = Some(future.boxed());
-            }
-            Err(FlushError::OutOfDate) => {
-                self.recreate_swapchain = true;
-                self.previous_frame_end = Some(sync::now(self.device.clone()).boxed());
-            }
-            Err(e) => {
-                println!("Failed to flush future: {:?}", e);
-                self.previous_frame_end = Some(sync::now(self.device.clone()).boxed());
-            }
-        }
+        frame.present(&self.queue, after_future);
     }
 }
