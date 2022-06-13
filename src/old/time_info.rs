@@ -21,7 +21,13 @@ pub struct TimeInfo {
 
 impl TimeInfo {
     pub fn new() -> TimeInfo {
-        TimeInfo { dt: 0.0, fps: 0.0, frame_sum: 0.0, dt_sum: 0.0, prev_time: Instant::now() }
+        TimeInfo {
+            dt: 0.0,
+            fps: 0.0,
+            frame_sum: 0.0,
+            dt_sum: 0.0,
+            prev_time: Instant::now(),
+        }
     }
 
     #[allow(dead_code)]

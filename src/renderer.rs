@@ -8,13 +8,10 @@ use vulkano::{
         physical::PhysicalDevice, Device, DeviceCreateInfo, DeviceExtensions, Features, Queue,
         QueueCreateInfo,
     },
-    image::{view::ImageView, AttachmentImage, ImageUsage, ImageViewAbstract, SwapchainImage},
+    image::{view::ImageView, ImageUsage, ImageViewAbstract, SwapchainImage},
     instance::{Instance, InstanceCreateInfo, InstanceExtensions},
-    swapchain::{
-        AcquireError, PresentMode, Surface, Swapchain, SwapchainCreateInfo, SwapchainCreationError,
-    },
-    sync,
-    sync::{FlushError, GpuFuture},
+    swapchain::{PresentMode, Surface, Swapchain, SwapchainCreateInfo},
+    sync::GpuFuture,
     Version,
 };
 use vulkano_win::VkSurfaceBuild;

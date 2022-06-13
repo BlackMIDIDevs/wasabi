@@ -160,8 +160,7 @@ pub struct Frame<'a> {
     command_buffer_builder: Option<AutoCommandBufferBuilder<PrimaryAutoCommandBuffer>>,
 }
 
-impl<'a> Frame<'a> {
-}
+impl<'a> Frame<'a> {}
 
 pub struct DrawPass<'f, 's: 'f> {
     frame: &'f mut Frame<'s>,
