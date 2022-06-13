@@ -1,0 +1,21 @@
+[package]
+name = "wasabi"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+egui_winit_vulkano = { git = "https://github.com/Kaydax/egui_winit_vulkano.git" }
+vulkano-shaders = { git = "https://github.com/Kaydax/vulkano.git" }
+egui_demo_lib = "0.17.0"
+vulkano-win = { git = "https://github.com/Kaydax/vulkano.git" }
+egui-winit = "0.17.0"
+bytemuck = "1.8.0"
+vulkano = { git = "https://github.com/Kaydax/vulkano.git" }
+egui = "0.17.0"
+winit = "0.26"
+image = "0.23.14"
+ahash = "0.7.6"
+cgmath = "0.18.0"
+nalgebra-glm = "0.17.0"
