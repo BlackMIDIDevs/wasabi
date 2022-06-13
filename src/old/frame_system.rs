@@ -15,8 +15,7 @@ use std::{convert::TryFrom, sync::Arc};
 
 use vulkano::{
     command_buffer::{
-        AutoCommandBufferBuilder, CommandBufferUsage, PrimaryAutoCommandBuffer,
-        SecondaryCommandBuffer, SubpassContents,
+        AutoCommandBufferBuilder, CommandBufferUsage, SecondaryCommandBuffer, SubpassContents,
     },
     device::Queue,
     format::Format,
