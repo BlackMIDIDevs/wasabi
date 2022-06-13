@@ -1,4 +1,4 @@
-mod swapchain;
+pub mod swapchain;
 
 use std::sync::Arc;
 
@@ -7,6 +7,7 @@ use vulkano::{
         physical::PhysicalDevice, Device, DeviceCreateInfo, DeviceExtensions, Features, Queue,
         QueueCreateInfo,
     },
+    format::Format,
     instance::{Instance, InstanceCreateInfo, InstanceExtensions},
     swapchain::{PresentMode, Surface},
     sync::GpuFuture,
@@ -22,7 +23,7 @@ use self::swapchain::{ManagedSwapchain, SwapchainFrame};
 
 pub struct Renderer {
     _instance: Arc<Instance>,
-    _device: Arc<Device>,
+    device: Arc<Device>,
     surface: Arc<Surface<Window>>,
     queue: Arc<Queue>,
     swap_chain: ManagedSwapchain,
@@ -81,7 +82,7 @@ impl Renderer {
 
         Self {
             _instance: instance,
-            _device: device,
+            device,
             surface,
             queue,
             swap_chain,
@@ -130,12 +131,20 @@ impl Renderer {
         self.queue.clone()
     }
 
+    pub fn device(&self) -> Arc<Device> {
+        self.device.clone()
+    }
+
     pub fn surface(&self) -> Arc<Surface<Window>> {
         self.surface.clone()
     }
 
     pub fn window(&self) -> &Window {
         self.surface.window()
+    }
+
+    pub fn format(&self) -> Format {
+        self.swap_chain.state().images_state.format
     }
 
     pub fn resize(&mut self) {

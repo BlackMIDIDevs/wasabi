@@ -119,70 +119,32 @@ impl FrameSystem {
             )
             .unwrap();
 
-        let mut frame = Frame {
-            system: self,
-            before_main_cb_future: Some(Box::new(before_future)),
-            framebuffer,
-            num_pass: 0,
-            command_buffer_builder: Some(command_buffer_builder),
-        };
+        render(DrawPass {
+            command_buffer_builder: &mut command_buffer_builder,
+        });
 
-        render(DrawPass { frame: &mut frame });
-
-        frame
-            .command_buffer_builder
-            .as_mut()
-            .unwrap()
-            .end_render_pass()
-            .unwrap();
-        let command_buffer = frame
-            .command_buffer_builder
-            .take()
-            .unwrap()
-            .build()
-            .unwrap();
-        let after_main_cb = frame
-            .before_main_cb_future
-            .take()
-            .unwrap()
-            .then_execute(frame.system.gfx_queue.clone(), command_buffer)
+        command_buffer_builder.end_render_pass().unwrap();
+        let command_buffer = command_buffer_builder.build().unwrap();
+        let after_main_cb = before_future
+            .then_execute(self.gfx_queue.clone(), command_buffer)
             .unwrap();
 
         Box::new(after_main_cb)
     }
 }
 
-pub struct Frame<'a> {
-    system: &'a mut FrameSystem,
-    num_pass: u8,
-    before_main_cb_future: Option<Box<dyn GpuFuture>>,
-    framebuffer: Arc<Framebuffer>,
-    command_buffer_builder: Option<AutoCommandBufferBuilder<PrimaryAutoCommandBuffer>>,
+pub struct DrawPass<'a> {
+    command_buffer_builder: &'a mut AutoCommandBufferBuilder<PrimaryAutoCommandBuffer>,
 }
 
-impl<'a> Frame<'a> {}
-
-pub struct DrawPass<'f, 's: 'f> {
-    frame: &'f mut Frame<'s>,
-}
-
-impl<'f, 's: 'f> DrawPass<'f, 's> {
+impl<'a> DrawPass<'a> {
     #[inline]
     pub fn execute<C>(&mut self, command_buffer: C)
     where
         C: SecondaryCommandBuffer + Send + Sync + 'static,
     {
-        self.frame
-            .command_buffer_builder
-            .as_mut()
-            .unwrap()
+        self.command_buffer_builder
             .execute_commands(command_buffer)
             .unwrap();
-    }
-
-    #[allow(dead_code)]
-    #[inline]
-    pub fn viewport_dimensions(&self) -> [u32; 2] {
-        self.frame.framebuffer.extent()
     }
 }

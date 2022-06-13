@@ -239,10 +239,6 @@ impl Renderer {
         self.recreate_swapchain = true;
     }
 
-    pub fn last_image_num(&self) -> usize {
-        self.image_num
-    }
-
     pub fn scene_images(&mut self) -> &Vec<Arc<ImageView<AttachmentImage>>> {
         &self.scene_images
     }

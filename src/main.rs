@@ -1,12 +1,11 @@
 mod gui;
 mod renderer;
 mod scenes;
-mod window;
 
 use egui_winit_vulkano::Gui;
+use gui::{window::GuiWasabiWindow, GuiRenderer, GuiState};
 use renderer::Renderer;
 use vulkano::swapchain::PresentMode;
-use window::GuiWasabiWindow;
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -26,7 +25,15 @@ pub fn main() {
     // Vulkano & Winit & egui integration
     let mut gui = Gui::new(renderer.surface(), renderer.queue(), false);
 
-    let mut gui_state = GuiWasabiWindow::new(&mut gui);
+    let mut gui_render_data = GuiRenderer {
+        gui: &mut gui,
+        device: renderer.device(),
+        queue: renderer.queue(),
+        format: renderer.format(),
+    };
+
+    let mut gui_state = GuiWasabiWindow::new(&mut gui_render_data);
+
     event_loop.run(move |event, _, control_flow| {
         // Update Egui integration so the UI works!
         match event {
@@ -50,9 +57,12 @@ pub fn main() {
             Event::RedrawRequested(window_id) if window_id == window_id => {
                 renderer.render(|frame, future| {
                     // Generate egui layouts
-                    gui.immediate_ui(|gui| {
-                        let ctx = gui.context();
-                        gui_state.layout(ctx);
+                    gui.immediate_ui(|mut gui| {
+                        let mut state = GuiState {
+                            gui: &mut gui,
+                            frame: &frame,
+                        };
+                        gui_state.layout(&mut state);
                     });
 
                     // Render the layouts

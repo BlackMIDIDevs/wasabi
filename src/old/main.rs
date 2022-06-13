@@ -24,10 +24,10 @@ use winit::{
 
 use self::{renderer::Renderer, time_info::TimeInfo};
 
-mod draw_system;
-mod frame_system;
-mod renderer;
-mod time_info;
+pub mod draw_system;
+pub mod frame_system;
+pub mod renderer;
+pub mod time_info;
 
 /// Example struct to contain the state of the UI
 pub struct GuiState {
