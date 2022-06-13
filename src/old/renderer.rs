@@ -33,8 +33,6 @@ use winit::{
 
 use crate::old::{draw_system::ChikaraShaderTest, frame_system::FrameSystem};
 
-use super::frame_system::Pass;
-
 pub struct Renderer {
     #[allow(dead_code)]
     instance: Arc<Instance>,
@@ -251,7 +249,7 @@ impl Renderer {
 
     /// Renders scene onto scene images using frame system and finally draws UI on final
     /// swapchain images
-    pub fn render(&mut self, gui: &mut Gui) {
+    pub fn render(&mut self, gui: &mut Gui, layout: impl FnOnce(usize, &mut Gui) -> ()) {
         // Recreate swap chain if needed (when resizing of window occurs or swapchain is outdated)
         if self.recreate_swapchain {
             self.recreate_swapchain();
@@ -270,6 +268,9 @@ impl Renderer {
             self.recreate_swapchain = true;
         }
         self.image_num = image_num;
+
+        layout(self.image_num, gui);
+
         // Knowing image num, let's render our scene on scene images
         self.render_scene();
         // Finally render GUI on our swapchain color image attachments
@@ -280,30 +281,21 @@ impl Renderer {
     }
 
     /// Renders the pass for scene on scene images
-    fn render_scene(&mut self) {
+    pub fn render_scene(&mut self) {
         let future = sync::now(self.device.clone()).boxed();
-        // Acquire frame from our frame system
-        let mut frame = self.frame_system.frame(
+
+        let after_future = self.frame_system.draw_frame(
             future,
             // Notice that final image is now scene image
             self.scene_images[self.image_num].clone(),
+            |mut draw_pass| {
+                let cb = self.scene.draw(self.scene_view_size);
+                draw_pass.execute(cb);
+            },
         );
-        // Draw each render pass that's related to scene
-        let mut after_future = None;
-        while let Some(pass) = frame.next_pass() {
-            match pass {
-                Pass::Deferred(mut draw_pass) => {
-                    let cb = self.scene.draw(self.scene_view_size);
-                    draw_pass.execute(cb);
-                }
-                Pass::Finished(af) => {
-                    after_future = Some(af);
-                }
-            }
-        }
+
         // Wait on our future
         let future = after_future
-            .unwrap()
             .then_signal_fence_and_flush()
             .expect("Failed to signal fence and flush");
         match future.wait(None) {
@@ -317,6 +309,7 @@ impl Renderer {
         self.scene_view_size = new_size;
         let scene_images =
             Self::create_scene_images(self.device.clone(), &self.final_images, new_size);
+        println!("Resized to {:?}", new_size);
         self.scene_images = scene_images;
     }
 

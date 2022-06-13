@@ -17,17 +17,17 @@ use vulkano::{
     swapchain::PresentMode,
 };
 use winit::{
+    dpi::PhysicalSize,
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
-    window::Window,
 };
 
-use self::{time_info::TimeInfo, renderer::Renderer};
+use self::{renderer::Renderer, time_info::TimeInfo};
 
+mod draw_system;
 mod frame_system;
 mod renderer;
 mod time_info;
-mod draw_system;
 
 /// Example struct to contain the state of the UI
 pub struct GuiState {
@@ -70,18 +70,20 @@ impl GuiState {
     pub fn layout(
         &mut self,
         egui_context: Context,
-        window: &Window,
+        inner_size: PhysicalSize<u32>,
         last_image_num: usize,
         fps: f32,
     ) {
         egui_context.set_visuals(Visuals::dark());
-        egui::SidePanel::left("Side Panel").default_width(150.0).show(&egui_context, |ui| {
-            ui.heading("Hello Tree");
-            ui.separator();
-            ui.checkbox(&mut self.show_texture_window1, "Show Tree");
-            ui.checkbox(&mut self.show_texture_window2, "Show Doge");
-            ui.checkbox(&mut self.show_scene_window, "Show Scene");
-        });
+        egui::SidePanel::left("Side Panel")
+            .default_width(150.0)
+            .show(&egui_context, |ui| {
+                ui.heading("Hello Tree");
+                ui.separator();
+                ui.checkbox(&mut self.show_texture_window1, "Show Tree");
+                ui.checkbox(&mut self.show_texture_window2, "Show Doge");
+                ui.checkbox(&mut self.show_scene_window, "Show Scene");
+            });
         let show_texture_window1 = &mut self.show_texture_window1;
         let show_texture_window2 = &mut self.show_texture_window2;
         let image_texture_id1 = self.image_texture_id1;
@@ -102,16 +104,20 @@ impl GuiState {
             });
         let show_scene_window = &mut self.show_scene_window;
         let scene_texture_id = self.scene_texture_ids[last_image_num];
-        egui::Window::new("Scene").resizable(true).vscroll(true).open(show_scene_window).show(
-            &egui_context,
-            |ui| {
+        egui::Window::new("Scene")
+            .resizable(true)
+            .vscroll(true)
+            .open(show_scene_window)
+            .show(&egui_context, |ui| {
                 let size = ui.available_size();
+                self.scene_view_size = [size.x as u32, size.y as u32];
                 ui.image(scene_texture_id, [size.x as f32, size.y as f32]);
-            },
-        );
-        let size = window.inner_size();
+            });
         egui::Area::new("fps")
-            .fixed_pos(egui::pos2(size.width as f32 - 0.05 * size.width as f32, 10.0))
+            .fixed_pos(egui::pos2(
+                inner_size.width as f32 - 0.05 * inner_size.width as f32,
+                10.0,
+            ))
             .show(&egui_context, |ui| {
                 ui.label(format!("{:.2}", fps));
             });
@@ -125,8 +131,13 @@ pub fn main() {
     // Create renderer for our scene & ui
     let window_size = [1280, 720];
     let scene_view_size = [256, 256];
-    let mut renderer =
-        Renderer::new(&event_loop, window_size, scene_view_size, PresentMode::Mailbox, "Wholesome");
+    let mut renderer = Renderer::new(
+        &event_loop,
+        window_size,
+        scene_view_size,
+        PresentMode::Mailbox,
+        "Wholesome",
+    );
     // After creating the renderer (window, gfx_queue) create out gui integration
     // It requires access to surface (Window, devices etc.) and Vulkano's gfx queue
     let mut gui = Gui::new(renderer.surface(), renderer.queue(), false);
@@ -158,13 +169,16 @@ pub fn main() {
                 // Set immediate UI in redraw here
                 // It's a closure giving access to egui context inside which you can call anything.
                 // Here we're calling the layout of our `gui_state`.
-                gui.immediate_ui(|gui| {
-                    let ctx = gui.context();
-                    gui_state.layout(ctx, renderer.window(), renderer.last_image_num(), time.fps())
-                });
+
                 // Lastly we'll need to render our ui. You need to organize gui rendering to your needs
                 // We'll render gui last on our swapchain images (see function below)
-                renderer.render(&mut gui);
+                let inner_size = renderer.window().inner_size();
+                renderer.render(&mut gui, |image_num, gui| {
+                    gui.immediate_ui(|gui| {
+                        let ctx = gui.context();
+                        gui_state.layout(ctx, inner_size, image_num, time.fps())
+                    });
+                });
                 // Update fps & dt
                 time.update();
             }

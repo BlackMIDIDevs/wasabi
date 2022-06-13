@@ -79,14 +79,12 @@ impl FrameSystem {
         Subpass::from(self.render_pass.clone(), 0).unwrap()
     }
 
-    pub fn frame<F>(
+    pub fn draw_frame(
         &mut self,
-        before_future: F,
+        before_future: impl GpuFuture + 'static,
         final_image: Arc<dyn ImageViewAbstract + 'static>,
-    ) -> Frame
-    where
-        F: GpuFuture + 'static,
-    {
+        render: impl FnOnce(DrawPass) -> (),
+    ) -> Box<dyn GpuFuture> {
         let img_dims = final_image.image().dimensions().width_height();
         if self.depth_buffer.image().dimensions().width_height() != img_dims {
             self.depth_buffer = ImageView::new_default(
@@ -121,13 +119,36 @@ impl FrameSystem {
             )
             .unwrap();
 
-        Frame {
+        let mut frame = Frame {
             system: self,
             before_main_cb_future: Some(Box::new(before_future)),
             framebuffer,
             num_pass: 0,
             command_buffer_builder: Some(command_buffer_builder),
-        }
+        };
+
+        render(DrawPass { frame: &mut frame });
+
+        frame
+            .command_buffer_builder
+            .as_mut()
+            .unwrap()
+            .end_render_pass()
+            .unwrap();
+        let command_buffer = frame
+            .command_buffer_builder
+            .take()
+            .unwrap()
+            .build()
+            .unwrap();
+        let after_main_cb = frame
+            .before_main_cb_future
+            .take()
+            .unwrap()
+            .then_execute(frame.system.gfx_queue.clone(), command_buffer)
+            .unwrap();
+
+        Box::new(after_main_cb)
     }
 }
 
@@ -140,35 +161,6 @@ pub struct Frame<'a> {
 }
 
 impl<'a> Frame<'a> {
-    pub fn next_pass<'f>(&'f mut self) -> Option<Pass<'f, 'a>> {
-        let current_pass = self.num_pass;
-        self.num_pass += 1;
-
-        match current_pass {
-            0 => Some(Pass::Deferred(DrawPass { frame: self })),
-            1 => {
-                self.command_buffer_builder
-                    .as_mut()
-                    .unwrap()
-                    .end_render_pass()
-                    .unwrap();
-                let command_buffer = self.command_buffer_builder.take().unwrap().build().unwrap();
-                let after_main_cb = self
-                    .before_main_cb_future
-                    .take()
-                    .unwrap()
-                    .then_execute(self.system.gfx_queue.clone(), command_buffer)
-                    .unwrap();
-                Some(Pass::Finished(Box::new(after_main_cb)))
-            }
-            _ => None,
-        }
-    }
-}
-
-pub enum Pass<'f, 's: 'f> {
-    Deferred(DrawPass<'f, 's>),
-    Finished(Box<dyn GpuFuture>),
 }
 
 pub struct DrawPass<'f, 's: 'f> {
