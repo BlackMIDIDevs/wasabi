@@ -2,15 +2,13 @@ mod swapchain;
 
 use std::sync::Arc;
 
-use egui_winit_vulkano::Gui;
 use vulkano::{
     device::{
         physical::PhysicalDevice, Device, DeviceCreateInfo, DeviceExtensions, Features, Queue,
         QueueCreateInfo,
     },
-    image::{view::ImageView, ImageUsage, ImageViewAbstract, SwapchainImage},
     instance::{Instance, InstanceCreateInfo, InstanceExtensions},
-    swapchain::{PresentMode, Surface, Swapchain, SwapchainCreateInfo},
+    swapchain::{PresentMode, Surface},
     sync::GpuFuture,
     Version,
 };
@@ -20,7 +18,7 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
-use self::swapchain::{ManagedSwapchain, SwapchainFrame, SwapchainState};
+use self::swapchain::{ManagedSwapchain, SwapchainFrame};
 
 pub struct Renderer {
     _instance: Arc<Instance>,
