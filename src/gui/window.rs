@@ -69,6 +69,8 @@ impl GuiWasabiWindow {
             .resizable(true)
             .vscroll(true)
             .open(&mut self.show_texture_window3)
-            .show(&egui_context, |mut ui| self.render_scene.layout(state, &mut ui));
+            .show(&egui_context, |mut ui| {
+                self.render_scene.layout(state, &mut ui)
+            });
     }
 }
