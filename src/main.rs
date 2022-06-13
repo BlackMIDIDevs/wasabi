@@ -53,11 +53,13 @@ pub fn main() {
 
                 // Lastly we'll need to render our ui. You need to organize gui rendering to your needs
                 // We'll render gui last on our swapchain images (see function below)
-                renderer.render(&mut gui, |_image_num, gui| {
+                renderer.render(|frame, future| {
                     gui.immediate_ui(|gui| {
                         let ctx = gui.context();
                         gui_state.layout(ctx);
                     });
+
+                    gui.draw_on_image(future, frame.image.clone())
                 });
                 // Update fps & dt
             }

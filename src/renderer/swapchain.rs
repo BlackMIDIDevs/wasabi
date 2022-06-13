@@ -12,7 +12,7 @@ use vulkano::{
 };
 use winit::window::Window;
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct ImagesState {
     pub count: usize,
     pub format: Format,
@@ -92,6 +92,10 @@ impl ManagedSwapchain {
         }
     }
 
+    pub fn state(&self) -> &SwapchainState {
+        &self.state
+    }
+
     pub fn resize(&mut self) {
         self.recreate_on_next_frame = true;
     }
@@ -113,6 +117,11 @@ impl ManagedSwapchain {
             .collect::<Vec<_>>();
 
         self.image_views = new_images;
+
+        self.state = SwapchainState {
+            size: dimensions,
+            images_state: self.state.images_state,
+        };
     }
 
     pub fn previous_frame_end(&mut self) -> Option<Box<dyn GpuFuture>> {
@@ -199,6 +208,10 @@ impl<'a> SwapchainFrame<'a> {
                 sc.previous_frame_end = Some(sync::now(sc.device.clone()).boxed());
             }
         }
+    }
+
+    pub fn swap_chain_state(&self) -> &SwapchainState {
+        &self.managed_swap_chain.state
     }
 }
 
