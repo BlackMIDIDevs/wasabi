@@ -1,3 +1,6 @@
+mod draw_system;
+mod frame_system;
+
 use std::sync::Arc;
 
 use egui::Ui;
@@ -6,10 +9,9 @@ use vulkano::{
     sync::{self, GpuFuture},
 };
 
-use crate::{
-    old::{draw_system::ChikaraShaderTest, frame_system::FrameSystem},
-    scenes::SceneSwapchain,
-};
+use crate::scenes::SceneSwapchain;
+
+use self::{frame_system::FrameSystem, draw_system::ChikaraShaderTest};
 
 use super::{GuiRenderer, GuiState};
 
