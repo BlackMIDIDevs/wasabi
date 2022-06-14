@@ -16,11 +16,11 @@ impl GuiWasabiWindow {
     pub fn new(renderer: &mut GuiRenderer) -> GuiWasabiWindow {
         // tree.png asset is from https://github.com/sotrh/learn-wgpu/tree/master/docs/beginner/tutorial5-textures
         let image_texture_id1 = renderer.gui.register_user_image(
-            include_bytes!("../old/assets/tree.png"),
+            include_bytes!("../../assets/tree.png"),
             Format::R8G8B8A8_UNORM,
         );
         let image_texture_id2 = renderer.gui.register_user_image(
-            include_bytes!("../old/assets/doge2.png"),
+            include_bytes!("../../assets/doge2.png"),
             Format::R8G8B8A8_UNORM,
         );
 

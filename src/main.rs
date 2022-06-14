@@ -11,9 +11,6 @@ use winit::{
     event_loop::{ControlFlow, EventLoop},
 };
 
-#[path = "./old/main.rs"]
-mod old;
-
 pub fn main() {
     // Winit event loop
     let event_loop = EventLoop::new();
