@@ -11,7 +11,7 @@ use vulkano::{
 
 use crate::scenes::SceneSwapchain;
 
-use self::{frame_system::FrameSystem, draw_system::ChikaraShaderTest};
+use self::{draw_system::ChikaraShaderTest, frame_system::FrameSystem};
 
 use super::{GuiRenderer, GuiState};
 
