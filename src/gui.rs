@@ -5,7 +5,6 @@ use vulkano::device::{Device, Queue};
 
 use crate::renderer::swapchain::SwapchainFrame;
 
-pub mod scene;
 pub mod window;
 
 pub struct GuiState<'a> {
