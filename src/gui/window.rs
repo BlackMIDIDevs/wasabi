@@ -42,18 +42,24 @@ impl GuiWasabiWindow {
         let keyboard_height = 100.0;
         let notes_height = height - keyboard_height;
 
+        let key_view = self.keyboard_layout.get_view_for_keys(0, 127);
+
+        let no_frame = Frame::default().margin(Margin::same(0.0));
+
         // Render the notes
         egui::TopBottomPanel::top("Note panel")
             .height_range(notes_height..=notes_height)
-            .show(&ctx, |mut ui| self.render_scene.layout(state, &mut ui));
+            .frame(no_frame)
+            .show(&ctx, |mut ui| {
+                self.render_scene.layout(state, &mut ui, &key_view)
+            });
 
         // Render the keyboard
         egui::TopBottomPanel::top("Keyboard panel")
             .height_range(keyboard_height..=keyboard_height)
-            .frame(Frame::default().margin(Margin::same(0.0)))
+            .frame(no_frame)
             .show(&ctx, |ui| {
-                self.keyboard
-                    .draw(ui, &self.keyboard_layout.get_view_for_keys(0, 127));
+                self.keyboard.draw(ui, &key_view);
             });
     }
 }

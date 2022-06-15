@@ -20,7 +20,7 @@ impl GuiKeyboard {
 
         let map_x = |num: f32| rect.left() + num * rect.width();
 
-        for (_, key) in key_view.iter_keys() {
+        for (_, key) in key_view.iter_visible_keys() {
             if !key.black {
                 let top_left = Pos2::new(map_x(key.left), top);
                 let bottom_right = Pos2::new(map_x(key.right), bottom);
@@ -32,7 +32,7 @@ impl GuiKeyboard {
             }
         }
 
-        for (_, key) in key_view.iter_keys() {
+        for (_, key) in key_view.iter_visible_keys() {
             if key.black {
                 let top_left = Pos2::new(map_x(key.left), top);
                 let bottom_right = Pos2::new(map_x(key.right), black_bottom);

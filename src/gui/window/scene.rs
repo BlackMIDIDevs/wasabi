@@ -6,7 +6,7 @@ use crate::scenes::SceneSwapchain;
 
 use self::draw_system::ChikaraShaderTest;
 
-use super::{GuiRenderer, GuiState};
+use super::{GuiRenderer, GuiState, keyboard_layout::KeyboardView};
 
 pub struct GuiRenderScene {
     swap_chain: SceneSwapchain,
@@ -22,13 +22,13 @@ impl GuiRenderScene {
         }
     }
 
-    pub fn layout(&mut self, state: &mut GuiState, ui: &mut Ui) {
+    pub fn layout(&mut self, state: &mut GuiState, ui: &mut Ui, key_view: &KeyboardView) {
         let size = ui.available_size();
         let size = [size.x as u32, size.y as u32];
 
         let scene_image = self.swap_chain.get_next_image(state, size);
 
-        self.draw_system.draw(scene_image.image.clone());
+        self.draw_system.draw(key_view, scene_image.image.clone());
 
         ui.image(scene_image.id, [size[0] as f32, size[1] as f32]);
     }

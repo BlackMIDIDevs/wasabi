@@ -4,6 +4,7 @@ use bytemuck::{Pod, Zeroable};
 use vulkano::{
     buffer::{BufferUsage, CpuAccessibleBuffer, TypedBufferAccess},
     command_buffer::{AutoCommandBufferBuilder, CommandBufferUsage, SubpassContents},
+    descriptor_set::{layout::DescriptorSetLayout, PersistentDescriptorSet, WriteDescriptorSet},
     device::{Device, Queue},
     format::Format,
     image::{view::ImageView, AttachmentImage, ImageAccess, ImageViewAbstract},
@@ -14,23 +15,23 @@ use vulkano::{
             vertex_input::BuffersDefinition,
             viewport::{Viewport, ViewportState},
         },
-        GraphicsPipeline,
+        GraphicsPipeline, Pipeline, PipelineBindPoint,
     },
     render_pass::{Framebuffer, FramebufferCreateInfo, RenderPass, Subpass},
     sync::{self, FenceSignalFuture, GpuFuture},
 };
 
-use crate::gui::GuiRenderer;
+use crate::gui::{window::keyboard_layout::KeyboardView, GuiRenderer};
 
 const NOTE_BUFFER_SIZE: u64 = 250000;
 
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Zeroable, Pod)]
 pub struct NoteVertex {
-    pub position: [f32; 2],
-    pub color: [f32; 4],
+    pub start_length: [f32; 2],
+    pub key_color: u32,
 }
-vulkano::impl_vertex!(NoteVertex, position, color);
+vulkano::impl_vertex!(NoteVertex, start_length, key_color);
 
 struct BufferSet {
     vertex_buffers: Vec<Arc<CpuAccessibleBuffer<[NoteVertex]>>>,
@@ -69,11 +70,20 @@ pub enum NotePassStatus {
     HasMoreNotes,
 }
 
+#[repr(C)]
+#[derive(Default, Debug, Copy, Clone, Zeroable, Pod)]
+pub struct KeyPosition {
+    left: f32,
+    right: f32,
+    _padding: [u8; 8],
+}
+
 pub struct NoteRenderPass {
     gfx_queue: Arc<Queue>,
     buffer_set: BufferSet,
     pipeline: Arc<GraphicsPipeline>,
     render_pass: Arc<RenderPass>,
+    key_locations: Arc<CpuAccessibleBuffer<[[KeyPosition; 256]]>>,
     depth_buffer: Arc<ImageView<AttachmentImage>>,
 }
 
@@ -115,6 +125,14 @@ impl NoteRenderPass {
         )
         .unwrap();
 
+        let key_locations = CpuAccessibleBuffer::from_iter(
+            gfx_queue.device().clone(),
+            BufferUsage::all(),
+            false,
+            [[Default::default(); 256]].into_iter(),
+        )
+        .unwrap();
+
         let vs = vs::load(gfx_queue.device().clone()).expect("failed to create shader module");
         let fs = fs::load(gfx_queue.device().clone()).expect("failed to create shader module");
         let gs = gs::load(gfx_queue.device().clone()).expect("failed to create shader module");
@@ -137,12 +155,14 @@ impl NoteRenderPass {
             pipeline,
             render_pass,
             depth_buffer,
+            key_locations,
         }
     }
 
     pub fn draw(
         &mut self,
         final_image: Arc<dyn ImageViewAbstract + 'static>,
+        key_view: &KeyboardView,
         mut fill_buffer: impl FnMut(&Arc<CpuAccessibleBuffer<[NoteVertex]>>) -> NotePassStatus,
     ) {
         let img_dims = final_image.image().dimensions().width_height();
@@ -157,12 +177,33 @@ impl NoteRenderPass {
             )
             .unwrap();
         }
+
         let framebuffer = Framebuffer::new(
             self.render_pass.clone(),
             FramebufferCreateInfo {
                 attachments: vec![final_image, self.depth_buffer.clone()],
                 ..Default::default()
             },
+        )
+        .unwrap();
+
+        let pipeline_layout = self.pipeline.layout();
+
+        {
+            let mut keys = self.key_locations.write().unwrap();
+            for (write, key) in keys[0].iter_mut().zip(key_view.iter_all_notes()) {
+                *write = KeyPosition {
+                    left: key.left,
+                    right: key.right,
+                    _padding: [0; 8],
+                };
+            }
+        }
+
+        let desc_layout = pipeline_layout.set_layouts().get(0).unwrap();
+        let set = PersistentDescriptorSet::new(
+            desc_layout.clone(),
+            [WriteDescriptorSet::buffer(0, self.key_locations.clone())],
         )
         .unwrap();
 
@@ -197,6 +238,12 @@ impl NoteRenderPass {
                 )
                 .unwrap();
 
+            let push_constants = gs::ty::PushConstants {
+                height_time: 1.0,
+                win_width: img_dims[0] as f32,
+                win_height: img_dims[1] as f32,
+            };
+
             command_buffer_builder
                 .bind_pipeline_graphics(self.pipeline.clone())
                 .set_viewport(
@@ -206,6 +253,13 @@ impl NoteRenderPass {
                         dimensions: [img_dims[0] as f32, img_dims[1] as f32],
                         depth_range: 0.0..1.0,
                     }],
+                )
+                .push_constants(pipeline_layout.clone().clone(), 0, push_constants)
+                .bind_descriptor_sets(
+                    PipelineBindPoint::Graphics,
+                    pipeline_layout.clone(),
+                    0,
+                    set.clone(),
                 )
                 .bind_vertex_buffers(0, buffer.clone())
                 .draw(items_to_render, 1, 0, 0)
@@ -255,15 +309,15 @@ mod vs {
         ty: "vertex",
         src: "
 #version 450
-layout(location = 0) in vec2 position;
-layout(location = 1) in vec4 color;
+layout(location = 0) in vec2 start_length;
+layout(location = 1) in uint key_color;
 
-layout(location = 0) out vec2 v_position;
-layout(location = 1) out vec4 v_color;
+layout(location = 0) out vec2 v_start_length;
+layout(location = 1) out uint v_key_color;
 
 void main() {
-    v_position = position;
-    v_color = color;
+    v_start_length = start_length;
+    v_key_color = key_color;
 }"
     }
 }

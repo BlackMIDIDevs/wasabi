@@ -246,7 +246,28 @@ impl<'a> KeyboardView<'a> {
         }
     }
 
-    pub fn iter_keys<'b>(&'b self) -> impl 'b + Iterator<Item = (usize, KeyPosition)> {
+    pub fn note(&self, key: usize) -> KeyPosition {
+        let note = self.layout.notes[key];
+        KeyPosition {
+            black: note.black,
+            left: self.range.transform(note.left),
+            right: self.range.transform(note.right),
+        }
+    }
+
+    pub fn iter_visible_keys<'b>(&'b self) -> impl 'b + Iterator<Item = (usize, KeyPosition)> {
         self.visible_range.clone().map(|i| (i, self.key(i)))
+    }
+
+    pub fn iter_all_keys<'b>(&'b self) -> impl 'b + Iterator<Item = KeyPosition> {
+        (0..257).map(|i| self.key(i))
+    }
+
+    pub fn iter_visible_notes<'b>(&'b self) -> impl 'b + Iterator<Item = (usize, KeyPosition)> {
+        self.visible_range.clone().map(|i| (i, self.note(i)))
+    }
+
+    pub fn iter_all_notes<'b>(&'b self) -> impl 'b + Iterator<Item = KeyPosition> {
+        (0..257).map(|i| self.note(i))
     }
 }

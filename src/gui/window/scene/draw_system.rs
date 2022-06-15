@@ -4,7 +4,7 @@ use std::{sync::Arc, time::Instant};
 
 use vulkano::{buffer::TypedBufferAccess, image::ImageViewAbstract};
 
-use crate::gui::GuiRenderer;
+use crate::gui::{window::keyboard_layout::KeyboardView, GuiRenderer};
 
 use self::notes_render_pass::{NotePassStatus, NoteRenderPass, NoteVertex};
 
@@ -22,20 +22,18 @@ impl ChikaraShaderTest {
     }
 
     fn iter_verts(start_time: Instant, len: usize) -> impl Iterator<Item = NoteVertex> {
-        let angle = start_time.elapsed().as_secs_f32() as f32 * 10.0;
-
         [
             NoteVertex {
-                position: [angle.cos() * 0.5, angle.sin() * 0.5],
-                color: [1.0, 0.0, 0.0, 1.0],
+                start_length: [0.0, 0.5],
+                key_color: 6,
             },
             NoteVertex {
-                position: [(angle + 0.25).cos() * 0.5, (angle + 0.25).sin() * 0.5],
-                color: [0.0, 1.0, 0.0, 1.0],
+                start_length: [0.0, 0.5],
+                key_color: 64,
             },
             NoteVertex {
-                position: [(angle + 0.5).cos() * 0.5, (angle + 0.5).sin() * 0.5],
-                color: [0.0, 0.0, 1.0, 1.0],
+                start_length: [0.0, 0.5],
+                key_color: 80,
             },
         ]
         .into_iter()
@@ -43,12 +41,16 @@ impl ChikaraShaderTest {
         .take(len)
     }
 
-    pub fn draw(&mut self, final_image: Arc<dyn ImageViewAbstract + 'static>) {
+    pub fn draw(
+        &mut self,
+        key_view: &KeyboardView,
+        final_image: Arc<dyn ImageViewAbstract + 'static>,
+    ) {
         let mut i = 0;
 
         let start_time = self.start_time;
 
-        self.render_pass.draw(final_image, |buffer| {
+        self.render_pass.draw(final_image, key_view, |buffer| {
             let new_verts =
                 ChikaraShaderTest::iter_verts(start_time, buffer.len() as usize).enumerate();
 
