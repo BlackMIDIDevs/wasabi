@@ -1,5 +1,4 @@
 mod draw_system;
-mod frame_system;
 
 use std::sync::Arc;
 
@@ -11,27 +10,21 @@ use vulkano::{
 
 use crate::scenes::SceneSwapchain;
 
-use self::{draw_system::ChikaraShaderTest, frame_system::FrameSystem};
+use self::draw_system::ChikaraShaderTest;
 
 use super::{GuiRenderer, GuiState};
 
 pub struct GuiRenderScene {
     swap_chain: SceneSwapchain,
-    frame_system: FrameSystem,
     draw_system: ChikaraShaderTest,
-    device: Arc<Device>,
 }
 
 impl GuiRenderScene {
     pub fn new(renderer: &GuiRenderer) -> Self {
-        let frame_system = FrameSystem::new(renderer.queue.clone(), renderer.format);
-        let draw_system =
-            ChikaraShaderTest::new(renderer.queue.clone(), frame_system.deferred_subpass());
+        let draw_system = ChikaraShaderTest::new(renderer);
         Self {
             swap_chain: SceneSwapchain::new(renderer.device.clone()),
-            frame_system,
             draw_system,
-            device: renderer.device.clone(),
         }
     }
 
@@ -41,24 +34,7 @@ impl GuiRenderScene {
 
         let scene_image = self.swap_chain.get_next_image(state, size);
 
-        let future = sync::now(self.device.clone()).boxed();
-
-        let cb = self.draw_system.draw(size);
-        let after_future = self.frame_system.draw_frame(
-            future,
-            // Notice that final image is now scene image
-            scene_image.image.clone(),
-            cb,
-        );
-
-        // Wait on our future
-        let future = after_future
-            .then_signal_fence_and_flush()
-            .expect("Failed to signal fence and flush");
-        match future.wait(None) {
-            Ok(x) => x,
-            Err(err) => println!("err: {:?}", err),
-        }
+        self.draw_system.draw(scene_image.image.clone());
 
         ui.image(scene_image.id, [size[0] as f32, size[1] as f32]);
     }

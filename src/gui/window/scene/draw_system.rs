@@ -1,23 +1,12 @@
-// Copyright (c) 2017 The vulkano developers <=== !
-// Licensed under the Apache License, Version 2.0
-// <LICENSE-APACHE or
-// http://www.apache.org/licenses/LICENSE-2.0> or the MIT
-// license <LICENSE-MIT or http://opensource.org/licenses/MIT>,
-// at your option. All files in the project carrying such
-// notice may not be copied, modified, or distributed except
-// according to those terms.
-
-// Slightly modified version from
-// https://github.com/vulkano-rs/vulkano-examples/blob/master/src/bin/deferred/triangle_draw_system.rs
-// To simplify this wholesome example :)
-
 use std::{sync::Arc, time::Instant};
 
 use bytemuck::{Pod, Zeroable};
 use vulkano::{
     buffer::{BufferUsage, CpuAccessibleBuffer, TypedBufferAccess},
-    command_buffer::{AutoCommandBufferBuilder, CommandBufferUsage, SecondaryAutoCommandBuffer},
-    device::Queue,
+    command_buffer::{AutoCommandBufferBuilder, CommandBufferUsage, SubpassContents},
+    device::{Device, Queue},
+    format::Format,
+    image::{view::ImageView, AttachmentImage, ImageAccess, ImageViewAbstract},
     pipeline::{
         graphics::{
             depth_stencil::DepthStencilState,
@@ -27,42 +16,91 @@ use vulkano::{
         },
         GraphicsPipeline,
     },
-    render_pass::Subpass,
+    render_pass::{Framebuffer, FramebufferCreateInfo, RenderPass, Subpass},
+    sync::{self, FenceSignalFuture, GpuFuture},
 };
+
+use crate::gui::GuiRenderer;
+
+struct BufferSet {
+    vertex_buffers: Vec<Arc<CpuAccessibleBuffer<[Vertex]>>>,
+    index: usize,
+}
+
+fn get_buffer(device: &Arc<Device>) -> Arc<CpuAccessibleBuffer<[Vertex]>> {
+    unsafe {
+        CpuAccessibleBuffer::uninitialized_array(
+            device.clone(),
+            NOTE_BUFFER_SIZE,
+            BufferUsage::all(),
+            false,
+        )
+        .expect("failed to create buffer")
+    }
+}
+
+impl BufferSet {
+    fn new(device: &Arc<Device>) -> Self {
+        Self {
+            vertex_buffers: vec![get_buffer(device), get_buffer(device)],
+            index: 0,
+        }
+    }
+
+    fn next(&mut self) -> &Arc<CpuAccessibleBuffer<[Vertex]>> {
+        self.index = (self.index + 1) % self.vertex_buffers.len();
+        &self.vertex_buffers[self.index]
+    }
+}
 
 pub struct ChikaraShaderTest {
     gfx_queue: Arc<Queue>,
-    vertex_buffer: Arc<CpuAccessibleBuffer<[Vertex]>>,
+    buffer_set: BufferSet,
     pipeline: Arc<GraphicsPipeline>,
     start_time: Instant,
+    render_pass: Arc<RenderPass>,
+    depth_buffer: Arc<ImageView<AttachmentImage>>,
 }
 
+const NOTE_BUFFER_SIZE: u64 = 250000;
+
 impl ChikaraShaderTest {
-    pub fn new(gfx_queue: Arc<Queue>, subpass: Subpass) -> ChikaraShaderTest {
-        let vertex_buffer = {
-            CpuAccessibleBuffer::from_iter(
+    pub fn new(renderer: &GuiRenderer) -> ChikaraShaderTest {
+        let gfx_queue = renderer.queue.clone();
+
+        let render_pass = vulkano::ordered_passes_renderpass!(gfx_queue.device().clone(),
+            attachments: {
+                final_color: {
+                    load: Clear,
+                    store: Store,
+                    format: renderer.format,
+                    samples: 1,
+                },
+                depth: {
+                    load: Clear,
+                    store: DontCare,
+                    format: Format::D16_UNORM,
+                    samples: 1,
+                }
+            },
+            passes: [
+                {
+                    color: [final_color],
+                    depth_stencil: {depth},
+                    input: []
+                }
+            ]
+        )
+        .unwrap();
+        let depth_buffer = ImageView::new_default(
+            AttachmentImage::transient_input_attachment(
                 gfx_queue.device().clone(),
-                BufferUsage::all(),
-                false,
-                [
-                    Vertex {
-                        position: [-0.5, -0.25],
-                        color: [1.0, 0.0, 0.0, 1.0],
-                    },
-                    Vertex {
-                        position: [0.0, 0.5],
-                        color: [0.0, 1.0, 0.0, 1.0],
-                    },
-                    Vertex {
-                        position: [0.25, -0.1],
-                        color: [0.0, 0.0, 1.0, 1.0],
-                    },
-                ]
-                .iter()
-                .cloned(),
+                [1, 1],
+                Format::D16_UNORM,
             )
-            .expect("failed to create buffer")
-        };
+            .unwrap(),
+        )
+        .unwrap();
 
         let vs = vs::load(gfx_queue.device().clone()).expect("failed to create shader module");
         let fs = fs::load(gfx_queue.device().clone()).expect("failed to create shader module");
@@ -76,15 +114,17 @@ impl ChikaraShaderTest {
             .fragment_shader(fs.entry_point("main").unwrap(), ())
             .viewport_state(ViewportState::viewport_dynamic_scissor_irrelevant())
             .depth_stencil_state(DepthStencilState::simple_depth_test())
-            .render_pass(subpass)
+            .render_pass(Subpass::from(render_pass.clone(), 0).unwrap())
             .build(gfx_queue.device().clone())
             .unwrap();
 
         ChikaraShaderTest {
             gfx_queue,
-            vertex_buffer,
+            buffer_set: BufferSet::new(&renderer.device),
             pipeline,
             start_time: Instant::now(),
+            render_pass,
+            depth_buffer,
         }
     }
 
@@ -106,38 +146,102 @@ impl ChikaraShaderTest {
             },
         ]
         .into_iter()
+        .cycle()
+        .take(NOTE_BUFFER_SIZE as usize)
     }
 
-    pub fn draw(&mut self, viewport_dimensions: [u32; 2]) -> SecondaryAutoCommandBuffer {
-        {
-            let new_verts = self.iter_verts().enumerate();
-            let mut verts = self.vertex_buffer.write().unwrap();
-            for (i, v) in new_verts {
-                verts[i] = v;
-            }
+    pub fn draw(&mut self, final_image: Arc<dyn ImageViewAbstract + 'static>) {
+        let img_dims = final_image.image().dimensions().width_height();
+        if self.depth_buffer.image().dimensions().width_height() != img_dims {
+            self.depth_buffer = ImageView::new_default(
+                AttachmentImage::transient_input_attachment(
+                    self.gfx_queue.device().clone(),
+                    img_dims,
+                    Format::D16_UNORM,
+                )
+                .unwrap(),
+            )
+            .unwrap();
         }
-
-        let mut builder = AutoCommandBufferBuilder::secondary_graphics(
-            self.gfx_queue.device().clone(),
-            self.gfx_queue.family(),
-            CommandBufferUsage::MultipleSubmit,
-            self.pipeline.subpass().clone(),
+        let framebuffer = Framebuffer::new(
+            self.render_pass.clone(),
+            FramebufferCreateInfo {
+                attachments: vec![final_image, self.depth_buffer.clone()],
+                ..Default::default()
+            },
         )
         .unwrap();
-        builder
-            .bind_pipeline_graphics(self.pipeline.clone())
-            .set_viewport(
-                0,
-                [Viewport {
-                    origin: [0.0, 0.0],
-                    dimensions: [viewport_dimensions[0] as f32, viewport_dimensions[1] as f32],
-                    depth_range: 0.0..1.0,
-                }],
+
+        let mut prev_future: Option<FenceSignalFuture<Box<dyn GpuFuture>>> = None;
+
+        for _ in 0..2 {
+            let new_verts = self.iter_verts().enumerate();
+            let buffer = self.buffer_set.next();
+
+            {
+                let mut verts = buffer.write().unwrap();
+                for (i, v) in new_verts {
+                    verts[i] = v;
+                }
+            }
+
+            let mut command_buffer_builder = AutoCommandBufferBuilder::primary(
+                self.gfx_queue.device().clone(),
+                self.gfx_queue.family(),
+                CommandBufferUsage::OneTimeSubmit,
             )
-            .bind_vertex_buffers(0, self.vertex_buffer.clone())
-            .draw(self.vertex_buffer.len() as u32, 1, 0, 0)
             .unwrap();
-        builder.build().unwrap()
+            command_buffer_builder
+                .begin_render_pass(
+                    framebuffer.clone(),
+                    SubpassContents::Inline,
+                    vec![[0.0, 0.0, 0.0, 0.0].into(), 1.0f32.into()],
+                )
+                .unwrap();
+
+            command_buffer_builder
+                .bind_pipeline_graphics(self.pipeline.clone())
+                .set_viewport(
+                    0,
+                    [Viewport {
+                        origin: [0.0, 0.0],
+                        dimensions: [img_dims[0] as f32, img_dims[1] as f32],
+                        depth_range: 0.0..1.0,
+                    }],
+                )
+                .bind_vertex_buffers(0, buffer.clone())
+                .draw(buffer.len() as u32, 1, 0, 0)
+                .unwrap();
+
+            command_buffer_builder.end_render_pass().unwrap();
+            let command_buffer = command_buffer_builder.build().unwrap();
+
+            if let Some(prev_future) = prev_future.take() {
+                match prev_future.wait(None) {
+                    Ok(x) => x,
+                    Err(err) => println!("err: {:?}", err),
+                }
+            }
+
+            let future = sync::now(self.gfx_queue.device().clone()).boxed();
+            let after_main_cb = future
+                .then_execute(self.gfx_queue.clone(), command_buffer)
+                .unwrap();
+
+            let future = after_main_cb
+                .boxed()
+                .then_signal_fence_and_flush()
+                .expect("Failed to signal fence and flush");
+
+            prev_future = Some(future);
+        }
+
+        if let Some(prev_future) = prev_future {
+            match prev_future.wait(None) {
+                Ok(x) => x,
+                Err(err) => println!("err: {:?}", err),
+            }
+        }
     }
 }
 

@@ -2327,6 +2327,7 @@ dependencies = [
  "egui_winit_vulkano",
  "image",
  "nalgebra-glm",
+ "rayon",
  "vulkano",
  "vulkano-shaders",
  "vulkano-win",

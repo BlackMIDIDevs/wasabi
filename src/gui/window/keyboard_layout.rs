@@ -233,7 +233,7 @@ impl KeyboardRange {
 pub struct KeyboardView<'a> {
     layout: &'a KeyboardLayout,
     pub range: KeyboardRange,
-    visible_range: Range<usize>,
+    pub visible_range: Range<usize>,
 }
 
 impl<'a> KeyboardView<'a> {

@@ -19,3 +19,12 @@ image = "0.23.14"
 ahash = "0.7.6"
 cgmath = "0.18.0"
 nalgebra-glm = "0.17.0"
+rayon = "1.5.3"
+
+[profile.dev]
+opt-level = 2
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+lto = true
