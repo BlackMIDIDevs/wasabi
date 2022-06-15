@@ -1,12 +1,6 @@
 mod draw_system;
 
-use std::sync::Arc;
-
 use egui::Ui;
-use vulkano::{
-    device::Device,
-    sync::{self, GpuFuture},
-};
 
 use crate::scenes::SceneSwapchain;
 

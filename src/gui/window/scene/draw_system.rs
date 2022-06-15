@@ -2,25 +2,7 @@ mod notes_render_pass;
 
 use std::{sync::Arc, time::Instant};
 
-use bytemuck::{Pod, Zeroable};
-use vulkano::{
-    buffer::{BufferUsage, CpuAccessibleBuffer, TypedBufferAccess},
-    command_buffer::{AutoCommandBufferBuilder, CommandBufferUsage, SubpassContents},
-    device::{Device, Queue},
-    format::Format,
-    image::{view::ImageView, AttachmentImage, ImageAccess, ImageViewAbstract},
-    pipeline::{
-        graphics::{
-            depth_stencil::DepthStencilState,
-            input_assembly::{InputAssemblyState, PrimitiveTopology},
-            vertex_input::BuffersDefinition,
-            viewport::{Viewport, ViewportState},
-        },
-        GraphicsPipeline,
-    },
-    render_pass::{Framebuffer, FramebufferCreateInfo, RenderPass, Subpass},
-    sync::{self, FenceSignalFuture, GpuFuture},
-};
+use vulkano::{buffer::TypedBufferAccess, image::ImageViewAbstract};
 
 use crate::gui::GuiRenderer;
 
