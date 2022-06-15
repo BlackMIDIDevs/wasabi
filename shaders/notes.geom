@@ -15,7 +15,7 @@ layout(push_constant) uniform PushConstants {
     float height_time;
     float win_width;
     float win_height;
-} push_constants;
+} consts;
 
 struct KeyPosition {
     float left;
@@ -28,10 +28,18 @@ layout(set = 0, binding = 0) uniform Keys {
 
 void main()
 {
-    float start = -(start_length[0].x * 2 - 1);
-    float end = -(start_length[0].y * 2 - 1);
+    float start = start_length[0].x / consts.height_time;
+    float end = start + start_length[0].y / consts.height_time;
+    start = -(start * 2 - 1);
+    end = -(end * 2 - 1);
 
-    uint key = key_color[0];
+    uint key = key_color[0] & 0xFF;
+    uint col_int = key_color[0] >> 8;
+
+    float col_r = float((col_int >> 16) & 0xFF) / 255.0;
+    float col_g = float((col_int >> 8) & 0xFF) / 255.0;
+    float col_b = float((col_int >> 0) & 0xFF) / 255.0;
+    vec3 color = vec3(col_r, col_g, col_b);
 
     KeyPosition key_position = key_positions[key];
 
@@ -39,9 +47,7 @@ void main()
     float right = key_position.right * 2 - 1;
 
     vec2 note_size_out = vec2(right - left, start - end);
-    vec2 win_size_out = vec2(push_constants.win_width, push_constants.win_height);
-
-    vec3 color = vec3(0.0, 0.0, 1.0);
+    vec2 win_size_out = vec2(consts.win_width, consts.win_height);
 
     gl_Position = vec4(left, start, 0, 1);
     frag_color = color;

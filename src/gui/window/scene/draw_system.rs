@@ -1,6 +1,6 @@
 mod notes_render_pass;
 
-use std::{sync::Arc, time::Instant};
+use std::{sync::Arc};
 
 use vulkano::{buffer::TypedBufferAccess, image::ImageViewAbstract};
 
@@ -10,31 +10,22 @@ use self::notes_render_pass::{NotePassStatus, NoteRenderPass, NoteVertex};
 
 pub struct ChikaraShaderTest {
     render_pass: NoteRenderPass,
-    start_time: Instant,
 }
 
 impl ChikaraShaderTest {
     pub fn new(renderer: &GuiRenderer) -> ChikaraShaderTest {
         ChikaraShaderTest {
-            start_time: Instant::now(),
             render_pass: NoteRenderPass::new(renderer),
         }
     }
 
-    fn iter_verts(start_time: Instant, len: usize) -> impl Iterator<Item = NoteVertex> {
+    fn iter_verts(len: usize) -> impl Iterator<Item = NoteVertex> {
+        let color = 0xFF00FF;
+
         [
-            NoteVertex {
-                start_length: [0.0, 0.5],
-                key_color: 6,
-            },
-            NoteVertex {
-                start_length: [0.0, 0.5],
-                key_color: 64,
-            },
-            NoteVertex {
-                start_length: [0.0, 0.5],
-                key_color: 80,
-            },
+            NoteVertex::new(0.0, 0.5, 6, color),
+            NoteVertex::new(0.1, 0.4, 64, color),
+            NoteVertex::new(0.0, 0.5, 80, color),
         ]
         .into_iter()
         .cycle()
@@ -48,11 +39,9 @@ impl ChikaraShaderTest {
     ) {
         let mut i = 0;
 
-        let start_time = self.start_time;
-
         self.render_pass.draw(final_image, key_view, |buffer| {
             let new_verts =
-                ChikaraShaderTest::iter_verts(start_time, buffer.len() as usize).enumerate();
+                ChikaraShaderTest::iter_verts(buffer.len() as usize).enumerate();
 
             {
                 let mut verts = buffer.write().unwrap();

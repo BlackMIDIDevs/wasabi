@@ -33,6 +33,15 @@ pub struct NoteVertex {
 }
 vulkano::impl_vertex!(NoteVertex, start_length, key_color);
 
+impl NoteVertex {
+    pub fn new(start: f32, len: f32, key: u8, color: u32) -> Self {
+        Self {
+            start_length: [start, len],
+            key_color: key as u32 | (color << 8),
+        }
+    }
+}
+
 struct BufferSet {
     vertex_buffers: Vec<Arc<CpuAccessibleBuffer<[NoteVertex]>>>,
     index: usize,
