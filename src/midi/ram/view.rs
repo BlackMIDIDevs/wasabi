@@ -1,4 +1,4 @@
-use std::{sync::Arc};
+use std::{ops::Range, sync::Arc};
 
 use gen_iter::GenIter;
 
@@ -20,7 +20,7 @@ impl InRamNoteViews {
     pub fn new(columns: Arc<Vec<InRamNoteColumn>>, track_count: usize) -> Self {
         let column_view_data = columns
             .iter()
-            .map(InRamNoteColumnViewData::from_column)
+            .map(|_| InRamNoteColumnViewData::new())
             .collect();
         InRamNoteViews {
             columns,
@@ -35,14 +35,17 @@ impl InRamNoteViews {
 }
 
 pub struct InRamNoteColumnViewData {
-    note_sum: usize,
+    notes_to_end: usize,
+    notes_to_start: usize,
+    block_range: Range<usize>,
 }
 
 impl InRamNoteColumnViewData {
-    pub fn from_column(column: &InRamNoteColumn) -> Self {
-        let note_count = column.blocks.iter().map(|b| b.notes.len()).sum();
+    pub fn new() -> Self {
         InRamNoteColumnViewData {
-            note_sum: note_count,
+            notes_to_end: 0,
+            notes_to_start: 0,
+            block_range: 0..0,
         }
     }
 }
@@ -55,8 +58,67 @@ pub struct InRamNoteColumnView<'a> {
 }
 
 impl MIDINoteViewsBase for InRamNoteViews {
-    fn shift_view_range(&mut self, new_range: MIDIViewRange) {
-        self.view_range = new_range;
+    fn shift_view_range(&mut self, new_view_range: MIDIViewRange) {
+        let old_view_range = self.view_range;
+        self.view_range = new_view_range;
+
+        for (column, data) in self.columns.iter().zip(self.column_view_data.iter_mut()) {
+            if column.blocks.len() == 0 {
+                continue;
+            }
+
+            let mut new_block_start = data.block_range.start;
+            let mut new_block_end = data.block_range.end;
+
+            if new_view_range.end > old_view_range.end {
+                while new_block_end < column.blocks.len() {
+                    let block = &column.blocks[new_block_end];
+                    if block.start >= new_view_range.end {
+                        break;
+                    }
+                    data.notes_to_end += block.notes.len();
+                    new_block_end += 1;
+                }
+            } else if new_view_range.end < old_view_range.end {
+                while new_block_end > 0 {
+                    let block = &column.blocks[new_block_end - 1];
+                    if block.start < new_view_range.end {
+                        break;
+                    }
+                    data.notes_to_end -= block.notes.len();
+                    new_block_end -= 1;
+                }
+            } else {
+                // No change in view end
+            }
+
+            if new_view_range.start > old_view_range.start {
+                while new_block_start < column.blocks.len() {
+                    let block = &column.blocks[new_block_start];
+                    if block.max_end() >= new_view_range.start {
+                        break;
+                    }
+                    data.notes_to_start += block.notes.len();
+                    new_block_start += 1;
+                }
+            } else if new_view_range.start < old_view_range.start {
+                // It is smaller, we have to start from the beginning
+                data.notes_to_start = 0;
+                new_block_start = 0;
+                while new_block_start < column.blocks.len() {
+                    let block = &column.blocks[new_block_start];
+                    if block.max_end() >= new_view_range.start {
+                        break;
+                    }
+                    data.notes_to_start += block.notes.len();
+                    new_block_start += 1;
+                }
+            } else {
+                // No change in view start
+            }
+
+            data.block_range = new_block_start..new_block_end;
+        }
     }
 
     fn allows_seeking_backward(&self) -> bool {
@@ -112,7 +174,8 @@ impl<'a> MIDINoteColumnView for InRamNoteColumnView<'a> {
         let colors = &self.view.default_track_colors;
 
         let iter = GenIter(move || {
-            for block in self.column.blocks.iter().rev() {
+            for block_index in self.data.block_range.clone().rev() {
+                let block = &self.column.blocks[block_index];
                 let start = (block.start - self.view_range.start) as f32;
 
                 for note in block.notes.iter().rev() {
@@ -146,6 +209,13 @@ impl<Iter: Iterator<Item = DisplacedMIDINote>> Iterator for InRamNoteBlockIter<'
 
 impl<Iter: Iterator<Item = DisplacedMIDINote>> ExactSizeIterator for InRamNoteBlockIter<'_, Iter> {
     fn len(&self) -> usize {
-        self.view.data.note_sum
+        if self.view.data.notes_to_end < self.view.data.notes_to_start {
+            dbg!(
+                self.view.data.notes_to_end,
+                self.view.data.notes_to_start,
+                &self.view.data.block_range
+            );
+        }
+        self.view.data.notes_to_end - self.view.data.notes_to_start
     }
 }

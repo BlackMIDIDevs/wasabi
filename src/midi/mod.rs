@@ -116,7 +116,7 @@ impl MIDIFileUnion {
     }
 }
 
-#[enum_dispatch(MIDINoteColumnsViewsBase)]
+#[enum_dispatch(MIDINoteViewsBase)]
 pub enum MIDIFileViewsUnion {
     InRam(InRamNoteViews),
 }

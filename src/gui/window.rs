@@ -2,9 +2,13 @@ mod keyboard;
 mod keyboard_layout;
 mod scene;
 
-use egui::{style::Margin, Frame, Visuals};
+use std::time::Instant;
 
-use crate::midi::{InRamMIDIFile, MIDIFileUnion, MIDIFileViewsUnion};
+use egui::{style::Margin, Frame, Slider, Visuals};
+
+use crate::midi::{
+    InRamMIDIFile, MIDIFileUnion, MIDIFileViewsUnion, MIDINoteViewsBase, MIDIViewRange,
+};
 
 use self::{keyboard::GuiKeyboard, scene::GuiRenderScene};
 
@@ -16,12 +20,16 @@ pub struct GuiWasabiWindow {
     keyboard: GuiKeyboard,
     midi_file: MIDIFileUnion,
     midi_file_views: MIDIFileViewsUnion,
+    view_start: f64,
+    view_length: f64,
+    start: Instant,
 }
 
 impl GuiWasabiWindow {
     pub fn new(renderer: &mut GuiRenderer) -> GuiWasabiWindow {
-        let midi_file =
-            MIDIFileUnion::InRam(InRamMIDIFile::load_from_file("D:/Midis/The Quarantine Project.mid"));
+        let midi_file = MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
+            "D:/Midis/The Nuker 4 F1/The Nuker 4 - F1 Part 13.mid",
+        ));
         let midi_file_views = midi_file.get_views();
 
         GuiWasabiWindow {
@@ -30,6 +38,9 @@ impl GuiWasabiWindow {
             keyboard: GuiKeyboard::new(),
             midi_file_views,
             midi_file,
+            view_start: 0.0,
+            view_length: 10.0,
+            start: Instant::now(),
         }
     }
 
@@ -42,7 +53,14 @@ impl GuiWasabiWindow {
         // Render the top panel
         egui::TopBottomPanel::top("Top panel")
             .height_range(100.0..=100.0)
-            .show(&ctx, |ui| ui.heading("Settings or whatever here"));
+            .show(&ctx, |ui| {
+                ui.add(Slider::new(&mut self.view_start, 0.0..=500.0).text("Start"));
+                ui.add(Slider::new(&mut self.view_length, 0.0..=500.0).text("Length"));
+
+                let time = self.start.elapsed().as_secs_f64();
+                self.midi_file_views
+                    .shift_view_range(MIDIViewRange::new(time, time + 0.25));
+            });
 
         // Calculate available space left for keyboard and notes
         // We must render notes before keyboard because the notes

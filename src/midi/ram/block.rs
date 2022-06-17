@@ -38,4 +38,8 @@ impl InRamNoteBlock {
         note.len = (end_time - self.start) as f32;
         self.max_length = self.max_length.max(note.len);
     }
+
+    pub fn max_end(&self) -> f64 {
+        self.start + self.max_length as f64
+    }
 }
