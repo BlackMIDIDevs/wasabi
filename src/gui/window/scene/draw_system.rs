@@ -110,7 +110,14 @@ impl ChikaraShaderTest {
                         return 0;
                     }
 
-                    let allowed_to_write = (buffer_length - offset as usize).min(column.iter.len());
+                    let remaining_buffer_space = buffer_length - offset as usize;
+                    let iter_length = column.iter.len();
+
+                    let (unfinished, allowed_to_write) = if iter_length > remaining_buffer_space {
+                        (true, remaining_buffer_space)
+                    } else {
+                        (false, iter_length)
+                    };
 
                     unsafe {
                         let buffer = buffer_writer.get_mut();
@@ -121,11 +128,12 @@ impl ChikaraShaderTest {
                                 buffer[i + offset] =
                                     NoteVertex::new(note.start, note.len, column.key, COLOR);
                             } else {
-                                column.ended = true;
-                                break;
+                                panic!("Invalid iterator length");
                             }
                         }
                     }
+
+                    column.ended = unfinished;
 
                     return allowed_to_write;
                 });
@@ -143,7 +151,5 @@ impl ChikaraShaderTest {
                 return NotePassStatus::HasMoreNotes;
             }
         });
-
-        // dbg!(notes_pushed);
     }
 }

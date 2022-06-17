@@ -25,10 +25,6 @@ impl InRamMIDIFile {
 }
 
 impl MIDIFileBase for InRamMIDIFile {
-    fn allows_seeking_backward(&self) -> bool {
-        false
-    }
-
     fn midi_length(&self) -> Option<f64> {
         None
     }

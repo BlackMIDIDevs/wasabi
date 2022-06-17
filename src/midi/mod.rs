@@ -16,7 +16,6 @@ pub struct MIDIViewRange {
 /// inside the [`MIDIFile`] trait.
 #[enum_dispatch]
 pub trait MIDIFileBase {
-    fn allows_seeking_backward(&self) -> bool;
     fn midi_length(&self) -> Option<f64>;
     fn parsed_up_to(&self) -> Option<f64>;
 }
@@ -31,6 +30,7 @@ pub trait MIDIFile: MIDIFileBase {
 #[enum_dispatch]
 pub trait MIDINoteViewsBase {
     fn shift_view_range(&mut self, new_range: MIDIViewRange);
+    fn allows_seeking_backward(&self) -> bool;
 }
 
 pub trait MIDINoteViews {

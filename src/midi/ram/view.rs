@@ -54,6 +54,10 @@ impl MIDINoteViewsBase for InRamNoteViews {
     fn shift_view_range(&mut self, new_range: MIDIViewRange) {
         self.view_range = new_range;
     }
+
+    fn allows_seeking_backward(&self) -> bool {
+        false
+    }
 }
 
 impl MIDINoteViews for InRamNoteViews {
