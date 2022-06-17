@@ -182,7 +182,7 @@ impl<'a> MIDINoteColumnView for InRamNoteColumnView<'a> {
                     yield DisplacedMIDINote {
                         start: start,
                         len: note.len,
-                        color: colors[note.track_chan as usize].as_u32(),
+                        color: colors[note.track_chan as usize],
                     };
                 }
             }

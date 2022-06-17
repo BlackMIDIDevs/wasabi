@@ -23,6 +23,7 @@ impl MIDIViewRange {
     }
 }
 
+#[derive(Debug, Clone, Copy, Default)]
 pub struct MIDIColor(u32);
 
 impl MIDIColor {
@@ -32,7 +33,7 @@ impl MIDIColor {
     }
 
     pub fn new_from_hue(hue: f64) -> Self {
-        let hsv = palette::Hsv::new(hue, 1.0, 0.5);
+        let hsv = palette::Hsv::new(hue, 1.0, 0.8);
         let rgb = palette::rgb::Rgb::from_color_unclamped(hsv);
         Self::new(
             (rgb.red * 255.0) as u8,
@@ -54,6 +55,18 @@ impl MIDIColor {
 
     pub fn as_u32(&self) -> u32 {
         self.0
+    }
+
+    pub fn red(&self) -> u8 {
+        (self.0 >> 16) as u8
+    }
+
+    pub fn green(&self) -> u8 {
+        (self.0 >> 8) as u8
+    }
+
+    pub fn blue(&self) -> u8 {
+        (self.0 >> 0) as u8
     }
 }
 
@@ -100,7 +113,7 @@ pub trait MIDINoteColumnView: Send {
 pub struct DisplacedMIDINote {
     pub start: f32,
     pub len: f32,
-    pub color: u32,
+    pub color: MIDIColor,
 }
 
 #[enum_dispatch(MIDIFileBase)]

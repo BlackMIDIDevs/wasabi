@@ -27,9 +27,8 @@ pub struct GuiWasabiWindow {
 
 impl GuiWasabiWindow {
     pub fn new(renderer: &mut GuiRenderer) -> GuiWasabiWindow {
-        let midi_file = MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
-            "D:/Midis/The Nuker 4 F1/The Nuker 4 - F1 Part 13.mid",
-        ));
+        let midi_file =
+            MIDIFileUnion::InRam(InRamMIDIFile::load_from_file("D:/Midis/tau2.5.9.mid"));
         let midi_file_views = midi_file.get_views();
 
         GuiWasabiWindow {
@@ -67,28 +66,35 @@ impl GuiWasabiWindow {
         // renderer tells us the key colors
         let available = ctx.available_rect();
         let height = available.height();
-        let keyboard_height = 100.0;
+        let keyboard_height = 60.0 / 720.0 * available.width() as f32;
         let notes_height = height - keyboard_height;
 
         let key_view = self.keyboard_layout.get_view_for_keys(0, 127);
 
         let no_frame = Frame::default().margin(Margin::same(0.0));
 
+        let mut render_result_data = None;
+
         // Render the notes
         egui::TopBottomPanel::top("Note panel")
             .height_range(notes_height..=notes_height)
             .frame(no_frame)
             .show(&ctx, |mut ui| {
-                self.render_scene
-                    .draw(state, &mut ui, &key_view, &self.midi_file_views)
+                let result =
+                    self.render_scene
+                        .draw(state, &mut ui, &key_view, &self.midi_file_views);
+                render_result_data = Some(result);
             });
+
+        let render_result_data = render_result_data.unwrap();
 
         // Render the keyboard
         egui::TopBottomPanel::top("Keyboard panel")
             .height_range(keyboard_height..=keyboard_height)
             .frame(no_frame)
             .show(&ctx, |ui| {
-                self.keyboard.draw(ui, &key_view);
+                self.keyboard
+                    .draw(ui, &key_view, &render_result_data.key_colors);
             });
     }
 }

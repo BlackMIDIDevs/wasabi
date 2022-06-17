@@ -7,7 +7,7 @@ use vulkano::{buffer::TypedBufferAccess, image::ImageViewAbstract};
 
 use crate::{
     gui::{window::keyboard_layout::KeyboardView, GuiRenderer},
-    midi::{DisplacedMIDINote, MIDINoteColumnView, MIDINoteViews},
+    midi::{DisplacedMIDINote, MIDIColor, MIDINoteColumnView, MIDINoteViews},
 };
 
 use self::notes_render_pass::{NotePassStatus, NoteRenderPass, NoteVertex};
@@ -32,6 +32,11 @@ impl<T> UnsafeSyncCell<T> {
 unsafe impl<T> Sync for UnsafeSyncCell<T> {}
 unsafe impl<T> Send for UnsafeSyncCell<T> {}
 
+pub struct RenderResultData {
+    pub notes_rendered: u64,
+    pub key_colors: Vec<Option<MIDIColor>>,
+}
+
 impl NoteRenderer {
     pub fn new(renderer: &GuiRenderer) -> NoteRenderer {
         NoteRenderer {
@@ -45,12 +50,13 @@ impl NoteRenderer {
         key_view: &KeyboardView,
         final_image: Arc<dyn ImageViewAbstract + 'static>,
         note_views: impl MIDINoteViews,
-    ) {
+    ) -> RenderResultData {
         struct ColumnViewInfo<Iter: ExactSizeIterator<Item = DisplacedMIDINote> + Send> {
             offset: usize,
             iter: Iter,
             key: u8,
             remaining: usize,
+            color: Option<MIDIColor>,
         }
 
         let mut total_notes = 0;
@@ -69,6 +75,7 @@ impl NoteRenderer {
                     iter,
                     key: i as u8,
                     remaining: length,
+                    color: None,
                 });
                 total_notes += length;
             }
@@ -84,6 +91,7 @@ impl NoteRenderer {
                     iter,
                     key: i as u8,
                     remaining: length,
+                    color: None,
                 });
                 total_notes += length;
             }
@@ -129,8 +137,17 @@ impl NoteRenderer {
                                 let next_note = column.iter.next();
                                 if let Some(note) = next_note {
                                     buffer[i + offset] = NoteVertex::new(
-                                        note.start, note.len, column.key, note.color,
+                                        note.start,
+                                        note.len,
+                                        column.key,
+                                        note.color.as_u32(),
                                     );
+
+                                    if note.start <= 0.0 {
+                                        if column.color.is_none() && note.start + note.len > 0.0 {
+                                            column.color = Some(note.color);
+                                        }
+                                    }
                                 } else {
                                     panic!("Invalid iterator length");
                                 }
@@ -157,5 +174,16 @@ impl NoteRenderer {
                     return NotePassStatus::HasMoreNotes;
                 }
             });
+
+        // Sort for output metrics
+        columns_view_info.sort_by_key(|k| k.key);
+
+        RenderResultData {
+            notes_rendered: notes_pushed as u64,
+            key_colors: columns_view_info
+                .iter()
+                .map(|column| column.color)
+                .collect(),
+        }
     }
 }
