@@ -2,11 +2,11 @@ mod draw_system;
 
 use egui::Ui;
 
-use crate::scenes::SceneSwapchain;
+use crate::{midi::MIDIFileViewsUnion, scenes::SceneSwapchain};
 
 use self::draw_system::ChikaraShaderTest;
 
-use super::{GuiRenderer, GuiState, keyboard_layout::KeyboardView};
+use super::{keyboard_layout::KeyboardView, GuiRenderer, GuiState};
 
 pub struct GuiRenderScene {
     swap_chain: SceneSwapchain,
@@ -22,13 +22,24 @@ impl GuiRenderScene {
         }
     }
 
-    pub fn layout(&mut self, state: &mut GuiState, ui: &mut Ui, key_view: &KeyboardView) {
+    pub fn draw(
+        &mut self,
+        state: &mut GuiState,
+        ui: &mut Ui,
+        key_view: &KeyboardView,
+        views: &MIDIFileViewsUnion,
+    ) {
         let size = ui.available_size();
         let size = [size.x as u32, size.y as u32];
 
         let scene_image = self.swap_chain.get_next_image(state, size);
+        let frame = scene_image.image.clone();
 
-        self.draw_system.draw(key_view, scene_image.image.clone());
+        match views {
+            MIDIFileViewsUnion::InRam(views) => {
+                self.draw_system.draw(key_view, frame, views);
+            }
+        }
 
         ui.image(scene_image.id, [size[0] as f32, size[1] as f32]);
     }

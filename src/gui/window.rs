@@ -4,6 +4,8 @@ mod scene;
 
 use egui::{style::Margin, Frame, Visuals};
 
+use crate::midi::{InRamMIDIFile, MIDIFile, MIDIFileUnion, MIDIFileViewsUnion};
+
 use self::{keyboard::GuiKeyboard, scene::GuiRenderScene};
 
 use super::{GuiRenderer, GuiState};
@@ -12,14 +14,21 @@ pub struct GuiWasabiWindow {
     render_scene: GuiRenderScene,
     keyboard_layout: keyboard_layout::KeyboardLayout,
     keyboard: GuiKeyboard,
+    midi_file: MIDIFileUnion,
+    midi_file_views: MIDIFileViewsUnion,
 }
 
 impl GuiWasabiWindow {
     pub fn new(renderer: &mut GuiRenderer) -> GuiWasabiWindow {
+        let midi_file = MIDIFileUnion::InRam(InRamMIDIFile::new_dummy_data(2000));
+        let midi_file_views = midi_file.get_views();
+
         GuiWasabiWindow {
             render_scene: GuiRenderScene::new(renderer),
             keyboard_layout: keyboard_layout::KeyboardLayout::new(&Default::default()),
             keyboard: GuiKeyboard::new(),
+            midi_file_views,
+            midi_file,
         }
     }
 
@@ -51,7 +60,8 @@ impl GuiWasabiWindow {
             .height_range(notes_height..=notes_height)
             .frame(no_frame)
             .show(&ctx, |mut ui| {
-                self.render_scene.layout(state, &mut ui, &key_view)
+                self.render_scene
+                    .draw(state, &mut ui, &key_view, &self.midi_file_views)
             });
 
         // Render the keyboard

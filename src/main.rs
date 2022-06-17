@@ -1,4 +1,9 @@
+#![feature(type_alias_impl_trait)]
+#![feature(generic_associated_types)]
+#![feature(generators)]
+
 mod gui;
+mod midi;
 mod renderer;
 mod scenes;
 

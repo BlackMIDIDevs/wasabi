@@ -394,6 +394,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "convert_case"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6245d59a3e82a7fc217c5828a6692dbc6dfb63a0c8c90495621f7b9d79704a0e"
+
+[[package]]
 name = "copypasta"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -789,6 +795,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "enum_dispatch"
+version = "0.3.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0eb359f1476bf611266ac1f5355bc14aeca37b299d0ebccc038ee7058891c9cb"
+dependencies = [
+ "once_cell",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "enumflags2"
 version = "0.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -930,6 +948,12 @@ dependencies = [
  "pin-utils",
  "slab",
 ]
+
+[[package]]
+name = "gen-iter"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1668ac3c7b8cc5f1e31565ed509d8d70aa1a81bd7f508b620725b78c6e1d7049"
 
 [[package]]
 name = "getrandom"
@@ -1204,6 +1228,31 @@ dependencies = [
  "foreign-types",
  "log",
  "objc",
+]
+
+[[package]]
+name = "midi-toolkit-rs"
+version = "0.1.0"
+source = "git+https://github.com/arduano/midi-toolkit-rs?rev=c6a054c#c6a054c96dfcdcdc21d7b8eff4e0e173abef2e3c"
+dependencies = [
+ "crossbeam-channel",
+ "gen-iter",
+ "midi-toolkit-rs-derive",
+ "num-traits",
+ "rayon",
+]
+
+[[package]]
+name = "midi-toolkit-rs-derive"
+version = "0.1.0"
+source = "git+https://github.com/arduano/midi-toolkit-rs?rev=c6a054c#c6a054c96dfcdcdc21d7b8eff4e0e173abef2e3c"
+dependencies = [
+ "convert_case",
+ "num-traits",
+ "proc-macro-error",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -1691,6 +1740,30 @@ checksum = "e17d47ce914bf4de440332250b0edd23ce48c005f59fab39d3335866b114f11a"
 dependencies = [
  "thiserror",
  "toml",
+]
+
+[[package]]
+name = "proc-macro-error"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da25490ff9892aab3fcf7c36f08cfb902dd3e71ca0f9f9517bea02a73a5ce38c"
+dependencies = [
+ "proc-macro-error-attr",
+ "proc-macro2",
+ "quote",
+ "syn",
+ "version_check",
+]
+
+[[package]]
+name = "proc-macro-error-attr"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a1be40180e52ecc98ad80b184934baf3d0d29f979574e439af5a55274b35f869"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "version_check",
 ]
 
 [[package]]
@@ -2325,7 +2398,10 @@ dependencies = [
  "egui-winit",
  "egui_demo_lib",
  "egui_winit_vulkano",
+ "enum_dispatch",
+ "gen-iter",
  "image",
+ "midi-toolkit-rs",
  "nalgebra-glm",
  "rayon",
  "vulkano",

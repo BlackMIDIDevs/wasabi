@@ -23,7 +23,7 @@ use vulkano::{
 
 use crate::gui::{window::keyboard_layout::KeyboardView, GuiRenderer};
 
-const NOTE_BUFFER_SIZE: u64 = 250000;
+const NOTE_BUFFER_SIZE: u64 = 25000000;
 
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Zeroable, Pod)]
