@@ -4,18 +4,18 @@ use egui::Ui;
 
 use crate::{midi::MIDIFileViewsUnion, scenes::SceneSwapchain};
 
-use self::draw_system::ChikaraShaderTest;
+use self::draw_system::NoteRenderer;
 
 use super::{keyboard_layout::KeyboardView, GuiRenderer, GuiState};
 
 pub struct GuiRenderScene {
     swap_chain: SceneSwapchain,
-    draw_system: ChikaraShaderTest,
+    draw_system: NoteRenderer,
 }
 
 impl GuiRenderScene {
     pub fn new(renderer: &GuiRenderer) -> Self {
-        let draw_system = ChikaraShaderTest::new(renderer);
+        let draw_system = NoteRenderer::new(renderer);
         Self {
             swap_chain: SceneSwapchain::new(renderer.device.clone()),
             draw_system,

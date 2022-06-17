@@ -23,7 +23,7 @@ use vulkano::{
 
 use crate::gui::{window::keyboard_layout::KeyboardView, GuiRenderer};
 
-const NOTE_BUFFER_SIZE: u64 = 2500000;
+const NOTE_BUFFER_SIZE: u64 = 25000000;
 
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Zeroable, Pod)]
@@ -214,6 +214,7 @@ impl NoteRenderPass {
         &mut self,
         final_image: Arc<dyn ImageViewAbstract + 'static>,
         key_view: &KeyboardView,
+        view_range: f32,
         mut fill_buffer: impl FnMut(&Arc<CpuAccessibleBuffer<[NoteVertex]>>) -> NotePassStatus,
     ) {
         let img_dims = final_image.image().dimensions().width_height();
@@ -304,7 +305,7 @@ impl NoteRenderPass {
                 .unwrap();
 
             let push_constants = gs::ty::PushConstants {
-                height_time: 1.0,
+                height_time: view_range,
                 win_width: img_dims[0] as f32,
                 win_height: img_dims[1] as f32,
             };

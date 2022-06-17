@@ -20,7 +20,8 @@ pub struct GuiWasabiWindow {
 
 impl GuiWasabiWindow {
     pub fn new(renderer: &mut GuiRenderer) -> GuiWasabiWindow {
-        let midi_file = MIDIFileUnion::InRam(InRamMIDIFile::new_dummy_data(2000));
+        let midi_file =
+            MIDIFileUnion::InRam(InRamMIDIFile::load_from_file("D:/Midis/The Quarantine Project.mid"));
         let midi_file_views = midi_file.get_views();
 
         GuiWasabiWindow {

@@ -75,6 +75,10 @@ impl MIDINoteViews for InRamNoteViews {
             view_range: self.view_range,
         }
     }
+
+    fn range<'a>(&'a self) -> MIDIViewRange {
+        self.view_range
+    }
 }
 
 impl MIDINoteViews for &InRamNoteViews {
@@ -87,6 +91,10 @@ impl MIDINoteViews for &InRamNoteViews {
             data: &self.column_view_data[key],
             view_range: self.view_range,
         }
+    }
+
+    fn range<'a>(&'a self) -> MIDIViewRange {
+        self.view_range
     }
 }
 

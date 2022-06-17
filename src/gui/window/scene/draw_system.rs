@@ -12,7 +12,7 @@ use crate::{
 
 use self::notes_render_pass::{NotePassStatus, NoteRenderPass, NoteVertex};
 
-pub struct ChikaraShaderTest {
+pub struct NoteRenderer {
     render_pass: NoteRenderPass,
     thrad_pool: rayon::ThreadPool,
 }
@@ -32,9 +32,9 @@ impl<T> UnsafeSyncCell<T> {
 unsafe impl<T> Sync for UnsafeSyncCell<T> {}
 unsafe impl<T> Send for UnsafeSyncCell<T> {}
 
-impl ChikaraShaderTest {
-    pub fn new(renderer: &GuiRenderer) -> ChikaraShaderTest {
-        ChikaraShaderTest {
+impl NoteRenderer {
+    pub fn new(renderer: &GuiRenderer) -> NoteRenderer {
+        NoteRenderer {
             render_pass: NoteRenderPass::new(renderer),
             thrad_pool: rayon::ThreadPoolBuilder::new().build().unwrap(),
         }
@@ -93,65 +93,69 @@ impl ChikaraShaderTest {
 
         let mut cycle = 0;
 
-        self.render_pass.draw(final_image, key_view, |buffer| {
-            let buffer_length = buffer.len() as usize;
+        let view_range = note_views.range().length() as f32;
 
-            let buffer_writer = UnsafeSyncCell::new(buffer.write().unwrap());
+        self.render_pass
+            .draw(final_image, key_view, view_range, |buffer| {
+                let buffer_length = buffer.len() as usize;
 
-            let written_notes = self.thrad_pool.install(|| {
-                let written_notes_per_key = columns_view_info.par_iter_mut().map(|column| {
-                    if column.remaining == 0 {
-                        return 0;
-                    }
+                let buffer_writer = UnsafeSyncCell::new(buffer.write().unwrap());
 
-                    let offset = (column.offset as i64 - notes_pushed as i64).max(0) as usize;
+                let written_notes = self.thrad_pool.install(|| {
+                    let written_notes_per_key = columns_view_info.par_iter_mut().map(|column| {
+                        if column.remaining == 0 {
+                            return 0;
+                        }
 
-                    if offset >= buffer_length {
-                        return 0;
-                    }
+                        let offset = (column.offset as i64 - notes_pushed as i64).max(0) as usize;
 
-                    let remaining_buffer_space = buffer_length - offset as usize;
-                    let iter_length = column.remaining;
+                        if offset >= buffer_length {
+                            return 0;
+                        }
 
-                    let allowed_to_write = if iter_length > remaining_buffer_space {
-                        remaining_buffer_space
-                    } else {
-                        iter_length
-                    };
+                        let remaining_buffer_space = buffer_length - offset as usize;
+                        let iter_length = column.remaining;
 
-                    unsafe {
-                        let buffer = buffer_writer.get_mut();
+                        let allowed_to_write = if iter_length > remaining_buffer_space {
+                            remaining_buffer_space
+                        } else {
+                            iter_length
+                        };
 
-                        for i in 0..allowed_to_write {
-                            let next_note = column.iter.next();
-                            if let Some(note) = next_note {
-                                buffer[i + offset] =
-                                    NoteVertex::new(note.start, note.len, column.key, note.color);
-                            } else {
-                                panic!("Invalid iterator length");
+                        unsafe {
+                            let buffer = buffer_writer.get_mut();
+
+                            for i in 0..allowed_to_write {
+                                let next_note = column.iter.next();
+                                if let Some(note) = next_note {
+                                    buffer[i + offset] = NoteVertex::new(
+                                        note.start, note.len, column.key, note.color,
+                                    );
+                                } else {
+                                    panic!("Invalid iterator length");
+                                }
                             }
                         }
-                    }
 
-                    column.remaining -= allowed_to_write;
+                        column.remaining -= allowed_to_write;
 
-                    return allowed_to_write;
+                        return allowed_to_write;
+                    });
+
+                    written_notes_per_key.sum::<usize>()
                 });
 
-                written_notes_per_key.sum::<usize>()
+                notes_pushed += written_notes;
+
+                cycle += 1;
+
+                if notes_pushed >= total_notes {
+                    return NotePassStatus::Finished {
+                        remaining: written_notes as u32,
+                    };
+                } else {
+                    return NotePassStatus::HasMoreNotes;
+                }
             });
-
-            notes_pushed += written_notes;
-
-            cycle += 1;
-
-            if notes_pushed >= total_notes {
-                return NotePassStatus::Finished {
-                    remaining: written_notes as u32,
-                };
-            } else {
-                return NotePassStatus::HasMoreNotes;
-            }
-        });
     }
 }

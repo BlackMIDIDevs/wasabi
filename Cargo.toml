@@ -20,7 +20,7 @@ ahash = "0.7.6"
 cgmath = "0.18.0"
 nalgebra-glm = "0.17.0"
 rayon = "1.5.3"
-midi-toolkit-rs = { git = "https://github.com/arduano/midi-toolkit-rs", rev = "c6a054c" }
+midi-toolkit-rs = { git = "https://github.com/arduano/midi-toolkit-rs", rev = "f30ca8a" }
 gen-iter = "0.2.1"
 enum_dispatch = "0.3.8"
 palette = "0.6.0"

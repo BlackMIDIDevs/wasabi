@@ -13,6 +13,16 @@ pub struct MIDIViewRange {
     pub end: f64,
 }
 
+impl MIDIViewRange {
+    pub fn new(start: f64, end: f64) -> Self {
+        MIDIViewRange { start, end }
+    }
+
+    pub fn length(&self) -> f64 {
+        self.end - self.start
+    }
+}
+
 pub struct MIDIColor(u32);
 
 impl MIDIColor {
@@ -74,6 +84,7 @@ pub trait MIDINoteViews {
         Self: 'a;
 
     fn get_column<'a>(&'a self, key: usize) -> Self::View<'a>;
+    fn range<'a>(&'a self) -> MIDIViewRange;
 }
 
 pub trait MIDINoteColumnView: Send {
