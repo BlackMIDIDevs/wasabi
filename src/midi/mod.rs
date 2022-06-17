@@ -1,5 +1,6 @@
 mod ram;
 use enum_dispatch::enum_dispatch;
+use palette::convert::FromColorUnclamped;
 
 pub use ram::InRamMIDIFile;
 
@@ -10,6 +11,40 @@ use self::ram::view::InRamNoteViews;
 pub struct MIDIViewRange {
     pub start: f64,
     pub end: f64,
+}
+
+pub struct MIDIColor(u32);
+
+impl MIDIColor {
+    pub fn new(r: u8, g: u8, b: u8) -> Self {
+        let num = (b as u32) | ((g as u32) << 8) | ((r as u32) << 16);
+        MIDIColor(num)
+    }
+
+    pub fn new_from_hue(hue: f64) -> Self {
+        let hsv = palette::Hsv::new(hue, 1.0, 0.5);
+        let rgb = palette::rgb::Rgb::from_color_unclamped(hsv);
+        Self::new(
+            (rgb.red * 255.0) as u8,
+            (rgb.green * 255.0) as u8,
+            (rgb.blue * 255.0) as u8,
+        )
+    }
+
+    pub fn new_vec_for_tracks(tracks: usize) -> Vec<Self> {
+        let count = tracks * 16;
+
+        let mut vec = Vec::with_capacity(count);
+        for i in 0..count {
+            vec.push(MIDIColor::new_from_hue(i as f64 * 360.0 / 16.0 * 15.0));
+        }
+
+        vec
+    }
+
+    pub fn as_u32(&self) -> u32 {
+        self.0
+    }
 }
 
 /// The basic shared functions in a midi file. The columns related functions are
@@ -54,7 +89,7 @@ pub trait MIDINoteColumnView: Send {
 pub struct DisplacedMIDINote {
     pub start: f32,
     pub len: f32,
-    pub track_chan: u32,
+    pub color: u32,
 }
 
 #[enum_dispatch(MIDIFileBase)]

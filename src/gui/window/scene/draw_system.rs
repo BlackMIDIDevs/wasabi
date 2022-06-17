@@ -17,8 +17,6 @@ pub struct ChikaraShaderTest {
     thrad_pool: rayon::ThreadPool,
 }
 
-const COLOR: u32 = 0xFF00FF;
-
 struct UnsafeSyncCell<T>(UnsafeCell<T>);
 
 impl<T> UnsafeSyncCell<T> {
@@ -52,7 +50,7 @@ impl ChikaraShaderTest {
             offset: usize,
             iter: Iter,
             key: u8,
-            ended: bool,
+            remaining: usize,
         }
 
         let mut total_notes = 0;
@@ -70,13 +68,13 @@ impl ChikaraShaderTest {
                     offset: total_notes,
                     iter,
                     key: i as u8,
-                    ended: false,
+                    remaining: length,
                 });
                 total_notes += length;
             }
         }
 
-        // Then white keys afte
+        // Then white keys after
         for (i, column) in columns.iter().enumerate() {
             if !key_view.key(i).black {
                 let iter = column.iterate_displaced_notes();
@@ -85,13 +83,15 @@ impl ChikaraShaderTest {
                     offset: total_notes,
                     iter,
                     key: i as u8,
-                    ended: false,
+                    remaining: length,
                 });
                 total_notes += length;
             }
         }
 
         let mut notes_pushed = 0;
+
+        let mut cycle = 0;
 
         self.render_pass.draw(final_image, key_view, |buffer| {
             let buffer_length = buffer.len() as usize;
@@ -100,7 +100,7 @@ impl ChikaraShaderTest {
 
             let written_notes = self.thrad_pool.install(|| {
                 let written_notes_per_key = columns_view_info.par_iter_mut().map(|column| {
-                    if column.ended {
+                    if column.remaining == 0 {
                         return 0;
                     }
 
@@ -111,12 +111,12 @@ impl ChikaraShaderTest {
                     }
 
                     let remaining_buffer_space = buffer_length - offset as usize;
-                    let iter_length = column.iter.len();
+                    let iter_length = column.remaining;
 
-                    let (unfinished, allowed_to_write) = if iter_length > remaining_buffer_space {
-                        (true, remaining_buffer_space)
+                    let allowed_to_write = if iter_length > remaining_buffer_space {
+                        remaining_buffer_space
                     } else {
-                        (false, iter_length)
+                        iter_length
                     };
 
                     unsafe {
@@ -126,14 +126,14 @@ impl ChikaraShaderTest {
                             let next_note = column.iter.next();
                             if let Some(note) = next_note {
                                 buffer[i + offset] =
-                                    NoteVertex::new(note.start, note.len, column.key, COLOR);
+                                    NoteVertex::new(note.start, note.len, column.key, note.color);
                             } else {
                                 panic!("Invalid iterator length");
                             }
                         }
                     }
 
-                    column.ended = unfinished;
+                    column.remaining -= allowed_to_write;
 
                     return allowed_to_write;
                 });
@@ -142,6 +142,8 @@ impl ChikaraShaderTest {
             });
 
             notes_pushed += written_notes;
+
+            cycle += 1;
 
             if notes_pushed >= total_notes {
                 return NotePassStatus::Finished {

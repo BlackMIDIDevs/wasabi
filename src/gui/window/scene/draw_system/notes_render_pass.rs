@@ -6,7 +6,7 @@ use vulkano::{
     command_buffer::{AutoCommandBufferBuilder, CommandBufferUsage, SubpassContents},
     descriptor_set::{PersistentDescriptorSet, WriteDescriptorSet},
     device::{Device, Queue},
-    format::Format,
+    format::{ClearValue, Format},
     image::{view::ImageView, AttachmentImage, ImageAccess, ImageViewAbstract},
     pipeline::{
         graphics::{
@@ -23,7 +23,7 @@ use vulkano::{
 
 use crate::gui::{window::keyboard_layout::KeyboardView, GuiRenderer};
 
-const NOTE_BUFFER_SIZE: u64 = 25000000;
+const NOTE_BUFFER_SIZE: u64 = 2500000;
 
 #[repr(C)]
 #[derive(Default, Debug, Copy, Clone, Zeroable, Pod)]
@@ -90,8 +90,10 @@ pub struct KeyPosition {
 pub struct NoteRenderPass {
     gfx_queue: Arc<Queue>,
     buffer_set: BufferSet,
-    pipeline: Arc<GraphicsPipeline>,
-    render_pass: Arc<RenderPass>,
+    pipeline_clear: Arc<GraphicsPipeline>,
+    pipeline_draw_over: Arc<GraphicsPipeline>,
+    render_pass_clear: Arc<RenderPass>,
+    render_pass_draw_over: Arc<RenderPass>,
     key_locations: Arc<CpuAccessibleBuffer<[[KeyPosition; 256]]>>,
     depth_buffer: Arc<ImageView<AttachmentImage>>,
 }
@@ -100,7 +102,7 @@ impl NoteRenderPass {
     pub fn new(renderer: &GuiRenderer) -> NoteRenderPass {
         let gfx_queue = renderer.queue.clone();
 
-        let render_pass = vulkano::ordered_passes_renderpass!(gfx_queue.device().clone(),
+        let render_pass_clear = vulkano::ordered_passes_renderpass!(gfx_queue.device().clone(),
             attachments: {
                 final_color: {
                     load: Clear,
@@ -110,7 +112,7 @@ impl NoteRenderPass {
                 },
                 depth: {
                     load: Clear,
-                    store: DontCare,
+                    store: Store,
                     format: Format::D16_UNORM,
                     samples: 1,
                 }
@@ -124,6 +126,32 @@ impl NoteRenderPass {
             ]
         )
         .unwrap();
+
+        let render_pass_draw_over = vulkano::ordered_passes_renderpass!(gfx_queue.device().clone(),
+            attachments: {
+                final_color: {
+                    load: DontCare,
+                    store: Store,
+                    format: renderer.format,
+                    samples: 1,
+                },
+                depth: {
+                    load: DontCare,
+                    store: Store,
+                    format: Format::D16_UNORM,
+                    samples: 1,
+                }
+            },
+            passes: [
+                {
+                    color: [final_color],
+                    depth_stencil: {depth},
+                    input: []
+                }
+            ]
+        )
+        .unwrap();
+
         let depth_buffer = ImageView::new_default(
             AttachmentImage::transient_input_attachment(
                 gfx_queue.device().clone(),
@@ -146,7 +174,7 @@ impl NoteRenderPass {
         let fs = fs::load(gfx_queue.device().clone()).expect("failed to create shader module");
         let gs = gs::load(gfx_queue.device().clone()).expect("failed to create shader module");
 
-        let pipeline = GraphicsPipeline::start()
+        let pipeline_clear = GraphicsPipeline::start()
             .input_assembly_state(InputAssemblyState::new().topology(PrimitiveTopology::PointList))
             .vertex_input_state(BuffersDefinition::new().vertex::<NoteVertex>())
             .vertex_shader(vs.entry_point("main").unwrap(), ())
@@ -154,15 +182,29 @@ impl NoteRenderPass {
             .fragment_shader(fs.entry_point("main").unwrap(), ())
             .viewport_state(ViewportState::viewport_dynamic_scissor_irrelevant())
             .depth_stencil_state(DepthStencilState::simple_depth_test())
-            .render_pass(Subpass::from(render_pass.clone(), 0).unwrap())
+            .render_pass(Subpass::from(render_pass_clear.clone(), 0).unwrap())
+            .build(gfx_queue.device().clone())
+            .unwrap();
+
+        let pipeline_draw_over = GraphicsPipeline::start()
+            .input_assembly_state(InputAssemblyState::new().topology(PrimitiveTopology::PointList))
+            .vertex_input_state(BuffersDefinition::new().vertex::<NoteVertex>())
+            .vertex_shader(vs.entry_point("main").unwrap(), ())
+            .geometry_shader(gs.entry_point("main").unwrap(), ())
+            .fragment_shader(fs.entry_point("main").unwrap(), ())
+            .viewport_state(ViewportState::viewport_dynamic_scissor_irrelevant())
+            .depth_stencil_state(DepthStencilState::simple_depth_test())
+            .render_pass(Subpass::from(render_pass_draw_over.clone(), 0).unwrap())
             .build(gfx_queue.device().clone())
             .unwrap();
 
         NoteRenderPass {
             gfx_queue,
             buffer_set: BufferSet::new(&renderer.device),
-            pipeline,
-            render_pass,
+            pipeline_clear,
+            pipeline_draw_over,
+            render_pass_clear,
+            render_pass_draw_over,
             depth_buffer,
             key_locations,
         }
@@ -187,17 +229,6 @@ impl NoteRenderPass {
             .unwrap();
         }
 
-        let framebuffer = Framebuffer::new(
-            self.render_pass.clone(),
-            FramebufferCreateInfo {
-                attachments: vec![final_image, self.depth_buffer.clone()],
-                ..Default::default()
-            },
-        )
-        .unwrap();
-
-        let pipeline_layout = self.pipeline.layout();
-
         {
             let mut keys = self.key_locations.write().unwrap();
             for (write, key) in keys[0].iter_mut().zip(key_view.iter_all_notes()) {
@@ -209,16 +240,11 @@ impl NoteRenderPass {
             }
         }
 
-        let desc_layout = pipeline_layout.set_layouts().get(0).unwrap();
-        let set = PersistentDescriptorSet::new(
-            desc_layout.clone(),
-            [WriteDescriptorSet::buffer(0, self.key_locations.clone())],
-        )
-        .unwrap();
-
         let mut prev_future: Option<FenceSignalFuture<Box<dyn GpuFuture>>> = None;
 
         let mut status = NotePassStatus::HasMoreNotes;
+
+        let mut first_pass = true;
 
         while status == NotePassStatus::HasMoreNotes {
             let buffer = self.buffer_set.next();
@@ -239,12 +265,42 @@ impl NoteRenderPass {
                 CommandBufferUsage::OneTimeSubmit,
             )
             .unwrap();
-            command_buffer_builder
-                .begin_render_pass(
-                    framebuffer.clone(),
-                    SubpassContents::Inline,
+
+            let (clears, pipeline, render_pass) = if first_pass {
+                first_pass = false;
+                (
                     vec![[0.0, 0.0, 0.0, 0.0].into(), 1.0f32.into()],
+                    &self.pipeline_clear,
+                    &self.render_pass_clear,
                 )
+            } else {
+                (
+                    vec![ClearValue::None, ClearValue::None],
+                    &self.pipeline_draw_over,
+                    &self.render_pass_draw_over,
+                )
+            };
+
+            let framebuffer = Framebuffer::new(
+                render_pass.clone(),
+                FramebufferCreateInfo {
+                    attachments: vec![final_image.clone(), self.depth_buffer.clone()],
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+
+            let pipeline_layout = pipeline.layout();
+
+            let desc_layout = pipeline_layout.set_layouts().get(0).unwrap();
+            let set = PersistentDescriptorSet::new(
+                desc_layout.clone(),
+                [WriteDescriptorSet::buffer(0, self.key_locations.clone())],
+            )
+            .unwrap();
+
+            command_buffer_builder
+                .begin_render_pass(framebuffer.clone(), SubpassContents::Inline, clears)
                 .unwrap();
 
             let push_constants = gs::ty::PushConstants {
@@ -254,7 +310,7 @@ impl NoteRenderPass {
             };
 
             command_buffer_builder
-                .bind_pipeline_graphics(self.pipeline.clone())
+                .bind_pipeline_graphics(pipeline.clone())
                 .set_viewport(
                     0,
                     [Viewport {

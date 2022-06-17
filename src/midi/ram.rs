@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use self::{column::InRamNoteColumn, view::InRamNoteViews};
 
@@ -9,17 +9,21 @@ pub mod column;
 pub mod view;
 
 pub struct InRamMIDIFile {
-    columns: Rc<Vec<InRamNoteColumn>>,
+    columns: Arc<Vec<InRamNoteColumn>>,
+    track_count: usize,
 }
 
 impl InRamMIDIFile {
     pub fn new_dummy_data(notes_per_block: usize) -> Self {
         let mut columns = Vec::new();
+
         for _ in 0..256 {
             columns.push(InRamNoteColumn::new_dummy_data(notes_per_block));
         }
+
         InRamMIDIFile {
-            columns: Rc::new(columns),
+            columns: Arc::new(columns),
+            track_count: 256,
         }
     }
 }
@@ -38,6 +42,6 @@ impl MIDIFile for InRamMIDIFile {
     type ColumnsViews = InRamNoteViews;
 
     fn get_column_views<'a>(&'a self) -> Self::ColumnsViews {
-        InRamNoteViews::new(self.columns.clone())
+        InRamNoteViews::new(self.columns.clone(), self.track_count)
     }
 }

@@ -1,21 +1,23 @@
-use std::rc::Rc;
+use std::{sync::Arc};
 
 use gen_iter::GenIter;
 
 use crate::midi::{
-    DisplacedMIDINote, MIDINoteColumnView, MIDINoteViews, MIDINoteViewsBase, MIDIViewRange,
+    DisplacedMIDINote, MIDIColor, MIDINoteColumnView, MIDINoteViews, MIDINoteViewsBase,
+    MIDIViewRange,
 };
 
 use super::column::InRamNoteColumn;
 
 pub struct InRamNoteViews {
-    columns: Rc<Vec<InRamNoteColumn>>,
+    columns: Arc<Vec<InRamNoteColumn>>,
     column_view_data: Vec<InRamNoteColumnViewData>,
+    default_track_colors: Vec<MIDIColor>,
     view_range: MIDIViewRange,
 }
 
 impl InRamNoteViews {
-    pub fn new(columns: Rc<Vec<InRamNoteColumn>>) -> Self {
+    pub fn new(columns: Arc<Vec<InRamNoteColumn>>, track_count: usize) -> Self {
         let column_view_data = columns
             .iter()
             .map(InRamNoteColumnViewData::from_column)
@@ -27,6 +29,7 @@ impl InRamNoteViews {
                 start: 0.0,
                 end: 0.0,
             },
+            default_track_colors: MIDIColor::new_vec_for_tracks(track_count),
         }
     }
 }
@@ -45,6 +48,7 @@ impl InRamNoteColumnViewData {
 }
 
 pub struct InRamNoteColumnView<'a> {
+    view: &'a InRamNoteViews,
     column: &'a InRamNoteColumn,
     data: &'a InRamNoteColumnViewData,
     view_range: MIDIViewRange,
@@ -65,6 +69,7 @@ impl MIDINoteViews for InRamNoteViews {
 
     fn get_column<'a>(&'a self, key: usize) -> Self::View<'a> {
         InRamNoteColumnView {
+            view: self,
             column: &self.columns[key],
             data: &self.column_view_data[key],
             view_range: self.view_range,
@@ -77,6 +82,7 @@ impl MIDINoteViews for &InRamNoteViews {
 
     fn get_column<'a>(&'a self, key: usize) -> Self::View<'a> {
         InRamNoteColumnView {
+            view: self,
             column: &self.columns[key],
             data: &self.column_view_data[key],
             view_range: self.view_range,
@@ -95,6 +101,8 @@ impl<'a> MIDINoteColumnView for InRamNoteColumnView<'a> {
     type Iter<'b> = impl 'b + ExactSizeIterator<Item = DisplacedMIDINote> where Self: 'b;
 
     fn iterate_displaced_notes<'b>(&'b self) -> Self::Iter<'b> {
+        let colors = &self.view.default_track_colors;
+
         let iter = GenIter(move || {
             for block in self.column.blocks.iter().rev() {
                 let start = (block.start - self.view_range.start) as f32;
@@ -103,7 +111,7 @@ impl<'a> MIDINoteColumnView for InRamNoteColumnView<'a> {
                     yield DisplacedMIDINote {
                         start: start,
                         len: note.len,
-                        track_chan: note.track_chan,
+                        color: colors[note.track_chan as usize].as_u32(),
                     };
                 }
             }
