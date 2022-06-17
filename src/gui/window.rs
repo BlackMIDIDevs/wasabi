@@ -4,7 +4,7 @@ mod scene;
 
 use egui::{style::Margin, Frame, Visuals};
 
-use crate::midi::{InRamMIDIFile, MIDIFile, MIDIFileUnion, MIDIFileViewsUnion};
+use crate::midi::{InRamMIDIFile, MIDIFileUnion, MIDIFileViewsUnion};
 
 use self::{keyboard::GuiKeyboard, scene::GuiRenderScene};
 

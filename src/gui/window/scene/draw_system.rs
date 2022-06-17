@@ -2,7 +2,7 @@ mod notes_render_pass;
 
 use std::{cell::UnsafeCell, sync::Arc};
 
-use rayon::iter::{IntoParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
+use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
 use vulkano::{buffer::TypedBufferAccess, image::ImageViewAbstract};
 
 use crate::{

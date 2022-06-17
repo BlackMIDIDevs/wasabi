@@ -1,11 +1,8 @@
 use std::rc::Rc;
 
-use self::{
-    column::InRamNoteColumn,
-    view::{InRamNoteColumnViewData, InRamNoteViews},
-};
+use self::{column::InRamNoteColumn, view::InRamNoteViews};
 
-use super::{MIDIFile, MIDIFileBase, MIDIViewRange};
+use super::{MIDIFile, MIDIFileBase};
 
 pub mod block;
 pub mod column;

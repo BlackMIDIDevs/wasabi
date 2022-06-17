@@ -1,4 +1,4 @@
-use super::{block::InRamNoteBlock, view::InRamNoteColumnView};
+use super::block::InRamNoteBlock;
 
 pub struct InRamNoteColumn {
     pub blocks: Vec<InRamNoteBlock>,
