@@ -101,7 +101,7 @@ impl TimeKeeper {
                 self.current_state = TimerState::Paused { time_offset: now };
             }
         }
-        
+
         self.notify_listeners(false);
     }
 

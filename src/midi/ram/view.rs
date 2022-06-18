@@ -1,11 +1,8 @@
-use std::{ops::Range};
+use std::ops::Range;
 
 use gen_iter::GenIter;
 
-use crate::midi::{
-    DisplacedMIDINote, MIDIColor, MIDINoteColumnView, MIDINoteViews,
-    MIDIViewRange,
-};
+use crate::midi::{DisplacedMIDINote, MIDIColor, MIDINoteColumnView, MIDINoteViews, MIDIViewRange};
 
 use super::column::InRamNoteColumn;
 
