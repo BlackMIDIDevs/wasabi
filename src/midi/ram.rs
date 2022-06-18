@@ -1,8 +1,4 @@
-
-
-use self::{
-    view::{InRamCurrentNoteViews, InRamNoteViewData},
-};
+use self::view::{InRamCurrentNoteViews, InRamNoteViewData};
 
 use super::{shared::timer::TimeKeeper, MIDIFile, MIDIFileBase, MIDIViewRange};
 
@@ -15,6 +11,7 @@ pub mod view;
 pub struct InRamMIDIFile {
     view_data: InRamNoteViewData,
     timer: TimeKeeper,
+    length: f64,
 }
 
 impl InRamMIDIFile {}
@@ -23,7 +20,7 @@ macro_rules! impl_file_base {
     ($for_type:ty) => {
         impl MIDIFileBase for $for_type {
             fn midi_length(&self) -> Option<f64> {
-                None
+                Some(self.length)
             }
 
             fn parsed_up_to(&self) -> Option<f64> {

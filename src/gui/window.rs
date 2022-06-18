@@ -57,7 +57,7 @@ pub struct GuiWasabiWindow {
 impl GuiWasabiWindow {
     pub fn new(renderer: &mut GuiRenderer) -> GuiWasabiWindow {
         let midi_file = MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
-            "D:/Midis/The Nuker 4 F1/The Nuker 4 - F1 Part 1.mid",
+            "D:/Midis/Ra Ra Rasputin Ultimate Black MIDI Final.mid",
             SimpleTemporaryPlayer::new(),
         ));
 

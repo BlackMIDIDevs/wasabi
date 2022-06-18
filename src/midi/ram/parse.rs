@@ -163,8 +163,11 @@ impl InRamMIDIFile {
             vec
         });
 
+        let mut length = 0.0;
+
         // Write events to the threads
         for batch in merged {
+            length += batch.delta();
             let batch = Arc::new(batch);
             key_snd.send(batch.clone()).unwrap();
             audio_snd.send(batch).unwrap();
@@ -188,6 +191,7 @@ impl InRamMIDIFile {
         InRamMIDIFile {
             view_data: InRamNoteViewData::new(columns, midi.track_count()),
             timer,
+            length,
         }
     }
 }
