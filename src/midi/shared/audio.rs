@@ -72,9 +72,10 @@ impl CompressedAudio {
                         }
                         Event::PitchWheelChange(e) => {
                             let head = EV_PITCH_BEND | e.channel;
+                            let value = e.pitch + 8192;
                             builder_vec.push(head);
-                            builder_vec.push((e.pitch & 0x7F) as u8);
-                            builder_vec.push(((e.pitch >> 7) & 0x7F) as u8);
+                            builder_vec.push((value & 0x7F) as u8);
+                            builder_vec.push(((value >> 7) & 0x7F) as u8);
                         }
                         _ => {}
                     }
