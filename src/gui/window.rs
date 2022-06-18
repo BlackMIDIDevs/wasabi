@@ -57,7 +57,7 @@ pub struct GuiWasabiWindow {
 impl GuiWasabiWindow {
     pub fn new(renderer: &mut GuiRenderer) -> GuiWasabiWindow {
         let midi_file = MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
-            "D:/Midis/The Quarantine Project.mid",
+            "D:/Midis/The Nuker 4 F1/The Nuker 4 - F1 Part 1.mid",
             SimpleTemporaryPlayer::new(),
         ));
 
@@ -87,8 +87,12 @@ impl GuiWasabiWindow {
         egui::TopBottomPanel::top("Top panel")
             .height_range(100.0..=100.0)
             .show(&ctx, |ui| {
-                // ui.add(Slider::new(&mut self.view_start, 0.0..=500.0).text("Start"));
-                // ui.add(Slider::new(&mut self.view_length, 0.0..=500.0).text("Length"));
+                if let Some(length) = self.midi_file.midi_length() {
+                    let time = self.midi_file.timer().get_time().as_secs_f64();
+                    let progress = (time / length) as f32;
+                    ui.add(egui::ProgressBar::new(progress));
+                }
+
                 ui.add(Label::new(format!("FPS: {}", self.fps.get_fps())));
             });
 
