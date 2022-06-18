@@ -13,6 +13,7 @@ vulkano-win = { git = "https://github.com/Kaydax/vulkano.git" }
 egui-winit = "0.17.0"
 bytemuck = "1.8.0"
 vulkano = { git = "https://github.com/Kaydax/vulkano.git" }
+kdmapi = { git = "https://github.com/arduano/kdmapi.git", rev = "9329cfc" }
 egui = "0.17.0"
 winit = "0.26"
 image = "0.23.14"
@@ -24,6 +25,7 @@ midi-toolkit-rs = { git = "https://github.com/arduano/midi-toolkit-rs", rev = "f
 gen-iter = "0.2.1"
 enum_dispatch = "0.3.8"
 palette = "0.6.0"
+crossbeam-channel = "0.5.5"
 
 [profile.dev]
 opt-level = 2

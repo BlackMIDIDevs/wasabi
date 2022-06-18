@@ -4,10 +4,11 @@ mod scene;
 
 use std::{collections::VecDeque, time::Instant};
 
-use egui::{style::Margin, Frame, Label, Slider, Visuals};
+use egui::{style::Margin, Frame, Label, Visuals};
 
-use crate::midi::{
-    InRamMIDIFile, MIDIFileUnion, MIDIFileViewsUnion, MIDINoteViewsBase, MIDIViewRange,
+use crate::{
+    audio_playback::SimpleTemporaryPlayer,
+    midi::{InRamMIDIFile, MIDIFileBase, MIDIFileUnion},
 };
 
 use self::{keyboard::GuiKeyboard, scene::GuiRenderScene};
@@ -50,10 +51,6 @@ pub struct GuiWasabiWindow {
     keyboard_layout: keyboard_layout::KeyboardLayout,
     keyboard: GuiKeyboard,
     midi_file: MIDIFileUnion,
-    midi_file_views: MIDIFileViewsUnion,
-    view_start: f64,
-    view_length: f64,
-    start: Instant,
     fps: FPS,
 }
 
@@ -61,24 +58,25 @@ impl GuiWasabiWindow {
     pub fn new(renderer: &mut GuiRenderer) -> GuiWasabiWindow {
         let midi_file = MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
             "D:/Midis/The Quarantine Project.mid",
+            SimpleTemporaryPlayer::new(),
         ));
-        let midi_file_views = midi_file.get_views();
 
         GuiWasabiWindow {
             render_scene: GuiRenderScene::new(renderer),
             keyboard_layout: keyboard_layout::KeyboardLayout::new(&Default::default()),
             keyboard: GuiKeyboard::new(),
-            midi_file_views,
             midi_file,
-            view_start: 0.0,
-            view_length: 10.0,
-            start: Instant::now(),
             fps: FPS::new(),
         }
     }
 
     /// Defines the layout of our UI
     pub fn layout(&mut self, state: &mut GuiState) {
+        // TODO: Remove this temporary thing
+        if self.midi_file.timer().is_paused() {
+            self.midi_file.timer_mut().play();
+        }
+
         let ctx = state.gui.context();
 
         self.fps.update();
@@ -92,10 +90,6 @@ impl GuiWasabiWindow {
                 // ui.add(Slider::new(&mut self.view_start, 0.0..=500.0).text("Start"));
                 // ui.add(Slider::new(&mut self.view_length, 0.0..=500.0).text("Length"));
                 ui.add(Label::new(format!("FPS: {}", self.fps.get_fps())));
-
-                let time = self.start.elapsed().as_secs_f64();
-                self.midi_file_views
-                    .shift_view_range(MIDIViewRange::new(time, time + 0.25));
             });
 
         // Calculate available space left for keyboard and notes
@@ -119,7 +113,7 @@ impl GuiWasabiWindow {
             .show(&ctx, |mut ui| {
                 let result =
                     self.render_scene
-                        .draw(state, &mut ui, &key_view, &self.midi_file_views);
+                        .draw(state, &mut ui, &key_view, &mut self.midi_file, 0.25);
                 render_result_data = Some(result);
             });
 

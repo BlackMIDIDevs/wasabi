@@ -1,10 +1,11 @@
 mod ram;
+mod shared;
 use enum_dispatch::enum_dispatch;
 use palette::convert::FromColorUnclamped;
 
 pub use ram::InRamMIDIFile;
 
-use self::ram::view::InRamNoteViews;
+use self::shared::timer::TimeKeeper;
 
 /// A struct that represents the view range of a midi screen render
 #[derive(Debug, Clone, Copy, Default)]
@@ -76,20 +77,24 @@ impl MIDIColor {
 pub trait MIDIFileBase {
     fn midi_length(&self) -> Option<f64>;
     fn parsed_up_to(&self) -> Option<f64>;
+
+    fn timer(&self) -> &TimeKeeper;
+    fn timer_mut(&mut self) -> &mut TimeKeeper;
+
+    fn allows_seeking_backward(&self) -> bool;
 }
 
 /// This trait contains a function to retrieve the column view of the midi
 pub trait MIDIFile: MIDIFileBase {
-    type ColumnsViews: MIDINoteViews;
+    type ColumnsViews<'a>: 'a + MIDINoteViews
+    where
+        Self: 'a;
 
-    fn get_column_views<'a>(&'a self) -> Self::ColumnsViews;
+    fn get_current_column_views<'a>(&'a mut self, range: f64) -> Self::ColumnsViews<'a>;
 }
 
 #[enum_dispatch]
-pub trait MIDINoteViewsBase {
-    fn shift_view_range(&mut self, new_range: MIDIViewRange);
-    fn allows_seeking_backward(&self) -> bool;
-}
+pub trait MIDINoteViewsBase {}
 
 pub trait MIDINoteViews {
     type View<'a>: 'a + MIDINoteColumnView
@@ -106,8 +111,6 @@ pub trait MIDINoteColumnView: Send {
         Self: 'a;
 
     fn iterate_displaced_notes<'a>(&'a self) -> Self::Iter<'a>;
-
-    fn adjust_view_range(&mut self, range: MIDIViewRange);
 }
 
 pub struct DisplacedMIDINote {
@@ -120,18 +123,3 @@ pub struct DisplacedMIDINote {
 pub enum MIDIFileUnion {
     InRam(ram::InRamMIDIFile),
 }
-
-impl MIDIFileUnion {
-    pub fn get_views(&self) -> MIDIFileViewsUnion {
-        match self {
-            Self::InRam(file) => MIDIFileViewsUnion::InRam(file.get_column_views()),
-        }
-    }
-}
-
-#[enum_dispatch(MIDINoteViewsBase)]
-pub enum MIDIFileViewsUnion {
-    InRam(InRamNoteViews),
-}
-
-impl MIDIFileViewsUnion {}

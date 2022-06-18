@@ -2,7 +2,7 @@ mod draw_system;
 
 use egui::Ui;
 
-use crate::{midi::MIDIFileViewsUnion, scenes::SceneSwapchain};
+use crate::{midi::MIDIFileUnion, scenes::SceneSwapchain};
 
 use self::draw_system::{NoteRenderer, RenderResultData};
 
@@ -27,7 +27,8 @@ impl GuiRenderScene {
         state: &mut GuiState,
         ui: &mut Ui,
         key_view: &KeyboardView,
-        views: &MIDIFileViewsUnion,
+        midi_file: &mut MIDIFileUnion,
+        view_range: f64,
     ) -> RenderResultData {
         let size = ui.available_size();
         let size = [size.x as u32, size.y as u32];
@@ -35,8 +36,8 @@ impl GuiRenderScene {
         let scene_image = self.swap_chain.get_next_image(state, size);
         let frame = scene_image.image.clone();
 
-        let result = match views {
-            MIDIFileViewsUnion::InRam(views) => self.draw_system.draw(key_view, frame, views),
+        let result = match midi_file {
+            MIDIFileUnion::InRam(file) => self.draw_system.draw(key_view, frame, file, view_range),
         };
 
         ui.image(scene_image.id, [size[0] as f32, size[1] as f32]);

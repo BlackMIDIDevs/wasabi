@@ -2,6 +2,7 @@
 #![feature(generic_associated_types)]
 #![feature(generators)]
 
+mod audio_playback;
 mod gui;
 mod midi;
 mod renderer;

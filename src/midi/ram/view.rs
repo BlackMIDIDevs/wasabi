@@ -1,28 +1,38 @@
-use std::{ops::Range, sync::Arc};
+use std::{ops::Range};
 
 use gen_iter::GenIter;
 
 use crate::midi::{
-    DisplacedMIDINote, MIDIColor, MIDINoteColumnView, MIDINoteViews, MIDINoteViewsBase,
+    DisplacedMIDINote, MIDIColor, MIDINoteColumnView, MIDINoteViews,
     MIDIViewRange,
 };
 
 use super::column::InRamNoteColumn;
 
-pub struct InRamNoteViews {
-    columns: Arc<Vec<InRamNoteColumn>>,
+pub struct InRamNoteViewData {
+    columns: Vec<InRamNoteColumn>,
     column_view_data: Vec<InRamNoteColumnViewData>,
     default_track_colors: Vec<MIDIColor>,
     view_range: MIDIViewRange,
 }
 
-impl InRamNoteViews {
-    pub fn new(columns: Arc<Vec<InRamNoteColumn>>, track_count: usize) -> Self {
+pub struct InRamCurrentNoteViews<'a> {
+    data: &'a InRamNoteViewData,
+}
+
+impl<'a> InRamCurrentNoteViews<'a> {
+    pub fn new(data: &'a InRamNoteViewData) -> Self {
+        InRamCurrentNoteViews { data }
+    }
+}
+
+impl InRamNoteViewData {
+    pub fn new(columns: Vec<InRamNoteColumn>, track_count: usize) -> Self {
         let column_view_data = columns
             .iter()
             .map(|_| InRamNoteColumnViewData::new())
             .collect();
-        InRamNoteViews {
+        InRamNoteViewData {
             columns,
             column_view_data,
             view_range: MIDIViewRange {
@@ -51,14 +61,14 @@ impl InRamNoteColumnViewData {
 }
 
 pub struct InRamNoteColumnView<'a> {
-    view: &'a InRamNoteViews,
+    view: &'a InRamNoteViewData,
     column: &'a InRamNoteColumn,
     data: &'a InRamNoteColumnViewData,
     view_range: MIDIViewRange,
 }
 
-impl MIDINoteViewsBase for InRamNoteViews {
-    fn shift_view_range(&mut self, new_view_range: MIDIViewRange) {
+impl InRamNoteViewData {
+    pub fn shift_view_range(&mut self, new_view_range: MIDIViewRange) {
         let old_view_range = self.view_range;
         self.view_range = new_view_range;
 
@@ -126,41 +136,22 @@ impl MIDINoteViewsBase for InRamNoteViews {
     }
 }
 
-impl MIDINoteViews for InRamNoteViews {
-    type View<'a> = InRamNoteColumnView<'a>;
+impl<'a> MIDINoteViews for InRamCurrentNoteViews<'a> {
+    type View<'b> = InRamNoteColumnView<'b> where Self: 'a + 'b;
 
-    fn get_column<'a>(&'a self, key: usize) -> Self::View<'a> {
+    fn get_column<'b>(&'b self, key: usize) -> Self::View<'b> {
         InRamNoteColumnView {
-            view: self,
-            column: &self.columns[key],
-            data: &self.column_view_data[key],
-            view_range: self.view_range,
+            view: self.data,
+            column: &self.data.columns[key],
+            data: &self.data.column_view_data[key],
+            view_range: self.data.view_range,
         }
     }
 
-    fn range<'a>(&'a self) -> MIDIViewRange {
-        self.view_range
+    fn range<'b>(&'b self) -> MIDIViewRange {
+        self.data.view_range
     }
 }
-
-impl MIDINoteViews for &InRamNoteViews {
-    type View<'a> = InRamNoteColumnView<'a> where Self: 'a;
-
-    fn get_column<'a>(&'a self, key: usize) -> Self::View<'a> {
-        InRamNoteColumnView {
-            view: self,
-            column: &self.columns[key],
-            data: &self.column_view_data[key],
-            view_range: self.view_range,
-        }
-    }
-
-    fn range<'a>(&'a self) -> MIDIViewRange {
-        self.view_range
-    }
-}
-
-impl<'a> InRamNoteColumnView<'a> {}
 
 struct InRamNoteBlockIter<'a, Iter: Iterator<Item = DisplacedMIDINote>> {
     view: &'a InRamNoteColumnView<'a>,
@@ -192,10 +183,6 @@ impl<'a> MIDINoteColumnView for InRamNoteColumnView<'a> {
             view: self,
             iter: iter.into_iter(),
         }
-    }
-
-    fn adjust_view_range(&mut self, range: MIDIViewRange) {
-        self.view_range = range;
     }
 }
 

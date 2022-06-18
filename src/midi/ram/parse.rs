@@ -1,6 +1,7 @@
 use std::{
     collections::{HashMap, VecDeque},
     sync::Arc,
+    thread,
 };
 
 use midi_toolkit::{
@@ -8,12 +9,21 @@ use midi_toolkit::{
     io::MIDIFile as TKMIDIFile,
     pipe,
     sequence::{
-        event::{cancel_tempo_events, convert_events_into_batches, scale_event_time},
+        event::{
+            cancel_tempo_events, convert_events_into_batches, scale_event_time, EventBatch,
+            TrackEvent,
+        },
         unwrap_items, TimeCaster,
     },
 };
 
-use crate::midi::ram::column::InRamNoteColumn;
+use crate::{
+    audio_playback::SimpleTemporaryPlayer,
+    midi::{
+        ram::{audio_player::InRamAudioPlayer, column::InRamNoteColumn, view::InRamNoteViewData},
+        shared::{audio::CompressedAudio, timer::TimeKeeper},
+    },
+};
 
 use super::{block::InRamNoteBlock, InRamMIDIFile};
 
@@ -89,7 +99,7 @@ impl Key {
 }
 
 impl InRamMIDIFile {
-    pub fn load_from_file(path: &str) -> Self {
+    pub fn load_from_file(path: &str, player: SimpleTemporaryPlayer) -> Self {
         let midi = TKMIDIFile::open(path, None).unwrap();
 
         let ppq = midi.ppq();
@@ -102,51 +112,82 @@ impl InRamMIDIFile {
             |>unwrap_items()
         );
 
-        let mut keys: Vec<Key> = (0..256).map(|_| Key::new()).collect();
+        type Ev = EventBatch<f64, TrackEvent<f64, Event<f64>>>;
+        let (key_snd, key_rcv) = crossbeam_channel::bounded::<Arc<Ev>>(1000);
+        let (audio_snd, audio_rcv) = crossbeam_channel::bounded::<Arc<Ev>>(1000);
 
-        let mut time = 0.0;
+        let key_join_handle = thread::spawn(|| {
+            let mut keys: Vec<Key> = (0..256).map(|_| Key::new()).collect();
 
-        fn flush_keys(time: f64, keys: &mut Vec<Key>) {
-            for key in keys.iter_mut() {
-                key.flush(time);
-            }
-        }
+            let mut time = 0.0;
 
-        for batch in merged {
-            if batch.delta() > 0.0 {
-                flush_keys(time, &mut keys);
-                time += batch.delta();
-            }
-
-            for event in batch.into_iter() {
-                let track = event.track;
-                match event.as_event() {
-                    Event::NoteOn(e) => {
-                        let track_chan = track * 16 + e.channel as u32;
-                        keys[e.key as usize].add_note(track_chan);
-                    }
-                    Event::NoteOff(e) => {
-                        let track_chan = track * 16 + e.channel as u32;
-                        keys[e.key as usize].end_note(track_chan, time);
-                    }
-                    _ => {}
+            fn flush_keys(time: f64, keys: &mut Vec<Key>) {
+                for key in keys.iter_mut() {
+                    key.flush(time);
                 }
             }
-        }
 
-        flush_keys(time, &mut keys);
+            for batch in key_rcv.into_iter() {
+                if batch.delta() > 0.0 {
+                    flush_keys(time, &mut keys);
+                    time += batch.delta();
+                }
 
-        for key in keys.iter_mut() {
-            key.end_all(time);
+                for event in batch.iter() {
+                    let track = event.track;
+                    match event.as_event() {
+                        Event::NoteOn(e) => {
+                            let track_chan = track * 16 + e.channel as u32;
+                            keys[e.key as usize].add_note(track_chan);
+                        }
+                        Event::NoteOff(e) => {
+                            let track_chan = track * 16 + e.channel as u32;
+                            keys[e.key as usize].end_note(track_chan, time);
+                        }
+                        _ => {}
+                    }
+                }
+            }
+
+            flush_keys(time, &mut keys);
+
+            for key in keys.iter_mut() {
+                key.end_all(time);
+            }
+
+            keys
+        });
+
+        let audio_join_handle = thread::spawn(|| {
+            let vec: Vec<_> = CompressedAudio::build_blocks(audio_rcv.into_iter()).collect();
+            vec
+        });
+
+        // Write events to the threads
+        for batch in merged {
+            let batch = Arc::new(batch);
+            key_snd.send(batch.clone()).unwrap();
+            audio_snd.send(batch).unwrap();
         }
+        // Drop the writers so the threads finish
+        drop(key_snd);
+        drop(audio_snd);
+
+        let keys = key_join_handle.join().unwrap();
+        let audio = audio_join_handle.join().unwrap();
+
+        let mut timer = TimeKeeper::new();
+
+        InRamAudioPlayer::new(audio, timer.get_listener(), player).spawn_playback();
+
+        let columns = keys
+            .into_iter()
+            .map(|key| InRamNoteColumn::new(key.column))
+            .collect();
 
         InRamMIDIFile {
-            columns: Arc::new(
-                keys.into_iter()
-                    .map(|key| InRamNoteColumn::new(key.column))
-                    .collect(),
-            ),
-            track_count: midi.track_count(),
+            view_data: InRamNoteViewData::new(columns, midi.track_count()),
+            timer,
         }
     }
 }

@@ -506,9 +506,9 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-channel"
-version = "0.5.4"
+version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5aaa7bd5fb665c6864b5f963dd9097905c54125909c7aa94c9e18507cdbe6c53"
+checksum = "4c02a4d71819009c192cf4872265391563fd6a84c81ff2c0f2a7026ca4c1d85c"
 dependencies = [
  "cfg-if 1.0.0",
  "crossbeam-utils",
@@ -1127,6 +1127,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "671a26f820db17c2a2750743f1dd03bafd15b98c9f30c7c2628c024c05d73397"
 dependencies = [
  "wasm-bindgen",
+]
+
+[[package]]
+name = "kdmapi"
+version = "0.1.0"
+source = "git+https://github.com/arduano/kdmapi.git?rev=9329cfc#9329cfc57e808a5e05d537d1e4ae1bd219416292"
+dependencies = [
+ "lazy_static",
+ "libloading",
 ]
 
 [[package]]
@@ -2483,6 +2492,7 @@ dependencies = [
  "ahash 0.7.6",
  "bytemuck",
  "cgmath",
+ "crossbeam-channel",
  "egui",
  "egui-winit",
  "egui_demo_lib",
@@ -2490,6 +2500,7 @@ dependencies = [
  "enum_dispatch",
  "gen-iter",
  "image",
+ "kdmapi",
  "midi-toolkit-rs",
  "nalgebra-glm",
  "palette",

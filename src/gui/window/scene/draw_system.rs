@@ -7,7 +7,7 @@ use vulkano::{buffer::TypedBufferAccess, image::ImageViewAbstract};
 
 use crate::{
     gui::{window::keyboard_layout::KeyboardView, GuiRenderer},
-    midi::{DisplacedMIDINote, MIDIColor, MIDINoteColumnView, MIDINoteViews},
+    midi::{DisplacedMIDINote, MIDIColor, MIDIFile, MIDINoteColumnView, MIDINoteViews},
 };
 
 use self::notes_render_pass::{NotePassStatus, NoteRenderPass, NoteVertex};
@@ -49,8 +49,11 @@ impl NoteRenderer {
         &mut self,
         key_view: &KeyboardView,
         final_image: Arc<dyn ImageViewAbstract + 'static>,
-        note_views: impl MIDINoteViews,
+        mut midi_file: impl MIDIFile,
+        view_range: f64,
     ) -> RenderResultData {
+        let note_views = midi_file.get_current_column_views(view_range);
+
         struct ColumnViewInfo<Iter: ExactSizeIterator<Item = DisplacedMIDINote> + Send> {
             offset: usize,
             iter: Iter,
