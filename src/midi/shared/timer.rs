@@ -35,6 +35,7 @@ impl TimerState {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct TimeKeeper {
     current_state: TimerState,
     listeners: Vec<crossbeam_channel::Sender<NotifySignal>>,
@@ -89,7 +90,7 @@ impl TimeKeeper {
 
     pub fn toggle_pause(&mut self) {
         let now = self.get_time();
-        match &mut self.current_state {
+        match self.current_state {
             TimerState::Paused { .. } => {
                 self.current_state = TimerState::Running {
                     continue_time: Instant::now(),
@@ -100,6 +101,7 @@ impl TimeKeeper {
                 self.current_state = TimerState::Paused { time_offset: now };
             }
         }
+        
         self.notify_listeners(false);
     }
 

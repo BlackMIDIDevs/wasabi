@@ -9,6 +9,7 @@ use midi_toolkit::{
 pub struct CompressedAudio {
     pub time: f64,
     data: Vec<u8>,
+    control_only_data: Option<Vec<u8>>,
 }
 
 const EV_OFF: u8 = 0x80;
@@ -24,6 +25,7 @@ impl CompressedAudio {
         iter: Iter,
     ) -> impl Iterator<Item = CompressedAudio> {
         let mut builder_vec: Vec<u8> = Vec::new();
+        let mut control_builder_vec: Vec<u8> = Vec::new();
         GenIter(move || {
             let mut time = 0.0;
 
@@ -39,43 +41,43 @@ impl CompressedAudio {
                     match event.as_event() {
                         Event::NoteOn(e) => {
                             let head = EV_ON | e.channel;
-                            builder_vec.push(head);
-                            builder_vec.push(e.key);
-                            builder_vec.push(e.velocity);
+                            let events = &[head, e.key, e.velocity];
+                            builder_vec.extend_from_slice(events);
                         }
                         Event::NoteOff(e) => {
                             let head = EV_OFF | e.channel;
-                            builder_vec.push(head);
-                            builder_vec.push(e.key);
+                            let events = &[head, e.key];
+                            builder_vec.extend_from_slice(events);
                         }
                         Event::PolyphonicKeyPressure(e) => {
                             let head = EV_POLYPHONIC | e.channel;
-                            builder_vec.push(head);
-                            builder_vec.push(e.key);
-                            builder_vec.push(e.velocity);
+                            let events = &[head, e.key, e.velocity];
+                            builder_vec.extend_from_slice(events);
                         }
                         Event::ControlChange(e) => {
                             let head = EV_CONTROL | e.channel;
-                            builder_vec.push(head);
-                            builder_vec.push(e.controller);
-                            builder_vec.push(e.value);
+                            let events = &[head, e.controller, e.value];
+                            builder_vec.extend_from_slice(events);
+                            control_builder_vec.extend_from_slice(events);
                         }
                         Event::ProgramChange(e) => {
                             let head = EV_PROGRAM | e.channel;
-                            builder_vec.push(head);
-                            builder_vec.push(e.program);
+                            let events = &[head, e.program];
+                            builder_vec.extend_from_slice(events);
+                            control_builder_vec.extend_from_slice(events);
                         }
                         Event::ChannelPressure(e) => {
                             let head = EV_CHAN_PRESSURE | e.channel;
-                            builder_vec.push(head);
-                            builder_vec.push(e.pressure);
+                            let events = &[head, e.pressure];
+                            builder_vec.extend_from_slice(events);
+                            control_builder_vec.extend_from_slice(events);
                         }
                         Event::PitchWheelChange(e) => {
                             let head = EV_PITCH_BEND | e.channel;
                             let value = e.pitch + 8192;
-                            builder_vec.push(head);
-                            builder_vec.push((value & 0x7F) as u8);
-                            builder_vec.push(((value >> 7) & 0x7F) as u8);
+                            let events = &[head, (value & 0x7F) as u8, ((value >> 7) & 0x7F) as u8];
+                            builder_vec.extend_from_slice(events);
+                            control_builder_vec.extend_from_slice(events);
                         }
                         _ => {}
                     }
@@ -84,8 +86,17 @@ impl CompressedAudio {
                 let mut new_vec = Vec::with_capacity(builder_vec.len());
                 new_vec.append(&mut builder_vec);
 
+                let new_control_vec = if control_builder_vec.len() > 0 {
+                    let mut new_control_vec = Vec::with_capacity(control_builder_vec.len());
+                    new_control_vec.append(&mut control_builder_vec);
+                    Some(new_control_vec)
+                } else {
+                    None
+                };
+
                 yield CompressedAudio {
                     data: new_vec,
+                    control_only_data: new_control_vec,
                     time,
                 };
             }
@@ -93,19 +104,28 @@ impl CompressedAudio {
     }
 
     pub fn iter_events<'a>(&'a self) -> impl 'a + Iterator<Item = u32> {
+        CompressedAudio::iter_events_from_vec(self.data.iter().cloned())
+    }
+
+    pub fn iter_control_events<'a>(&'a self) -> impl 'a + Iterator<Item = u32> {
+        CompressedAudio::iter_events_from_vec(self.control_only_data.iter().flatten().cloned())
+    }
+
+    pub fn iter_events_from_vec<'a>(
+        mut iter: impl 'a + Iterator<Item = u8>,
+    ) -> impl 'a + Iterator<Item = u32> {
         GenIter(move || {
-            let mut iter = self.data.iter();
             while let Some(next) = iter.next() {
                 let ev = next & 0xF0;
                 let val = match ev {
                     EV_OFF | EV_PROGRAM | EV_CHAN_PRESSURE => {
-                        let val2 = *iter.next().unwrap() as u32;
-                        (*next as u32) | (val2 << 8)
+                        let val2 = iter.next().unwrap() as u32;
+                        (next as u32) | (val2 << 8)
                     }
                     EV_ON | EV_POLYPHONIC | EV_CONTROL | EV_PITCH_BEND => {
-                        let val2 = *iter.next().unwrap() as u32;
-                        let val3 = *iter.next().unwrap() as u32;
-                        (*next as u32) | (val2 << 8) | (val3 << 16)
+                        let val2 = iter.next().unwrap() as u32;
+                        let val3 = iter.next().unwrap() as u32;
+                        (next as u32) | (val2 << 8) | (val3 << 16)
                     }
                     _ => panic!("Can't reach {:#x}", next),
                 };

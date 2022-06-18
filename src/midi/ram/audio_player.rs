@@ -73,7 +73,7 @@ impl InRamAudioPlayer {
         })
     }
 
-    fn seek_to_time(&mut self, time: f64) {
+    fn find_time_index(&self, time: f64) -> usize {
         let events = &self.events;
 
         // Binary search to find the right time segment
@@ -91,17 +91,27 @@ impl InRamAudioPlayer {
             let range_end = events[mid].time;
 
             if time < range_start {
-                left = mid + 1;
-            } else if time > range_end {
                 right = mid;
+            } else if time > range_end {
+                left = mid + 1;
             } else {
-                self.index = mid;
-                return;
+                return mid;
             }
 
             size = right - left;
         }
 
-        self.index = events.len();
+        return events.len();
+    }
+
+    fn seek_to_time(&mut self, time: f64) {
+        self.index = self.find_time_index(time);
+
+        // Reset and push all control events before
+        self.player.reset();
+        for i in 0..(self.index) {
+            self.player
+                .push_events(self.events[i].iter_control_events());
+        }
     }
 }

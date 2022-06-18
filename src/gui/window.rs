@@ -2,7 +2,10 @@ mod keyboard;
 mod keyboard_layout;
 mod scene;
 
-use std::{collections::VecDeque, time::Instant};
+use std::{
+    collections::VecDeque,
+    time::{Duration, Instant},
+};
 
 use egui::{style::Margin, Frame, Label, Visuals};
 
@@ -17,6 +20,8 @@ use super::{GuiRenderer, GuiState};
 
 struct FPS(VecDeque<Instant>);
 
+const FPS_WINDOW: f64 = 0.5;
+
 impl FPS {
     fn new() -> Self {
         Self(VecDeque::new())
@@ -26,7 +31,7 @@ impl FPS {
         self.0.push_back(Instant::now());
         loop {
             if let Some(front) = self.0.front() {
-                if front.elapsed().as_secs() > 1 {
+                if front.elapsed().as_secs_f64() > FPS_WINDOW {
                     self.0.pop_front();
                 } else {
                     break;
@@ -41,7 +46,7 @@ impl FPS {
         if self.0.len() == 0 {
             return 0.0;
         } else {
-            self.0.len() as f64 / self.0.front().unwrap().elapsed().as_secs_f64()
+            self.0.len() as f64 / self.0.front().unwrap().elapsed().as_secs_f64() / FPS_WINDOW
         }
     }
 }
@@ -56,10 +61,12 @@ pub struct GuiWasabiWindow {
 
 impl GuiWasabiWindow {
     pub fn new(renderer: &mut GuiRenderer) -> GuiWasabiWindow {
-        let midi_file = MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
-            "D:/Midis/Ra Ra Rasputin Ultimate Black MIDI Final.mid",
+        let mut midi_file = MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
+            "D:/Midis/The Quarantine Project.mid",
             SimpleTemporaryPlayer::new(),
         ));
+
+        midi_file.timer_mut().play();
 
         GuiWasabiWindow {
             render_scene: GuiRenderScene::new(renderer),
@@ -72,11 +79,6 @@ impl GuiWasabiWindow {
 
     /// Defines the layout of our UI
     pub fn layout(&mut self, state: &mut GuiState) {
-        // TODO: Remove this temporary thing
-        if self.midi_file.timer().is_paused() {
-            self.midi_file.timer_mut().play();
-        }
-
         let ctx = state.gui.context();
 
         self.fps.update();
@@ -93,7 +95,25 @@ impl GuiWasabiWindow {
                     ui.add(egui::ProgressBar::new(progress));
                 }
 
-                ui.add(Label::new(format!("FPS: {}", self.fps.get_fps())));
+                ui.add(Label::new(format!("FPS: {}", self.fps.get_fps().round())));
+
+                if ui.small_button("Toggle Pause").clicked() {
+                    self.midi_file.timer_mut().toggle_pause();
+                }
+
+                let time = self.midi_file.timer().get_time();
+                let five_sec = Duration::from_secs(5);
+                if ui.small_button("Skip 5 sec").clicked() {
+                    self.midi_file.timer_mut().seek(time + five_sec);
+                }
+
+                if ui.small_button("Back 5 sec").clicked() {
+                    if time >= five_sec {
+                        self.midi_file.timer_mut().seek(time - five_sec);
+                    } else {
+                        self.midi_file.timer_mut().seek(Duration::from_secs(0));
+                    }
+                }
             });
 
         // Calculate available space left for keyboard and notes

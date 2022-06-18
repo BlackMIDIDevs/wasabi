@@ -43,6 +43,12 @@ impl SimpleTemporaryPlayer {
     }
 
     pub fn push_event(&mut self, data: u32) {
-        self.sender.send_event_u32(data);
+        // self.sender.send_event_u32(data);
+        self.kdmapi.send_direct_data(data);
+    }
+
+    pub fn reset(&mut self) {
+        // xsynth can't reset at the moment
+        self.kdmapi.reset();
     }
 }
