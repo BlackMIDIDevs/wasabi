@@ -2,9 +2,9 @@ mod keyboard;
 mod keyboard_layout;
 mod scene;
 
-use std::time::Instant;
+use std::{collections::VecDeque, time::Instant};
 
-use egui::{style::Margin, Frame, Slider, Visuals};
+use egui::{style::Margin, Frame, Label, Slider, Visuals};
 
 use crate::midi::{
     InRamMIDIFile, MIDIFileUnion, MIDIFileViewsUnion, MIDINoteViewsBase, MIDIViewRange,
@@ -13,6 +13,37 @@ use crate::midi::{
 use self::{keyboard::GuiKeyboard, scene::GuiRenderScene};
 
 use super::{GuiRenderer, GuiState};
+
+struct FPS(VecDeque<Instant>);
+
+impl FPS {
+    fn new() -> Self {
+        Self(VecDeque::new())
+    }
+
+    fn update(&mut self) {
+        self.0.push_back(Instant::now());
+        loop {
+            if let Some(front) = self.0.front() {
+                if front.elapsed().as_secs() > 1 {
+                    self.0.pop_front();
+                } else {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+    }
+
+    fn get_fps(&self) -> f64 {
+        if self.0.len() == 0 {
+            return 0.0;
+        } else {
+            self.0.len() as f64 / self.0.front().unwrap().elapsed().as_secs_f64()
+        }
+    }
+}
 
 pub struct GuiWasabiWindow {
     render_scene: GuiRenderScene,
@@ -23,12 +54,14 @@ pub struct GuiWasabiWindow {
     view_start: f64,
     view_length: f64,
     start: Instant,
+    fps: FPS,
 }
 
 impl GuiWasabiWindow {
     pub fn new(renderer: &mut GuiRenderer) -> GuiWasabiWindow {
-        let midi_file =
-            MIDIFileUnion::InRam(InRamMIDIFile::load_from_file("D:/Midis/tau2.5.9.mid"));
+        let midi_file = MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
+            "D:/Midis/The Quarantine Project.mid",
+        ));
         let midi_file_views = midi_file.get_views();
 
         GuiWasabiWindow {
@@ -40,6 +73,7 @@ impl GuiWasabiWindow {
             view_start: 0.0,
             view_length: 10.0,
             start: Instant::now(),
+            fps: FPS::new(),
         }
     }
 
@@ -47,14 +81,17 @@ impl GuiWasabiWindow {
     pub fn layout(&mut self, state: &mut GuiState) {
         let ctx = state.gui.context();
 
+        self.fps.update();
+
         ctx.set_visuals(Visuals::dark());
 
         // Render the top panel
         egui::TopBottomPanel::top("Top panel")
             .height_range(100.0..=100.0)
             .show(&ctx, |ui| {
-                ui.add(Slider::new(&mut self.view_start, 0.0..=500.0).text("Start"));
-                ui.add(Slider::new(&mut self.view_length, 0.0..=500.0).text("Length"));
+                // ui.add(Slider::new(&mut self.view_start, 0.0..=500.0).text("Start"));
+                // ui.add(Slider::new(&mut self.view_length, 0.0..=500.0).text("Length"));
+                ui.add(Label::new(format!("FPS: {}", self.fps.get_fps())));
 
                 let time = self.start.elapsed().as_secs_f64();
                 self.midi_file_views
