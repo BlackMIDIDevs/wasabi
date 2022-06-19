@@ -3,7 +3,7 @@ use std::sync::Arc;
 use kdmapi::{KDMAPIStream, KDMAPI};
 use xsynth_core::{
     channel::ChannelEvent,
-    soundfont::{SoundfontBase, SquareSoundfont},
+    soundfont::{SampleSoundfont, SoundfontBase},
 };
 use xsynth_realtime::{RealtimeEventSender, RealtimeSynth, SynthEvent};
 
@@ -19,7 +19,7 @@ impl SimpleTemporaryPlayer {
 
         let params = synth.stream_params();
 
-        let soundfonts: Vec<Arc<dyn SoundfontBase>> = vec![Arc::new(SquareSoundfont::new(
+        let soundfonts: Vec<Arc<dyn SoundfontBase>> = vec![Arc::new(SampleSoundfont::new(
             params.sample_rate,
             params.channels,
         ))];
@@ -43,12 +43,12 @@ impl SimpleTemporaryPlayer {
     }
 
     pub fn push_event(&mut self, data: u32) {
-        // self.sender.send_event_u32(data);
-        self.kdmapi.send_direct_data(data);
+        self.sender.send_event_u32(data);
+        // self.kdmapi.send_direct_data(data);
     }
 
     pub fn reset(&mut self) {
-        // xsynth can't reset at the moment
-        self.kdmapi.reset();
+        self.sender.reset_synth();
+        // self.kdmapi.reset();
     }
 }

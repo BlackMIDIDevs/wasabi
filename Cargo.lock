@@ -1503,18 +1503,6 @@ dependencies = [
 [[package]]
 name = "midi-toolkit-rs"
 version = "0.1.0"
-source = "git+https://github.com/arduano/midi-toolkit-rs?rev=c6a054c#c6a054c96dfcdcdc21d7b8eff4e0e173abef2e3c"
-dependencies = [
- "crossbeam-channel",
- "gen-iter",
- "midi-toolkit-rs-derive 0.1.0 (git+https://github.com/arduano/midi-toolkit-rs?rev=c6a054c)",
- "num-traits",
- "rayon",
-]
-
-[[package]]
-name = "midi-toolkit-rs"
-version = "0.1.0"
 source = "git+https://github.com/arduano/midi-toolkit-rs?rev=f30ca8a#f30ca8a2e5aeabd8bae94f1811f42b1dad7a25bf"
 dependencies = [
  "crossbeam-channel",
@@ -1528,19 +1516,6 @@ dependencies = [
 name = "midi-toolkit-rs-derive"
 version = "0.1.0"
 source = "git+https://github.com/arduano/midi-toolkit-rs?rev=51ff0dc#51ff0dcef32451d022bc240c190f0eb31d494765"
-dependencies = [
- "convert_case",
- "num-traits",
- "proc-macro-error",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "midi-toolkit-rs-derive"
-version = "0.1.0"
-source = "git+https://github.com/arduano/midi-toolkit-rs?rev=c6a054c#c6a054c96dfcdcdc21d7b8eff4e0e173abef2e3c"
 dependencies = [
  "convert_case",
  "num-traits",
@@ -3441,7 +3416,7 @@ checksum = "d2d7d3948613f75c98fd9328cfdcc45acc4d360655289d0a7d4ec931392200a3"
 [[package]]
 name = "xsynth-core"
 version = "0.1.0"
-source = "git+https://github.com/arduano/xsynth.git?rev=e7eda70#e7eda70043555642fb4f401244852a73e1c6a589"
+source = "git+https://github.com/arduano/xsynth.git?rev=09d19fb#09d19fb57374aed2fe31061683e52894ea917cce"
 dependencies = [
  "atomic_refcell",
  "bytemuck",
@@ -3461,15 +3436,16 @@ dependencies = [
 [[package]]
 name = "xsynth-realtime"
 version = "0.1.0"
-source = "git+https://github.com/arduano/xsynth.git?rev=e7eda70#e7eda70043555642fb4f401244852a73e1c6a589"
+source = "git+https://github.com/arduano/xsynth.git?rev=09d19fb#09d19fb57374aed2fe31061683e52894ea917cce"
 dependencies = [
  "atomic_refcell",
  "bytemuck",
  "cbindgen",
  "cpal",
  "crossbeam-channel",
+ "gen-iter",
  "lazy_static",
- "midi-toolkit-rs 0.1.0 (git+https://github.com/arduano/midi-toolkit-rs?rev=c6a054c)",
+ "midi-toolkit-rs 0.1.0 (git+https://github.com/arduano/midi-toolkit-rs?rev=f30ca8a)",
  "rayon",
  "simdeez",
  "sofiza",

@@ -46,7 +46,7 @@ impl FPS {
         if self.0.len() == 0 {
             return 0.0;
         } else {
-            self.0.len() as f64 / self.0.front().unwrap().elapsed().as_secs_f64() / FPS_WINDOW
+            self.0.len() as f64 / self.0.front().unwrap().elapsed().as_secs_f64()
         }
     }
 }
@@ -62,7 +62,7 @@ pub struct GuiWasabiWindow {
 impl GuiWasabiWindow {
     pub fn new(renderer: &mut GuiRenderer) -> GuiWasabiWindow {
         let mut midi_file = MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
-            "D:/Midis/The Quarantine Project.mid",
+            "F:/Fast MIDIs/The Nuker 3 F3.mid",
             SimpleTemporaryPlayer::new(),
         ));
 

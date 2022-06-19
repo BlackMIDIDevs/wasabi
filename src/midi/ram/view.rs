@@ -1,6 +1,9 @@
 use std::ops::Range;
 
 use gen_iter::GenIter;
+use rayon::iter::{
+    IndexedParallelIterator, IntoParallelRefIterator, IntoParallelRefMutIterator, ParallelIterator,
+};
 
 use crate::midi::{DisplacedMIDINote, MIDIColor, MIDINoteColumnView, MIDINoteViews, MIDIViewRange};
 
@@ -69,63 +72,66 @@ impl InRamNoteViewData {
         let old_view_range = self.view_range;
         self.view_range = new_view_range;
 
-        for (column, data) in self.columns.iter().zip(self.column_view_data.iter_mut()) {
-            if column.blocks.len() == 0 {
-                continue;
-            }
-
-            let mut new_block_start = data.block_range.start;
-            let mut new_block_end = data.block_range.end;
-
-            if new_view_range.end > old_view_range.end {
-                while new_block_end < column.blocks.len() {
-                    let block = &column.blocks[new_block_end];
-                    if block.start >= new_view_range.end {
-                        break;
-                    }
-                    data.notes_to_end += block.notes.len();
-                    new_block_end += 1;
+        self.columns
+            .par_iter()
+            .zip(self.column_view_data.par_iter_mut())
+            .for_each(|(column, data)| {
+                if column.blocks.len() == 0 {
+                    return;
                 }
-            } else if new_view_range.end < old_view_range.end {
-                while new_block_end > 0 {
-                    let block = &column.blocks[new_block_end - 1];
-                    if block.start < new_view_range.end {
-                        break;
-                    }
-                    data.notes_to_end -= block.notes.len();
-                    new_block_end -= 1;
-                }
-            } else {
-                // No change in view end
-            }
 
-            if new_view_range.start > old_view_range.start {
-                while new_block_start < column.blocks.len() {
-                    let block = &column.blocks[new_block_start];
-                    if block.max_end() >= new_view_range.start {
-                        break;
-                    }
-                    data.notes_to_start += block.notes.len();
-                    new_block_start += 1;
-                }
-            } else if new_view_range.start < old_view_range.start {
-                // It is smaller, we have to start from the beginning
-                data.notes_to_start = 0;
-                new_block_start = 0;
-                while new_block_start < column.blocks.len() {
-                    let block = &column.blocks[new_block_start];
-                    if block.max_end() >= new_view_range.start {
-                        break;
-                    }
-                    data.notes_to_start += block.notes.len();
-                    new_block_start += 1;
-                }
-            } else {
-                // No change in view start
-            }
+                let mut new_block_start = data.block_range.start;
+                let mut new_block_end = data.block_range.end;
 
-            data.block_range = new_block_start..new_block_end;
-        }
+                if new_view_range.end > old_view_range.end {
+                    while new_block_end < column.blocks.len() {
+                        let block = &column.blocks[new_block_end];
+                        if block.start >= new_view_range.end {
+                            break;
+                        }
+                        data.notes_to_end += block.notes.len();
+                        new_block_end += 1;
+                    }
+                } else if new_view_range.end < old_view_range.end {
+                    while new_block_end > 0 {
+                        let block = &column.blocks[new_block_end - 1];
+                        if block.start < new_view_range.end {
+                            break;
+                        }
+                        data.notes_to_end -= block.notes.len();
+                        new_block_end -= 1;
+                    }
+                } else {
+                    // No change in view end
+                }
+
+                if new_view_range.start > old_view_range.start {
+                    while new_block_start < column.blocks.len() {
+                        let block = &column.blocks[new_block_start];
+                        if block.max_end() >= new_view_range.start {
+                            break;
+                        }
+                        data.notes_to_start += block.notes.len();
+                        new_block_start += 1;
+                    }
+                } else if new_view_range.start < old_view_range.start {
+                    // It is smaller, we have to start from the beginning
+                    data.notes_to_start = 0;
+                    new_block_start = 0;
+                    while new_block_start < column.blocks.len() {
+                        let block = &column.blocks[new_block_start];
+                        if block.max_end() >= new_view_range.start {
+                            break;
+                        }
+                        data.notes_to_start += block.notes.len();
+                        new_block_start += 1;
+                    }
+                } else {
+                    // No change in view start
+                }
+
+                data.block_range = new_block_start..new_block_end;
+            });
     }
 
     fn allows_seeking_backward(&self) -> bool {
