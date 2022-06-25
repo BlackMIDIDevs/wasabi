@@ -1348,6 +1348,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "10257499f089cd156ad82d0a9cd57d9501fa2c989068992a97eb3c27836f206b"
 
 [[package]]
+name = "lazy-regex"
+version = "2.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b6b12f2eb6ed7d39405c5eb25a034b4c106a9ad87a6d9be3298de6c5f32fd57d"
+dependencies = [
+ "lazy-regex-proc_macros",
+ "once_cell",
+ "regex",
+]
+
+[[package]]
+name = "lazy-regex-proc_macros"
+version = "2.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2496e5264069bc726ccf37eb76b9cd89406ae110d836c3f76729f99c8a23293"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "regex",
+ "syn",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3416,7 +3439,7 @@ checksum = "d2d7d3948613f75c98fd9328cfdcc45acc4d360655289d0a7d4ec931392200a3"
 [[package]]
 name = "xsynth-core"
 version = "0.1.0"
-source = "git+https://github.com/arduano/xsynth.git?rev=09d19fb#09d19fb57374aed2fe31061683e52894ea917cce"
+source = "git+https://github.com/arduano/xsynth.git?rev=29728da#29728da1533bbbc3e14bd87a9c17c600406ff342"
 dependencies = [
  "atomic_refcell",
  "bytemuck",
@@ -3431,12 +3454,13 @@ dependencies = [
  "spin_sleep",
  "to_vec",
  "wav",
+ "xsynth-soundfonts",
 ]
 
 [[package]]
 name = "xsynth-realtime"
 version = "0.1.0"
-source = "git+https://github.com/arduano/xsynth.git?rev=09d19fb#09d19fb57374aed2fe31061683e52894ea917cce"
+source = "git+https://github.com/arduano/xsynth.git?rev=29728da#29728da1533bbbc3e14bd87a9c17c600406ff342"
 dependencies = [
  "atomic_refcell",
  "bytemuck",
@@ -3454,6 +3478,14 @@ dependencies = [
  "to_vec",
  "wav",
  "xsynth-core",
+]
+
+[[package]]
+name = "xsynth-soundfonts"
+version = "0.1.0"
+source = "git+https://github.com/arduano/xsynth.git?rev=29728da#29728da1533bbbc3e14bd87a9c17c600406ff342"
+dependencies = [
+ "lazy-regex",
 ]
 
 [[package]]

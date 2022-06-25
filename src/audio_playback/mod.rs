@@ -19,14 +19,17 @@ impl SimpleTemporaryPlayer {
 
         let params = synth.stream_params();
 
-        let soundfonts: Vec<Arc<dyn SoundfontBase>> = vec![Arc::new(SampleSoundfont::new(
-            params.sample_rate,
-            params.channels,
-        ))];
+        let soundfont: Arc<dyn SoundfontBase> = Arc::new(
+            SampleSoundfont::new(
+                "D:/Midis/Loud and Proud Remastered/Axley Presets/Loud and Proud Remastered.sfz",
+                params.clone(),
+            )
+            .unwrap(),
+        );
 
-        sender.send_event(SynthEvent::AllChannels(ChannelEvent::SetSoundfonts(
-            soundfonts,
-        )));
+        sender.send_event(SynthEvent::AllChannels(ChannelEvent::SetSoundfonts(vec![
+            soundfont,
+        ])));
 
         // FIXME: Basically I'm leaking a pointer because the synth can't be sent between
         // threads and I really cbb making a synth state manager rn
