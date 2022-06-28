@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use kdmapi::{KDMAPIStream, KDMAPI};
 use xsynth_core::{
-    channel::ChannelEvent,
+    channel::{ChannelConfigEvent, ChannelEvent},
     soundfont::{SampleSoundfont, SoundfontBase},
 };
 use xsynth_realtime::{RealtimeEventSender, RealtimeSynth, SynthEvent};
@@ -27,9 +27,8 @@ impl SimpleTemporaryPlayer {
             .unwrap(),
         );
 
-        sender.send_event(SynthEvent::AllChannels(ChannelEvent::SetSoundfonts(vec![
-            soundfont,
-        ])));
+        sender.send_config(ChannelConfigEvent::SetSoundfonts(vec![soundfont]));
+        sender.send_config(ChannelConfigEvent::SetLayerCount(Some(4)));
 
         // FIXME: Basically I'm leaking a pointer because the synth can't be sent between
         // threads and I really cbb making a synth state manager rn
