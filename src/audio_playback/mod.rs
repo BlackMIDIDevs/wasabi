@@ -2,10 +2,10 @@ use std::sync::Arc;
 
 use kdmapi::{KDMAPIStream, KDMAPI};
 use xsynth_core::{
-    channel::{ChannelConfigEvent, ChannelEvent},
+    channel::ChannelConfigEvent,
     soundfont::{SampleSoundfont, SoundfontBase},
 };
-use xsynth_realtime::{RealtimeEventSender, RealtimeSynth, SynthEvent};
+use xsynth_realtime::{config::XSynthRealtimeConfig, RealtimeEventSender, RealtimeSynth};
 
 pub struct SimpleTemporaryPlayer {
     kdmapi: KDMAPIStream,
@@ -14,7 +14,13 @@ pub struct SimpleTemporaryPlayer {
 
 impl SimpleTemporaryPlayer {
     pub fn new() -> Self {
-        let synth = RealtimeSynth::open_with_all_defaults();
+        let config = XSynthRealtimeConfig {
+            render_window_ms: 10.0,
+            use_threadpool: false,
+            ..Default::default()
+        };
+
+        let synth = RealtimeSynth::open_with_default_output(config);
         let mut sender = synth.get_senders();
 
         let params = synth.stream_params();
