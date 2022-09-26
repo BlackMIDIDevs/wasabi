@@ -5,6 +5,7 @@ mod scene;
 use std::{
     collections::VecDeque,
     time::{Duration, Instant},
+    env,
 };
 
 use egui::{style::Margin, Frame, Label, Visuals};
@@ -61,8 +62,9 @@ pub struct GuiWasabiWindow {
 
 impl GuiWasabiWindow {
     pub fn new(renderer: &mut GuiRenderer) -> GuiWasabiWindow {
+        let args: Vec<String> = env::args().collect();
         let mut midi_file = MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
-            "F:/Fast MIDIs/The Nuker 3 F3.mid",
+            &args[1],
             SimpleTemporaryPlayer::new(),
         ));
 
@@ -81,23 +83,36 @@ impl GuiWasabiWindow {
     pub fn layout(&mut self, state: &mut GuiState) {
         let ctx = state.gui.context();
 
+        let window_size = vec![ctx.available_rect().width(), ctx.available_rect().height()];
+
         self.fps.update();
 
         ctx.set_visuals(Visuals::dark());
 
+        let note_speed = 0.25;
+
         // Render the top panel
         egui::TopBottomPanel::top("Top panel")
-            .height_range(100.0..=100.0)
+            .height_range(60.0..=60.0)
             .show(&ctx, |ui| {
-                if let Some(length) = self.midi_file.midi_length() {
-                    let time = self.midi_file.timer().get_time().as_secs_f64();
-                    let progress = (time / length) as f32;
-                    ui.add(egui::ProgressBar::new(progress));
+                let one_sec = Duration::from_secs(1);
+                let time = self.midi_file.timer().get_time();
+                let events = ui.input().events.clone();
+                for event in &events {
+                    match event {
+                        egui::Event::Key{key, pressed, ..} => if pressed == &true {
+                            match key {
+                                egui::Key::ArrowRight => self.midi_file.timer_mut().seek(time + one_sec),
+                                egui::Key::ArrowLeft => self.midi_file.timer_mut().seek(time - one_sec),
+                                egui::Key::Space => self.midi_file.timer_mut().toggle_pause(),
+                                _ => {},
+                            }
+                        },
+                        _ => {},
+                    }
                 }
 
-                ui.add(Label::new(format!("FPS: {}", self.fps.get_fps().round())));
-
-                if ui.small_button("Toggle Pause").clicked() {
+                /*if ui.small_button("Play/Pause").clicked() {
                     self.midi_file.timer_mut().toggle_pause();
                 }
 
@@ -113,7 +128,25 @@ impl GuiWasabiWindow {
                     } else {
                         self.midi_file.timer_mut().seek(Duration::from_secs(0));
                     }
+                }*/
+
+                if let Some(length) = self.midi_file.midi_length() {
+                    let time = self.midi_file.timer().get_time().as_secs_f64();
+                    let mut progress = time / length;
+                    let progress_prev = progress.clone();
+                    if time > length { let time = length; }
+                    let slider = egui::Slider::new(&mut progress, 0.0..=1.0)
+                        .show_value(false);
+                    ui.spacing_mut().slider_width = window_size[0] - 15.0;
+                    ui.add(slider);
+                    if progress_prev != progress {
+                        let position = Duration::from_secs_f64(progress * length);
+                        self.midi_file.timer_mut().seek(position);
+                    }
+
+                    ui.add(Label::new(format!("Time: {}/{}", time as u32, length as u32)));
                 }
+                ui.add(Label::new(format!("FPS: {}", self.fps.get_fps().round())));
             });
 
         // Calculate available space left for keyboard and notes
@@ -121,7 +154,7 @@ impl GuiWasabiWindow {
         // renderer tells us the key colors
         let available = ctx.available_rect();
         let height = available.height();
-        let keyboard_height = 60.0 / 720.0 * available.width() as f32;
+        let keyboard_height = 70.0 / 760.0 * available.width() as f32;
         let notes_height = height - keyboard_height;
 
         let key_view = self.keyboard_layout.get_view_for_keys(0, 127);
@@ -137,7 +170,7 @@ impl GuiWasabiWindow {
             .show(&ctx, |mut ui| {
                 let result =
                     self.render_scene
-                        .draw(state, &mut ui, &key_view, &mut self.midi_file, 0.25);
+                        .draw(state, &mut ui, &key_view, &mut self.midi_file, note_speed.clone());
                 render_result_data = Some(result);
             });
 

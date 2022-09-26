@@ -22,8 +22,8 @@ cgmath = "0.18.0"
 nalgebra-glm = "0.17.0"
 rayon = "1.5.3"
 midi-toolkit-rs = { git = "https://github.com/arduano/midi-toolkit-rs", rev = "f30ca8a" }
-xsynth-core = { git = "https://github.com/arduano/xsynth.git", rev = "c4dc7ae" }
-xsynth-realtime = { git = "https://github.com/arduano/xsynth.git", rev = "c4dc7ae" }
+xsynth-core = { path = "../xsynth/core", package = "xsynth-core" }
+xsynth-realtime = { path = "../xsynth/realtime", package = "xsynth-realtime" }
 gen-iter = "0.2.1"
 enum_dispatch = "0.3.8"
 palette = "0.6.0"
