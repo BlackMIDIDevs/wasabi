@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use vulkano::{
     device::{
-        physical::PhysicalDevice, Device, DeviceCreateInfo, DeviceExtensions, Features, Queue,
+        physical::PhysicalDevice, physical::PhysicalDeviceType, Device, DeviceCreateInfo, DeviceExtensions, Features, Queue,
         QueueCreateInfo,
     },
     format::Format,
@@ -50,13 +50,25 @@ impl Renderer {
         .expect("Failed to create instance");
 
         // Get most performant physical device (device with most memory)
-        let physical = PhysicalDevice::enumerate(&instance)
+        /*let physical = PhysicalDevice::enumerate(&instance)
             .fold(None, |acc, val| {
                 if acc.is_none() {
                     Some(val)
                 } else if acc.unwrap().properties().max_compute_shared_memory_size
                     >= val.properties().max_compute_shared_memory_size
                 {
+                    acc
+                } else {
+                    Some(val)
+                }
+            })
+            .expect("No physical device found");*/
+
+        let physical = PhysicalDevice::enumerate(&instance)
+            .fold(None, |acc, val| {
+                if acc.is_none() {
+                    Some(val)
+                } else if acc.unwrap().properties().device_type == PhysicalDeviceType::DiscreteGpu {
                     acc
                 } else {
                     Some(val)

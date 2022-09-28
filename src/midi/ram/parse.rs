@@ -121,6 +121,8 @@ impl InRamMIDIFile {
 
             let mut time = 0.0;
 
+            let mut notes: usize = 0;
+
             fn flush_keys(time: f64, keys: &mut Vec<Key>) {
                 for key in keys.iter_mut() {
                     key.flush(time);
@@ -139,6 +141,7 @@ impl InRamMIDIFile {
                         Event::NoteOn(e) => {
                             let track_chan = track * 16 + e.channel as u32;
                             keys[e.key as usize].add_note(track_chan);
+                            notes += 1;
                         }
                         Event::NoteOff(e) => {
                             let track_chan = track * 16 + e.channel as u32;
@@ -155,7 +158,7 @@ impl InRamMIDIFile {
                 key.end_all(time);
             }
 
-            keys
+            (keys, notes)
         });
 
         let audio_join_handle = thread::spawn(|| {
@@ -176,7 +179,7 @@ impl InRamMIDIFile {
         drop(key_snd);
         drop(audio_snd);
 
-        let keys = key_join_handle.join().unwrap();
+        let (keys, note_count) = key_join_handle.join().unwrap();
         let audio = audio_join_handle.join().unwrap();
 
         let mut timer = TimeKeeper::new();
@@ -192,6 +195,7 @@ impl InRamMIDIFile {
             view_data: InRamNoteViewData::new(columns, midi.track_count()),
             timer,
             length,
+            note_count,
         }
     }
 }

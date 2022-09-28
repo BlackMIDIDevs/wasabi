@@ -39,7 +39,8 @@ impl InRamNoteViewData {
                 start: 0.0,
                 end: 0.0,
             },
-            default_track_colors: MIDIColor::new_vec_for_tracks(track_count),
+            // default_track_colors: MIDIColor::new_vec_for_tracks(track_count),
+            default_track_colors: MIDIColor::new_random_vec_for_tracks(track_count),
         }
     }
 }

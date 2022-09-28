@@ -23,7 +23,7 @@ pub fn main() {
 
     // Create renderer for our scene & ui
     let window_size = [1280, 720];
-    let mut renderer = Renderer::new(&event_loop, window_size, PresentMode::Mailbox, "Wholesome");
+    let mut renderer = Renderer::new(&event_loop, window_size, PresentMode::Fifo, "Wasabi");
 
     // Vulkano & Winit & egui integration
     let mut gui = Gui::new(renderer.surface(), renderer.queue(), false);

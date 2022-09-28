@@ -11,17 +11,18 @@ impl GuiKeyboard {
         GuiKeyboard {}
     }
 
-    pub fn draw(&mut self, ui: &mut Ui, key_view: &KeyboardView, colors: &Vec<Option<MIDIColor>>) {
+    pub fn draw(&mut self, ui: &mut Ui, key_view: &KeyboardView, colors: &Vec<Option<MIDIColor>>) -> usize {
         let (rect, _) = ui.allocate_exact_size(ui.available_size(), Sense::click());
 
         let mut mesh = Mesh::default();
 
         let painter = ui.painter();
-        let ppp = ui.ctx().pixels_per_point();
-        let unit = 1.0 / ppp;
-        let rounded = painter.round_to_pixel(1.0); // + 0.5 * unit;
 
-        let md_height = rect.height() * 0.04;
+        let key_density = (((rect.width() as usize / key_view.visible_range.len()) / 8) as u8).max(1);
+
+        let onepx = painter.round_to_pixel(1.0 * key_density as f32);
+
+        let md_height = rect.height() * 0.042;
 
         let black_key_overlap = md_height / 1.5;
         let top = rect.top() + md_height;
@@ -33,6 +34,8 @@ impl GuiKeyboard {
         fn map_color(col: MIDIColor) -> Color32 {
             Color32::from_rgb(col.red(), col.green(), col.blue())
         }
+
+        let mut pressed: usize = 0;
 
         for (i, key) in key_view.iter_visible_keys() {
             if !key.black {
@@ -48,11 +51,12 @@ impl GuiKeyboard {
                     let top_left2 = Pos2::new(map_x(key.left), bottom - white_key_bottom);
                     let bottom_right2 = Pos2::new(map_x(key.right), bottom);
                     let rect2 = Rect::from_min_max(top_left2, bottom_right2);
-                    let color2 = Color32::from_rgb(60, 60, 60);
+                    let color2 = Color32::from_rgb(120, 120, 120);
 
                     mesh.add_colored_rect(rect1, color);
                     mesh.add_colored_rect(rect2, color2);
                 } else {  // Pressed
+                    pressed += 1;
                     let top_left = Pos2::new(map_x(key.left), top);
                     let bottom_right = Pos2::new(map_x(key.right), bottom);
                     let rect = Rect::from_min_max(top_left, bottom_right);
@@ -60,7 +64,7 @@ impl GuiKeyboard {
                 }
                 let color3 = Color32::from_rgb(20, 20, 20);
                 let top_left3 = Pos2::new(map_x(key.right), top);
-                let bottom_right3 = Pos2::new(map_x(key.right) - rounded, bottom);
+                let bottom_right3 = Pos2::new(map_x(key.right) - onepx, bottom);
                 let rect3 = Rect::from_min_max(top_left3, bottom_right3);
                 mesh.add_colored_rect(rect3, color3);
             }
@@ -69,7 +73,7 @@ impl GuiKeyboard {
         let bar_top_left = Pos2::new(rect.left(), rect.top());
         let bar_bottom_right = Pos2::new(rect.right(), top);
         let bar_rect = Rect::from_min_max(bar_top_left, bar_bottom_right);
-        let bar_color = Color32::from_rgb(30, 0, 0);
+        let bar_color = Color32::from_rgb(65, 0, 30);
 
         mesh.add_colored_rect(bar_rect, bar_color);
 
@@ -80,25 +84,26 @@ impl GuiKeyboard {
                 if color == Color32::BLACK {  // Not pressed
                     let black_key_bottom = md_height;
 
-                    let top_left1 = Pos2::new(map_x(key.left) - rounded, top);
-                    let bottom_right1 = Pos2::new(map_x(key.right) + rounded, black_bottom);
+                    let top_left1 = Pos2::new(map_x(key.left) - onepx, top);
+                    let bottom_right1 = Pos2::new(map_x(key.right) + onepx, black_bottom);
                     let rect1 = Rect::from_min_max(top_left1, bottom_right1);
 
                     let top_left2 = Pos2::new(map_x(key.left), top - black_key_overlap);
                     let bottom_right2 = Pos2::new(map_x(key.right), black_bottom - black_key_bottom);
                     let rect2 = Rect::from_min_max(top_left2, bottom_right2);
-                    let color2 = Color32::from_rgb(8, 8, 8);
+                    let color2 = Color32::from_rgb(30, 30, 30);
 
                     mesh.add_colored_rect(rect1, color);
                     mesh.add_colored_rect(rect2, color2);
                 } else {  // Pressed
+                    pressed += 1;
                     let top_left1 = Pos2::new(map_x(key.left), top);
                     let bottom_right1 = Pos2::new(map_x(key.right), black_bottom);
                     let rect1 = Rect::from_min_max(top_left1, bottom_right1);
                     let color1 = Color32::from_rgb(color.r() / 2, color.g() / 2, color.b() / 2);
 
-                    let top_left2 = Pos2::new(map_x(key.left) + rounded, top + rounded);
-                    let bottom_right2 = Pos2::new(map_x(key.right) - rounded, black_bottom - rounded);
+                    let top_left2 = Pos2::new(map_x(key.left) + onepx, top);
+                    let bottom_right2 = Pos2::new(map_x(key.right) - onepx, black_bottom - onepx);
                     let rect2 = Rect::from_min_max(top_left2, bottom_right2);
 
                     mesh.add_colored_rect(rect1, color1);
@@ -108,5 +113,7 @@ impl GuiKeyboard {
         }
 
         ui.painter().add(mesh);
+
+        pressed
     }
 }
