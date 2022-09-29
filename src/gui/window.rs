@@ -62,7 +62,7 @@ pub struct GuiWasabiWindow {
 impl GuiWasabiWindow {
     pub fn new(renderer: &mut GuiRenderer) -> GuiWasabiWindow {
         let mut midi_file = MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
-            "/mnt/jar/Midis/The Quarantine Project.mid",
+            "D:/Midis/The Quarantine Project.mid",
             SimpleTemporaryPlayer::new(),
         ));
 

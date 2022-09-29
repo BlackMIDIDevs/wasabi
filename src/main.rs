@@ -11,16 +11,8 @@ mod scenes;
 use egui_winit_vulkano::Gui;
 use gui::{window::GuiWasabiWindow, GuiRenderer, GuiState};
 use renderer::Renderer;
-use vulkano::{
-    format::Format,
-    image::{ImageUsage, StorageImage},
-    swapchain::PresentMode,
-};
-use vulkano_util::{
-    context::{VulkanoConfig, VulkanoContext},
-    renderer::{DeviceImageView, DEFAULT_IMAGE_FORMAT},
-    window::{VulkanoWindows, WindowDescriptor},
-};
+use vulkano::swapchain::PresentMode;
+
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
