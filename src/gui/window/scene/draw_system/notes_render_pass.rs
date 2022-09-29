@@ -8,7 +8,7 @@ use vulkano::{
     },
     descriptor_set::{PersistentDescriptorSet, WriteDescriptorSet},
     device::{Device, Queue},
-    format::{ClearValue, Format},
+    format::Format,
     image::{view::ImageView, AttachmentImage, ImageAccess, ImageViewAbstract},
     pipeline::{
         graphics::{

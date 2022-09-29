@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use kdmapi::{KDMAPIStream, KDMAPI};
 use xsynth_core::{
     channel::ChannelConfigEvent,
     soundfont::{SampleSoundfont, SoundfontBase},
