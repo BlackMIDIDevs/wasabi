@@ -101,7 +101,7 @@ impl InRamAudioPlayer {
             size = right - left;
         }
 
-        return events.len();
+        events.len()
     }
 
     fn seek_to_time(&mut self, time: f64) {

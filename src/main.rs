@@ -69,13 +69,13 @@ pub fn main() {
                     _ => (),
                 }
             }
-            Event::RedrawRequested(window_id) if window_id == window_id => {
+            Event::RedrawRequested(_) => {
                 renderer.render(|frame, future| {
                     // Generate egui layouts
                     gui.immediate_ui(|mut gui| {
                         let mut state = GuiState {
                             gui: &mut gui,
-                            frame: &frame,
+                            frame,
                         };
                         gui_state.layout(&mut state);
                     });
