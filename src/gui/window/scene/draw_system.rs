@@ -24,6 +24,7 @@ impl<T> UnsafeSyncCell<T> {
         UnsafeSyncCell(UnsafeCell::new(value))
     }
 
+    #[allow(clippy::mut_from_ref)]
     pub unsafe fn get_mut(&self) -> &mut T {
         &mut *self.0.get()
     }
@@ -112,7 +113,9 @@ impl NoteRenderer {
 
                 let buffer_writer = UnsafeSyncCell::new(buffer.write().unwrap());
 
+                // A system to write multiple note columns into 1 large allocated array in parallel
                 let written_notes = self.thrad_pool.install(|| {
+                    // For each note column, write it into the buffer
                     let written_notes_per_key = columns_view_info.par_iter_mut().map(|column| {
                         if column.remaining == 0 {
                             return 0;
@@ -146,10 +149,11 @@ impl NoteRenderer {
                                         note.color.as_u32(),
                                     );
 
-                                    if note.start <= 0.0 {
-                                        if column.color.is_none() && note.start + note.len > 0.0 {
-                                            column.color = Some(note.color);
-                                        }
+                                    if note.start <= 0.0
+                                        && column.color.is_none()
+                                        && note.start + note.len > 0.0
+                                    {
+                                        column.color = Some(note.color);
                                     }
                                 } else {
                                     panic!("Invalid iterator length");
@@ -159,7 +163,7 @@ impl NoteRenderer {
 
                         column.remaining -= allowed_to_write;
 
-                        return allowed_to_write;
+                        allowed_to_write
                     });
 
                     written_notes_per_key.sum::<usize>()
@@ -170,11 +174,11 @@ impl NoteRenderer {
                 cycle += 1;
 
                 if notes_pushed >= total_notes {
-                    return NotePassStatus::Finished {
+                    NotePassStatus::Finished {
                         remaining: written_notes as u32,
-                    };
+                    }
                 } else {
-                    return NotePassStatus::HasMoreNotes;
+                    NotePassStatus::HasMoreNotes
                 }
             });
 

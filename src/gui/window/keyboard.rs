@@ -11,7 +11,7 @@ impl GuiKeyboard {
         GuiKeyboard {}
     }
 
-    pub fn draw(&mut self, ui: &mut Ui, key_view: &KeyboardView, colors: &Vec<Option<MIDIColor>>) {
+    pub fn draw(&mut self, ui: &mut Ui, key_view: &KeyboardView, colors: &[Option<MIDIColor>]) {
         let (rect, _) = ui.allocate_exact_size(ui.available_size(), Sense::click());
 
         let mut mesh = Mesh::default();

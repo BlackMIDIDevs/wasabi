@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::time::{Duration, Instant};
 
 struct NotifySignal {
@@ -28,10 +30,7 @@ impl TimerState {
     }
 
     fn is_paused(&self) -> bool {
-        match self {
-            TimerState::Paused { .. } => true,
-            _ => false,
-        }
+        matches!(self, TimerState::Paused { .. })
     }
 }
 
@@ -189,7 +188,7 @@ impl TimeListener {
 
     pub fn wait_until_unpause(&mut self) -> UnpauseWaitResult {
         if !self.current.is_paused() {
-            UnpauseWaitResult::Unpaused;
+            return UnpauseWaitResult::Unpaused;
         }
 
         let mut seeked = None;

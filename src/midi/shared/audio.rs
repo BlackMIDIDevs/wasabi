@@ -86,7 +86,7 @@ impl CompressedAudio {
                 let mut new_vec = Vec::with_capacity(builder_vec.len());
                 new_vec.append(&mut builder_vec);
 
-                let new_control_vec = if control_builder_vec.len() > 0 {
+                let new_control_vec = if !control_builder_vec.is_empty() {
                     let mut new_control_vec = Vec::with_capacity(control_builder_vec.len());
                     new_control_vec.append(&mut control_builder_vec);
                     Some(new_control_vec)
@@ -103,11 +103,11 @@ impl CompressedAudio {
         })
     }
 
-    pub fn iter_events<'a>(&'a self) -> impl 'a + Iterator<Item = u32> {
+    pub fn iter_events(&self) -> impl '_ + Iterator<Item = u32> {
         CompressedAudio::iter_events_from_vec(self.data.iter().cloned())
     }
 
-    pub fn iter_control_events<'a>(&'a self) -> impl 'a + Iterator<Item = u32> {
+    pub fn iter_control_events(&self) -> impl '_ + Iterator<Item = u32> {
         CompressedAudio::iter_events_from_vec(self.control_only_data.iter().flatten().cloned())
     }
 

@@ -120,7 +120,7 @@ impl Renderer {
         // Create swap chain & frame(s) to which we'll render
         let swap_chain = ManagedSwapchain::create(
             surface.clone(),
-            physical_device.clone(),
+            physical_device,
             device.clone(),
             present_mode,
         );

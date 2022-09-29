@@ -83,7 +83,7 @@ impl Key {
     }
 
     pub fn flush(&mut self, time: f64) {
-        if self.block_builder.len() > 0 {
+        if !self.block_builder.is_empty() {
             let block = InRamNoteBlock::new_from_trackchans(time, self.block_builder.drain(..));
             self.column.push(block);
         }
@@ -121,7 +121,7 @@ impl InRamMIDIFile {
 
             let mut time = 0.0;
 
-            fn flush_keys(time: f64, keys: &mut Vec<Key>) {
+            fn flush_keys(time: f64, keys: &mut [Key]) {
                 for key in keys.iter_mut() {
                     key.flush(time);
                 }

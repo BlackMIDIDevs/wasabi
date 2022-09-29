@@ -18,24 +18,20 @@ use self::{keyboard::GuiKeyboard, scene::GuiRenderScene};
 
 use super::{GuiRenderer, GuiState};
 
-struct FPS(VecDeque<Instant>);
+struct Fps(VecDeque<Instant>);
 
 const FPS_WINDOW: f64 = 0.5;
 
-impl FPS {
+impl Fps {
     fn new() -> Self {
         Self(VecDeque::new())
     }
 
     fn update(&mut self) {
         self.0.push_back(Instant::now());
-        loop {
-            if let Some(front) = self.0.front() {
-                if front.elapsed().as_secs_f64() > FPS_WINDOW {
-                    self.0.pop_front();
-                } else {
-                    break;
-                }
+        while let Some(front) = self.0.front() {
+            if front.elapsed().as_secs_f64() > FPS_WINDOW {
+                self.0.pop_front();
             } else {
                 break;
             }
@@ -43,8 +39,8 @@ impl FPS {
     }
 
     fn get_fps(&self) -> f64 {
-        if self.0.len() == 0 {
-            return 0.0;
+        if self.0.is_empty() {
+            0.0
         } else {
             self.0.len() as f64 / self.0.front().unwrap().elapsed().as_secs_f64()
         }
@@ -56,7 +52,7 @@ pub struct GuiWasabiWindow {
     keyboard_layout: keyboard_layout::KeyboardLayout,
     keyboard: GuiKeyboard,
     midi_file: MIDIFileUnion,
-    fps: FPS,
+    fps: Fps,
 }
 
 impl GuiWasabiWindow {
@@ -73,7 +69,7 @@ impl GuiWasabiWindow {
             keyboard_layout: keyboard_layout::KeyboardLayout::new(&Default::default()),
             keyboard: GuiKeyboard::new(),
             midi_file,
-            fps: FPS::new(),
+            fps: Fps::new(),
         }
     }
 
@@ -126,7 +122,7 @@ impl GuiWasabiWindow {
 
         let key_view = self.keyboard_layout.get_view_for_keys(0, 127);
 
-        let no_frame = Frame::default().margin(Margin::same(0.0));
+        let no_frame = Frame::default().inner_margin(Margin::same(0.0));
 
         let mut render_result_data = None;
 
@@ -134,10 +130,10 @@ impl GuiWasabiWindow {
         egui::TopBottomPanel::top("Note panel")
             .height_range(notes_height..=notes_height)
             .frame(no_frame)
-            .show(&ctx, |mut ui| {
+            .show(&ctx, |ui| {
                 let result =
                     self.render_scene
-                        .draw(state, &mut ui, &key_view, &mut self.midi_file, 0.25);
+                        .draw(state, ui, &key_view, &mut self.midi_file, 0.25);
                 render_result_data = Some(result);
             });
 

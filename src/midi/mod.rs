@@ -67,7 +67,7 @@ impl MIDIColor {
     }
 
     pub fn blue(&self) -> u8 {
-        (self.0 >> 0) as u8
+        self.0 as u8
     }
 }
 
@@ -90,7 +90,7 @@ pub trait MIDIFile: MIDIFileBase {
     where
         Self: 'a;
 
-    fn get_current_column_views<'a>(&'a mut self, range: f64) -> Self::ColumnsViews<'a>;
+    fn get_current_column_views(&mut self, range: f64) -> Self::ColumnsViews<'_>;
 }
 
 #[enum_dispatch]
@@ -101,8 +101,8 @@ pub trait MIDINoteViews {
     where
         Self: 'a;
 
-    fn get_column<'a>(&'a self, key: usize) -> Self::View<'a>;
-    fn range<'a>(&'a self) -> MIDIViewRange;
+    fn get_column(&self, key: usize) -> Self::View<'_>;
+    fn range(&self) -> MIDIViewRange;
 }
 
 pub trait MIDINoteColumnView: Send {
@@ -110,7 +110,7 @@ pub trait MIDINoteColumnView: Send {
     where
         Self: 'a;
 
-    fn iterate_displaced_notes<'a>(&'a self) -> Self::Iter<'a>;
+    fn iterate_displaced_notes(&self) -> Self::Iter<'_>;
 }
 
 pub struct DisplacedMIDINote {

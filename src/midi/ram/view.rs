@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::ops::Range;
 
 use gen_iter::GenIter;
@@ -76,7 +78,7 @@ impl InRamNoteViewData {
             .par_iter()
             .zip(self.column_view_data.par_iter_mut())
             .for_each(|(column, data)| {
-                if column.blocks.len() == 0 {
+                if column.blocks.is_empty() {
                     return;
                 }
 
@@ -142,7 +144,7 @@ impl InRamNoteViewData {
 impl<'a> MIDINoteViews for InRamCurrentNoteViews<'a> {
     type View<'b> = InRamNoteColumnView<'b> where Self: 'a + 'b;
 
-    fn get_column<'b>(&'b self, key: usize) -> Self::View<'b> {
+    fn get_column(&self, key: usize) -> Self::View<'_> {
         InRamNoteColumnView {
             view: self.data,
             column: &self.data.columns[key],
@@ -151,7 +153,7 @@ impl<'a> MIDINoteViews for InRamCurrentNoteViews<'a> {
         }
     }
 
-    fn range<'b>(&'b self) -> MIDIViewRange {
+    fn range(&self) -> MIDIViewRange {
         self.data.view_range
     }
 }
@@ -164,7 +166,7 @@ struct InRamNoteBlockIter<'a, Iter: Iterator<Item = DisplacedMIDINote>> {
 impl<'a> MIDINoteColumnView for InRamNoteColumnView<'a> {
     type Iter<'b> = impl 'b + ExactSizeIterator<Item = DisplacedMIDINote> where Self: 'b;
 
-    fn iterate_displaced_notes<'b>(&'b self) -> Self::Iter<'b> {
+    fn iterate_displaced_notes(&self) -> Self::Iter<'_> {
         let colors = &self.view.default_track_colors;
 
         let iter = GenIter(move || {
@@ -174,7 +176,7 @@ impl<'a> MIDINoteColumnView for InRamNoteColumnView<'a> {
 
                 for note in block.notes.iter().rev() {
                     yield DisplacedMIDINote {
-                        start: start,
+                        start,
                         len: note.len,
                         color: colors[note.track_chan as usize],
                     };
@@ -182,10 +184,7 @@ impl<'a> MIDINoteColumnView for InRamNoteColumnView<'a> {
             }
         });
 
-        InRamNoteBlockIter {
-            view: self,
-            iter: iter.into_iter(),
-        }
+        InRamNoteBlockIter { view: self, iter }
     }
 }
 
