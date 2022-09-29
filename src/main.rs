@@ -1,5 +1,4 @@
 #![feature(type_alias_impl_trait)]
-#![feature(generic_associated_types)]
 #![feature(generators)]
 
 mod audio_playback;
@@ -72,11 +71,8 @@ pub fn main() {
             Event::RedrawRequested(_) => {
                 renderer.render(|frame, future| {
                     // Generate egui layouts
-                    gui.immediate_ui(|mut gui| {
-                        let mut state = GuiState {
-                            gui: &mut gui,
-                            frame,
-                        };
+                    gui.immediate_ui(|gui| {
+                        let mut state = GuiState { gui, frame };
                         gui_state.layout(&mut state);
                     });
 
