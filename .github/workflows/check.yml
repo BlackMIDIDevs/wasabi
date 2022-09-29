@@ -16,6 +16,7 @@ jobs:
           components: rustfmt, clippy
 
       - uses: actions-rs/cargo@v1
+        name: Check code formatting
         with:
           command: fmt
           args: --all -- --check
@@ -24,6 +25,7 @@ jobs:
         run: sudo apt-get install -y libasound2-dev portaudio19-dev build-essential libpulse-dev libdbus-1-dev
 
       - uses: actions-rs/cargo@v1
+        name: Check code with clippy
         with:
           command: clippy
           args: --all -- --deny "warnings"
