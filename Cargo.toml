@@ -17,10 +17,6 @@ vulkano = "0.31.0"
 kdmapi = { git = "https://github.com/arduano/kdmapi.git", rev = "9329cfc" }
 egui = "0.19.0"
 winit = "0.27.3"
-#image = "0.24.4"
-#ahash = "0.8.0"
-#cgmath = "0.18.0"
-#nalgebra-glm = "0.17.0"
 rayon = "1.5.3"
 midi-toolkit-rs = { git = "https://github.com/arduano/midi-toolkit-rs", rev = "f30ca8a" }
 xsynth-core = { git = "https://github.com/arduano/xsynth.git", rev = "c4dc7ae" }

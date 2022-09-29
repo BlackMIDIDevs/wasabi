@@ -11,11 +11,11 @@ const float border = 2.0;
 
 void main() {
     vec2 v_uv = frag_tex_coord;
-    vec3 color = frag_color;
+    vec3 color = frag_color * 1.3;
     float aspect = win_size.y / win_size.x;
 
-    float lighten = cos(v_uv.x + 1) + 3 / 4;
-    color += vec3(lighten, lighten, lighten) * 0.3;
+    float lighten = cos(v_uv.x + 1) + 0.7;
+    color *= vec3(lighten, lighten, lighten);
 
     float horiz_width_pixels = v_note_size.x / 2 * win_size.x;
     float vert_width_pixels = v_note_size.y / 2 * win_size.y;
