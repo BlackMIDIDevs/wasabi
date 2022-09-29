@@ -13,6 +13,7 @@ use egui_winit_vulkano::Gui;
 use gui::{window::GuiWasabiWindow, GuiRenderer, GuiState};
 use renderer::Renderer;
 use vulkano::swapchain::PresentMode;
+
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -32,7 +33,13 @@ pub fn main() {
     let mut renderer = Renderer::new(&event_loop, window_size, PresentMode::Fifo, "Wasabi");
 
     // Vulkano & Winit & egui integration
-    let mut gui = Gui::new(renderer.surface(), renderer.queue(), false);
+    let mut gui = Gui::new(
+        &event_loop,
+        renderer.surface(),
+        Some(renderer.format()),
+        renderer.queue(),
+        false,
+    );
 
     let mut gui_render_data = GuiRenderer {
         gui: &mut gui,
@@ -63,7 +70,7 @@ pub fn main() {
                     _ => (),
                 }
             }
-            Event::RedrawRequested(window_id) if window_id == window_id => {
+            Event::RedrawRequested(_) => {
                 renderer.render(|frame, future| {
                     // Generate egui layouts
                     gui.immediate_ui(|mut gui| {

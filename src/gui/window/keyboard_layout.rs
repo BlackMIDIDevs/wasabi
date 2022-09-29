@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::ops::Range;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -52,12 +54,12 @@ fn load_key_numbers() -> [usize; 257] {
     let mut white = 0;
     let mut numbers = [0; 257];
 
-    for i in 0..257 {
+    for (i, number) in numbers.iter_mut().enumerate() {
         if is_black(i) {
-            numbers[i] = black;
+            *number = black;
             black += 1;
         } else {
-            numbers[i] = white;
+            *number = white;
             white += 1;
         }
     }
@@ -255,19 +257,19 @@ impl<'a> KeyboardView<'a> {
         }
     }
 
-    pub fn iter_visible_keys<'b>(&'b self) -> impl 'b + Iterator<Item = (usize, KeyPosition)> {
+    pub fn iter_visible_keys(&self) -> impl '_ + Iterator<Item = (usize, KeyPosition)> {
         self.visible_range.clone().map(|i| (i, self.key(i)))
     }
 
-    pub fn iter_all_keys<'b>(&'b self) -> impl 'b + Iterator<Item = KeyPosition> {
+    pub fn iter_all_keys(&self) -> impl '_ + Iterator<Item = KeyPosition> {
         (0..257).map(|i| self.key(i))
     }
 
-    pub fn iter_visible_notes<'b>(&'b self) -> impl 'b + Iterator<Item = (usize, KeyPosition)> {
+    pub fn iter_visible_notes(&self) -> impl '_ + Iterator<Item = (usize, KeyPosition)> {
         self.visible_range.clone().map(|i| (i, self.note(i)))
     }
 
-    pub fn iter_all_notes<'b>(&'b self) -> impl 'b + Iterator<Item = KeyPosition> {
+    pub fn iter_all_notes(&self) -> impl '_ + Iterator<Item = KeyPosition> {
         (0..257).map(|i| self.note(i))
     }
 }

@@ -23,11 +23,11 @@ use self::{keyboard::GuiKeyboard, scene::GuiRenderScene};
 use super::{GuiRenderer, GuiState};
 use crate::settings::{WasabiPermanentSettings, WasabiTemporarySettings};
 
-struct FPS(VecDeque<Instant>);
+struct Fps(VecDeque<Instant>);
 
 const FPS_WINDOW: f64 = 0.5;
 
-impl FPS {
+impl Fps {
     fn new() -> Self {
         Self(VecDeque::new())
     }
@@ -58,7 +58,7 @@ pub struct GuiWasabiWindow {
     keyboard_layout: keyboard_layout::KeyboardLayout,
     keyboard: GuiKeyboard,
     midi_file: Option<MIDIFileUnion>,
-    fps: FPS,
+    fps: Fps,
 }
 
 impl GuiWasabiWindow {
@@ -68,7 +68,7 @@ impl GuiWasabiWindow {
             keyboard_layout: keyboard_layout::KeyboardLayout::new(&Default::default()),
             keyboard: GuiKeyboard::new(),
             midi_file: None,
-            fps: FPS::new(),
+            fps: Fps::new(),
         }
     }
 
@@ -87,7 +87,7 @@ impl GuiWasabiWindow {
         // Settings window
         if temp_settings.settings_visible {
             let _settings_frame = Frame::default()
-                .margin(egui::style::Margin::same(10.0))
+                .inner_margin(egui::style::Margin::same(10.0))
                 .fill(egui::Color32::from_rgba_unmultiplied(0, 0, 0, 170))
                 .rounding(egui::Rounding::same(2.0));
 
@@ -162,7 +162,7 @@ impl GuiWasabiWindow {
         let panel_height = if temp_settings.panel_visible {
             let panel_height = 40.0;
             let panel_frame = Frame::default()
-            .margin(egui::style::Margin::same(10.0))
+            .inner_margin(egui::style::Margin::same(10.0))
             .fill(egui::Color32::from_rgb(42, 42, 42));
             egui::TopBottomPanel::top("Top panel")
             .height_range(panel_height..=panel_height)
@@ -245,11 +245,11 @@ impl GuiWasabiWindow {
         let key_view = self.keyboard_layout.get_view_for_keys(perm_settings.first_key, perm_settings.last_key);
 
         let no_frame = Frame::default()
-            .margin(Margin::same(0.0))
+            .inner_margin(Margin::same(0.0))
             .fill(perm_settings.bg_color);
 
         let stats_frame = Frame::default()
-            .margin(egui::style::Margin::same(10.0))
+            .inner_margin(egui::style::Margin::same(10.0))
             .fill(egui::Color32::from_rgba_unmultiplied(0, 0, 0, 170))
             .rounding(egui::Rounding::same(5.0));
 

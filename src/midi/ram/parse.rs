@@ -83,7 +83,7 @@ impl Key {
     }
 
     pub fn flush(&mut self, time: f64) {
-        if self.block_builder.len() > 0 {
+        if !self.block_builder.is_empty() {
             let block = InRamNoteBlock::new_from_trackchans(time, self.block_builder.drain(..));
             self.column.push(block);
         }

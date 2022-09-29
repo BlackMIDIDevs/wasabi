@@ -6,20 +6,17 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-egui_winit_vulkano = { git = "https://github.com/Kaydax/egui_winit_vulkano.git" }
-vulkano-shaders = { git = "https://github.com/Kaydax/vulkano.git" }
-egui_demo_lib = "0.17.0"
-vulkano-win = { git = "https://github.com/Kaydax/vulkano.git" }
-egui-winit = "0.17.0"
+egui_winit_vulkano = "0.20.0"
+vulkano-shaders = "0.31.0"
+egui_demo_lib = "0.19.0"
+vulkano-win = "0.31.0"
+vulkano-util = "0.31.0"
+egui-winit = "0.19.0"
 bytemuck = "1.8.0"
-vulkano = { git = "https://github.com/Kaydax/vulkano.git" }
+vulkano = "0.31.0"
 kdmapi = { git = "https://github.com/arduano/kdmapi.git", rev = "9329cfc" }
-egui = "0.17.0"
-winit = "0.26"
-image = "0.23.14"
-ahash = "0.7.6"
-cgmath = "0.18.0"
-nalgebra-glm = "0.17.0"
+egui = "0.19.0"
+winit = "0.27.3"
 rayon = "1.5.3"
 midi-toolkit-rs = { git = "https://github.com/arduano/midi-toolkit-rs", rev = "f30ca8a" }
 xsynth-core = { path = "../xsynth/core" }
