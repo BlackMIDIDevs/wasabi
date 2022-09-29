@@ -99,7 +99,7 @@ impl Key {
 }
 
 impl InRamMIDIFile {
-    pub fn load_from_file(path: &str, player: SimpleTemporaryPlayer) -> Self {
+    pub fn load_from_file(path: &str, player: SimpleTemporaryPlayer, random_colors: bool) -> Self {
         let midi = TKMIDIFile::open(path, None).unwrap();
 
         let ppq = midi.ppq();
@@ -192,7 +192,7 @@ impl InRamMIDIFile {
             .collect();
 
         InRamMIDIFile {
-            view_data: InRamNoteViewData::new(columns, midi.track_count()),
+            view_data: InRamNoteViewData::new(columns, midi.track_count(), random_colors),
             timer,
             length,
             note_count,

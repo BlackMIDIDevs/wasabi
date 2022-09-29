@@ -7,6 +7,7 @@ mod gui;
 mod midi;
 mod renderer;
 mod scenes;
+mod settings;
 
 use egui_winit_vulkano::Gui;
 use gui::{window::GuiWasabiWindow, GuiRenderer, GuiState};
@@ -16,10 +17,15 @@ use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
 };
+use settings::{WasabiPermanentSettings, WasabiTemporarySettings};
 
 pub fn main() {
     // Winit event loop
     let event_loop = EventLoop::new();
+
+    // Load the settings values
+    let mut perm_settings = WasabiPermanentSettings::new_or_load();
+    let mut temp_settings = WasabiTemporarySettings::new();
 
     // Create renderer for our scene & ui
     let window_size = [1280, 720];
@@ -65,7 +71,7 @@ pub fn main() {
                             gui: &mut gui,
                             frame: &frame,
                         };
-                        gui_state.layout(&mut state);
+                        gui_state.layout(&mut state, &mut perm_settings, &mut temp_settings);
                     });
 
                     // Render the layouts

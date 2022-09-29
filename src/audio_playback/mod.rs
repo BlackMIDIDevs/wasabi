@@ -5,15 +5,16 @@ use xsynth_core::{
     channel::ChannelConfigEvent,
     soundfont::{SampleSoundfont, SoundfontBase},
 };
-use xsynth_realtime::{config::XSynthRealtimeConfig, RealtimeEventSender, RealtimeSynth};
+use xsynth_realtime::{config::XSynthRealtimeConfig, RealtimeEventSender, RealtimeSynth, RealtimeSynthStatsReader};
 
 pub struct SimpleTemporaryPlayer {
     //kdmapi: KDMAPIStream,
     sender: RealtimeEventSender,
+    pub stats: RealtimeSynthStatsReader,
 }
 
 impl SimpleTemporaryPlayer {
-    pub fn new() -> Self {
+    pub fn new(sfz_path: &str) -> Self {
         let config = XSynthRealtimeConfig {
             render_window_ms: 1000.0 / 60.0,
             use_threadpool: true,
@@ -25,23 +26,27 @@ impl SimpleTemporaryPlayer {
 
         let params = synth.stream_params();
 
-        let soundfont: Arc<dyn SoundfontBase> = Arc::new(
-            SampleSoundfont::new(
-                "/home/jim/Black MIDIs/SoundFonts/MBMS Soundfonts/CFaz Keys IV Concert Grand Piano/.PianoSamples/cfaz.sfz",
-                params.clone(),
-            )
-            .unwrap(),
-        );
+        if !sfz_path.is_empty() {
+            let soundfont: Arc<dyn SoundfontBase> = Arc::new(
+                SampleSoundfont::new(
+                    sfz_path,
+                    params.clone(),
+                )
+                .unwrap(),
+            );
+            sender.send_config(ChannelConfigEvent::SetSoundfonts(vec![soundfont]));
+        }
 
-        sender.send_config(ChannelConfigEvent::SetSoundfonts(vec![soundfont]));
         sender.send_config(ChannelConfigEvent::SetLayerCount(Some(4)));
+
+        let stats = synth.get_stats();
 
         // FIXME: Basically I'm leaking a pointer because the synth can't be sent between
         // threads and I really cbb making a synth state manager rn
         Box::leak(Box::new(synth));
 
         //let kdmapi = KDMAPI.open_stream();
-        SimpleTemporaryPlayer { sender }//{ kdmapi, sender }
+        SimpleTemporaryPlayer { sender, stats }
     }
 
     pub fn push_events(&mut self, data: impl Iterator<Item = u32>) {
