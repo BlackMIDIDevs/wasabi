@@ -3,7 +3,9 @@ use std::sync::Arc;
 use bytemuck::{Pod, Zeroable};
 use vulkano::{
     buffer::{BufferUsage, CpuAccessibleBuffer, TypedBufferAccess},
-    command_buffer::{AutoCommandBufferBuilder, CommandBufferUsage, SubpassContents},
+    command_buffer::{
+        AutoCommandBufferBuilder, CommandBufferUsage, RenderPassBeginInfo, SubpassContents,
+    },
     descriptor_set::{PersistentDescriptorSet, WriteDescriptorSet},
     device::{Device, Queue},
     format::{ClearValue, Format},
@@ -47,12 +49,26 @@ struct BufferSet {
     index: usize,
 }
 
+const BUFFER_USAGE: BufferUsage = BufferUsage {
+    transfer_src: true,
+    transfer_dst: true,
+    uniform_texel_buffer: true,
+    storage_texel_buffer: true,
+    uniform_buffer: true,
+    storage_buffer: true,
+    index_buffer: true,
+    vertex_buffer: true,
+    indirect_buffer: true,
+    shader_device_address: true,
+    ..BufferUsage::empty()
+};
+
 fn get_buffer(device: &Arc<Device>) -> Arc<CpuAccessibleBuffer<[NoteVertex]>> {
     unsafe {
         CpuAccessibleBuffer::uninitialized_array(
             device.clone(),
             NOTE_BUFFER_SIZE,
-            BufferUsage::all(),
+            BUFFER_USAGE,
             false,
         )
         .expect("failed to create buffer")
@@ -164,7 +180,7 @@ impl NoteRenderPass {
 
         let key_locations = CpuAccessibleBuffer::from_iter(
             gfx_queue.device().clone(),
-            BufferUsage::all(),
+            BUFFER_USAGE,
             false,
             [[Default::default(); 256]].into_iter(),
         )
@@ -262,7 +278,7 @@ impl NoteRenderPass {
 
             let mut command_buffer_builder = AutoCommandBufferBuilder::primary(
                 self.gfx_queue.device().clone(),
-                self.gfx_queue.family(),
+                self.gfx_queue.queue_family_index(),
                 CommandBufferUsage::OneTimeSubmit,
             )
             .unwrap();
@@ -270,13 +286,13 @@ impl NoteRenderPass {
             let (clears, pipeline, render_pass) = if first_pass {
                 first_pass = false;
                 (
-                    vec![[0.0, 0.0, 0.0, 0.0].into(), 1.0f32.into()],
+                    vec![Some([0.0, 0.0, 0.0, 0.0].into()), Some(1.0f32.into())],
                     &self.pipeline_clear,
                     &self.render_pass_clear,
                 )
             } else {
                 (
-                    vec![ClearValue::None, ClearValue::None],
+                    vec![None, None],
                     &self.pipeline_draw_over,
                     &self.render_pass_draw_over,
                 )
@@ -301,7 +317,13 @@ impl NoteRenderPass {
             .unwrap();
 
             command_buffer_builder
-                .begin_render_pass(framebuffer.clone(), SubpassContents::Inline, clears)
+                .begin_render_pass(
+                    RenderPassBeginInfo {
+                        clear_values: clears,
+                        ..RenderPassBeginInfo::framebuffer(framebuffer)
+                    },
+                    SubpassContents::Inline,
+                )
                 .unwrap();
 
             let push_constants = gs::ty::PushConstants {
@@ -366,7 +388,12 @@ impl NoteRenderPass {
 mod gs {
     vulkano_shaders::shader! {
         ty: "geometry",
-        path: "shaders/notes.geom"
+        path: "shaders/notes.geom",
+        types_meta: {
+            use bytemuck::{Pod, Zeroable};
+
+            #[derive(Clone, Copy, Zeroable, Pod)]
+        },
     }
 }
 

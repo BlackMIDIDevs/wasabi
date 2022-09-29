@@ -8,15 +8,15 @@ use xsynth_core::{
 use xsynth_realtime::{config::XSynthRealtimeConfig, RealtimeEventSender, RealtimeSynth};
 
 pub struct SimpleTemporaryPlayer {
-    kdmapi: KDMAPIStream,
+    //kdmapi: KDMAPIStream,
     sender: RealtimeEventSender,
 }
 
 impl SimpleTemporaryPlayer {
     pub fn new() -> Self {
         let config = XSynthRealtimeConfig {
-            render_window_ms: 10.0,
-            use_threadpool: false,
+            render_window_ms: 0.5,
+            use_threadpool: true,
             ..Default::default()
         };
 
@@ -26,11 +26,7 @@ impl SimpleTemporaryPlayer {
         let params = synth.stream_params();
 
         let soundfont: Arc<dyn SoundfontBase> = Arc::new(
-            SampleSoundfont::new(
-                "D:/Midis/Loud and Proud Remastered/Axley Presets/Loud and Proud Remastered.sfz",
-                params.clone(),
-            )
-            .unwrap(),
+            SampleSoundfont::new("/mnt/jar/Midis/Soundfonts/Loud and Proud Remastered/Kaydax Presets/Loud and Proud Remastered (Realistic).sfz", params.clone()).unwrap(),
         );
 
         sender.send_config(ChannelConfigEvent::SetSoundfonts(vec![soundfont]));
@@ -40,8 +36,8 @@ impl SimpleTemporaryPlayer {
         // threads and I really cbb making a synth state manager rn
         Box::leak(Box::new(synth));
 
-        let kdmapi = KDMAPI.open_stream();
-        SimpleTemporaryPlayer { kdmapi, sender }
+        //let kdmapi = KDMAPI.open_stream();
+        SimpleTemporaryPlayer { sender }
     }
 
     pub fn push_events(&mut self, data: impl Iterator<Item = u32>) {

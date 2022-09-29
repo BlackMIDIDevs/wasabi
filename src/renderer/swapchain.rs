@@ -5,8 +5,8 @@ use vulkano::{
     format::Format,
     image::{view::ImageView, ImageUsage, SwapchainImage},
     swapchain::{
-        AcquireError, PresentMode, Surface, Swapchain, SwapchainAcquireFuture, SwapchainCreateInfo,
-        SwapchainCreationError,
+        AcquireError, PresentInfo, PresentMode, Surface, Swapchain, SwapchainAcquireFuture,
+        SwapchainCreateInfo, SwapchainCreationError,
     },
     sync::{self, FlushError, GpuFuture},
 };
@@ -36,7 +36,7 @@ pub struct ManagedSwapchain {
 impl ManagedSwapchain {
     pub fn create(
         surface: Arc<Surface<Window>>,
-        physical: PhysicalDevice,
+        physical: Arc<PhysicalDevice>,
         device: Arc<Device>,
         present_mode: PresentMode,
     ) -> Self {
@@ -58,7 +58,10 @@ impl ManagedSwapchain {
                 min_image_count: surface_capabilities.min_image_count,
                 image_format,
                 image_extent,
-                image_usage: ImageUsage::color_attachment(),
+                image_usage: ImageUsage {
+                    color_attachment: true,
+                    ..ImageUsage::empty()
+                },
                 composite_alpha: surface_capabilities
                     .supported_composite_alpha
                     .iter()
@@ -185,8 +188,11 @@ impl<'a> SwapchainFrame<'a> {
 
         let sc = &mut self.managed_swap_chain;
 
+        let mut present_info = PresentInfo::swapchain(sc.swap_chain.clone());
+        present_info.index = self.image_num;
+
         let future = after_future
-            .then_swapchain_present(queue.clone(), sc.swap_chain.clone(), self.image_num)
+            .then_swapchain_present(queue.clone(), present_info)
             .then_signal_fence_and_flush();
 
         match future {

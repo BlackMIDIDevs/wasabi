@@ -11,7 +11,16 @@ mod scenes;
 use egui_winit_vulkano::Gui;
 use gui::{window::GuiWasabiWindow, GuiRenderer, GuiState};
 use renderer::Renderer;
-use vulkano::swapchain::PresentMode;
+use vulkano::{
+    format::Format,
+    image::{ImageUsage, StorageImage},
+    swapchain::PresentMode,
+};
+use vulkano_util::{
+    context::{VulkanoConfig, VulkanoContext},
+    renderer::{DeviceImageView, DEFAULT_IMAGE_FORMAT},
+    window::{VulkanoWindows, WindowDescriptor},
+};
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -23,10 +32,21 @@ pub fn main() {
 
     // Create renderer for our scene & ui
     let window_size = [1280, 720];
-    let mut renderer = Renderer::new(&event_loop, window_size, PresentMode::Mailbox, "Wholesome");
+    let mut renderer = Renderer::new(
+        &event_loop,
+        window_size,
+        PresentMode::Immediate,
+        "Wholesome",
+    );
 
     // Vulkano & Winit & egui integration
-    let mut gui = Gui::new(renderer.surface(), renderer.queue(), false);
+    let mut gui = Gui::new(
+        &event_loop,
+        renderer.surface(),
+        Some(renderer.format()),
+        renderer.queue(),
+        false,
+    );
 
     let mut gui_render_data = GuiRenderer {
         gui: &mut gui,
