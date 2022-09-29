@@ -9,11 +9,15 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
+        name: Initialize Cargo
         with:
           profile: minimal
           toolchain: nightly
           override: true
           components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+        name: Cargo Cache
 
       - uses: actions-rs/cargo@v1
         name: Check code formatting
