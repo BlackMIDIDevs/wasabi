@@ -184,10 +184,7 @@ impl<'a> MIDINoteColumnView for InRamNoteColumnView<'a> {
             }
         });
 
-        InRamNoteBlockIter {
-            view: self,
-            iter,
-        }
+        InRamNoteBlockIter { view: self, iter }
     }
 }
 
