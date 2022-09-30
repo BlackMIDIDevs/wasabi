@@ -29,7 +29,7 @@ layout(set = 0, binding = 0) uniform Keys {
 void main()
 {
     float start = start_length[0].x / consts.height_time;
-    float end = start + start_length[0].y / consts.height_time;
+    float end = min(1.5, start + start_length[0].y / consts.height_time);
     start = -(start * 2 - 1);
     end = -(end * 2 - 1);
 

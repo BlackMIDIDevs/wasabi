@@ -150,6 +150,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "atomic_float"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "62af46d040ba9df09edc6528dae9d8e49f5f3e82f55b7d2ec31a733c38dbc49d"
+
+[[package]]
 name = "atomic_refcell"
 version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2801,6 +2807,7 @@ dependencies = [
 name = "wasabi"
 version = "0.1.0"
 dependencies = [
+ "atomic_float",
  "bytemuck",
  "crossbeam-channel",
  "egui",
@@ -2813,6 +2820,7 @@ dependencies = [
  "midi-toolkit-rs 0.1.0 (git+https://github.com/arduano/midi-toolkit-rs?rev=f30ca8a)",
  "palette",
  "rayon",
+ "rustc-hash",
  "vulkano",
  "vulkano-shaders",
  "vulkano-util",

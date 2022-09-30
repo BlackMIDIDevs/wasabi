@@ -1,8 +1,4 @@
-use std::{
-    collections::{HashMap, VecDeque},
-    sync::Arc,
-    thread,
-};
+use std::{collections::VecDeque, sync::Arc, thread};
 
 use midi_toolkit::{
     events::{Event, MIDIEvent, MIDIEventEnum},
@@ -16,12 +12,13 @@ use midi_toolkit::{
         unwrap_items, TimeCaster,
     },
 };
+use rustc_hash::FxHashMap;
 
 use crate::{
     audio_playback::SimpleTemporaryPlayer,
     midi::{
         ram::{audio_player::InRamAudioPlayer, column::InRamNoteColumn, view::InRamNoteViewData},
-        shared::{audio::CompressedAudio, timer::TimeKeeper},
+        shared::{audio::CompressedAudio, timer::TimeKeeper, track_channel::TrackAndChannel},
     },
 };
 
@@ -34,8 +31,8 @@ struct UnendedNote {
 
 struct Key {
     column: Vec<InRamNoteBlock>,
-    block_builder: Vec<u32>,
-    unended_notes: HashMap<u32, VecDeque<UnendedNote>>,
+    block_builder: Vec<TrackAndChannel>,
+    unended_notes: FxHashMap<TrackAndChannel, VecDeque<UnendedNote>>,
 }
 
 impl Key {
@@ -43,11 +40,11 @@ impl Key {
         Key {
             column: Vec::new(),
             block_builder: Vec::new(),
-            unended_notes: HashMap::new(),
+            unended_notes: FxHashMap::default(),
         }
     }
 
-    fn add_note(&mut self, track_chan: u32) {
+    fn add_note(&mut self, track_chan: TrackAndChannel) {
         let block_index = self.block_builder.len();
         let column_index = self.column.len();
         self.block_builder.push(track_chan);
@@ -61,7 +58,7 @@ impl Key {
         });
     }
 
-    pub fn end_note(&mut self, track_chan: u32, time: f64) {
+    pub fn end_note(&mut self, track_chan: TrackAndChannel, time: f64) {
         let note = self
             .unended_notes
             .get_mut(&track_chan)
@@ -137,11 +134,11 @@ impl InRamMIDIFile {
                     let track = event.track;
                     match event.as_event() {
                         Event::NoteOn(e) => {
-                            let track_chan = track * 16 + e.channel as u32;
+                            let track_chan = TrackAndChannel::new(track, e.channel);
                             keys[e.key as usize].add_note(track_chan);
                         }
                         Event::NoteOff(e) => {
-                            let track_chan = track * 16 + e.channel as u32;
+                            let track_chan = TrackAndChannel::new(track, e.channel);
                             keys[e.key as usize].end_note(track_chan, time);
                         }
                         _ => {}

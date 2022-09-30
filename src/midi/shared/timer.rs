@@ -236,4 +236,8 @@ impl TimeListener {
             }
         }
     }
+
+    pub fn get_time(&self) -> Duration {
+        self.current.get_time()
+    }
 }

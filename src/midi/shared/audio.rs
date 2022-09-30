@@ -86,12 +86,12 @@ impl CompressedAudio {
                 let mut new_vec = Vec::with_capacity(builder_vec.len());
                 new_vec.append(&mut builder_vec);
 
-                let new_control_vec = if !control_builder_vec.is_empty() {
+                let new_control_vec = if control_builder_vec.is_empty() {
+                    None
+                } else {
                     let mut new_control_vec = Vec::with_capacity(control_builder_vec.len());
                     new_control_vec.append(&mut control_builder_vec);
                     Some(new_control_vec)
-                } else {
-                    None
                 };
 
                 yield CompressedAudio {

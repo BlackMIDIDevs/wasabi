@@ -1,13 +1,15 @@
+use crate::midi::shared::track_channel::TrackAndChannel;
+
 pub struct InRamNoteBlock {
     pub start: f64,
     pub max_length: f32,
-    pub notes: Vec<BasicMIDINote>,
+    pub notes: Box<[BasicMIDINote]>,
 }
 
 #[derive(Debug, Clone)]
 pub struct BasicMIDINote {
     pub len: f32,
-    pub track_chan: u32,
+    pub track_chan: TrackAndChannel,
 }
 
 impl InRamNoteBlock {
@@ -15,7 +17,7 @@ impl InRamNoteBlock {
     /// This assumes that the lengths will be added in the future.
     pub fn new_from_trackchans(
         time: f64,
-        track_chans_iter: impl ExactSizeIterator<Item = u32>,
+        track_chans_iter: impl ExactSizeIterator<Item = TrackAndChannel>,
     ) -> Self {
         let mut notes: Vec<BasicMIDINote> = Vec::with_capacity(track_chans_iter.len());
 
@@ -28,7 +30,7 @@ impl InRamNoteBlock {
 
         InRamNoteBlock {
             start: time,
-            notes,
+            notes: notes.into_boxed_slice(),
             max_length: 0.0,
         }
     }
