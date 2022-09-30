@@ -1,5 +1,8 @@
+#[allow(dead_code)]
 mod live;
+#[allow(dead_code)]
 mod ram;
+
 mod shared;
 use enum_dispatch::enum_dispatch;
 use palette::convert::FromColorUnclamped;

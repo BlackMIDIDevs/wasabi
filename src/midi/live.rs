@@ -4,18 +4,7 @@ use std::{
 };
 
 use atomic_float::AtomicF64;
-use midi_toolkit::{
-    events::{Event, MIDIEvent},
-    io::{DiskReader, DiskTrackReader, MIDIFile as TKMIDIFile},
-    pipe,
-    sequence::{
-        event::{
-            cancel_tempo_events, convert_events_into_batches, get_channels_array_statistics,
-            scale_event_time, EventBatch, TrackEvent,
-        },
-        unwrap_items, TimeCaster,
-    },
-};
+use midi_toolkit::{io::MIDIFile as TKMIDIFile, sequence::event::get_channels_array_statistics};
 
 use crate::audio_playback::SimpleTemporaryPlayer;
 

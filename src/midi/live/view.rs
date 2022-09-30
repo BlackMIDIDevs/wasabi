@@ -1,11 +1,7 @@
 #![allow(dead_code)]
 
-use std::ops::Range;
-
 use gen_iter::GenIter;
-use rayon::iter::{
-    IndexedParallelIterator, IntoParallelRefIterator, IntoParallelRefMutIterator, ParallelIterator,
-};
+use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
 
 use crate::midi::{DisplacedMIDINote, MIDIColor, MIDINoteColumnView, MIDINoteViews, MIDIViewRange};
 

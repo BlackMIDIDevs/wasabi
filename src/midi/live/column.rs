@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, ops::Range};
+use std::collections::VecDeque;
 
 use super::block::LiveRefNoteBlock;
 
