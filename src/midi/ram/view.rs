@@ -44,7 +44,7 @@ impl InRamNoteViewData {
             default_track_colors: match random_colors {
                 true => MIDIColor::new_random_vec_for_tracks(track_count),
                 false => MIDIColor::new_vec_for_tracks(track_count),
-            }
+            },
         }
     }
 }

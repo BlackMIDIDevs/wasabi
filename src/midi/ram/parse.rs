@@ -123,7 +123,7 @@ impl InRamMIDIFile {
 
             let mut notes: usize = 0;
 
-            fn flush_keys(time: f64, keys: &mut Vec<Key>) {
+            fn flush_keys(time: f64, keys: &mut [Key]) {
                 for key in keys.iter_mut() {
                     key.flush(time);
                 }

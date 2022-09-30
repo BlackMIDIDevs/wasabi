@@ -20,10 +20,6 @@ impl MIDIFileStats {
             passed_notes: 0,
         }
     }
-
-    pub fn add_notes(&mut self, count: usize) {
-        self.passed_notes += count
-    }
 }
 
 pub struct InRamMIDIFile {

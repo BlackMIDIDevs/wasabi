@@ -5,7 +5,9 @@ use xsynth_core::{
     channel::ChannelConfigEvent,
     soundfont::{SampleSoundfont, SoundfontBase},
 };
-use xsynth_realtime::{config::XSynthRealtimeConfig, RealtimeEventSender, RealtimeSynth, RealtimeSynthStatsReader};
+use xsynth_realtime::{
+    config::XSynthRealtimeConfig, RealtimeEventSender, RealtimeSynth, RealtimeSynthStatsReader,
+};
 
 pub struct SimpleTemporaryPlayer {
     //kdmapi: KDMAPIStream,
@@ -27,13 +29,8 @@ impl SimpleTemporaryPlayer {
         let params = synth.stream_params();
 
         if !sfz_path.is_empty() {
-            let soundfont: Arc<dyn SoundfontBase> = Arc::new(
-                SampleSoundfont::new(
-                    sfz_path,
-                    params.clone(),
-                )
-                .unwrap(),
-            );
+            let soundfont: Arc<dyn SoundfontBase> =
+                Arc::new(SampleSoundfont::new(sfz_path, params.clone()).unwrap());
             sender.send_config(ChannelConfigEvent::SetSoundfonts(vec![soundfont]));
         }
 

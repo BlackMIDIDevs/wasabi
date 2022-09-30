@@ -14,11 +14,11 @@ use gui::{window::GuiWasabiWindow, GuiRenderer, GuiState};
 use renderer::Renderer;
 use vulkano::swapchain::PresentMode;
 
+use settings::{WasabiPermanentSettings, WasabiTemporarySettings};
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
 };
-use settings::{WasabiPermanentSettings, WasabiTemporarySettings};
 
 pub fn main() {
     // Winit event loop
@@ -30,7 +30,7 @@ pub fn main() {
 
     // Create renderer for our scene & ui
     let window_size = [1280, 720];
-    let mut renderer = Renderer::new(&event_loop, window_size, PresentMode::Fifo, "Wasabi");
+    let mut renderer = Renderer::new(&event_loop, window_size, PresentMode::Immediate, "Wasabi");
 
     // Vulkano & Winit & egui integration
     let mut gui = Gui::new(
@@ -73,11 +73,8 @@ pub fn main() {
             Event::RedrawRequested(_) => {
                 renderer.render(|frame, future| {
                     // Generate egui layouts
-                    gui.immediate_ui(|mut gui| {
-                        let mut state = GuiState {
-                            gui: &mut gui,
-                            frame: &frame,
-                        };
+                    gui.immediate_ui(|gui| {
+                        let mut state = GuiState { gui, frame };
                         gui_state.layout(&mut state, &mut perm_settings, &mut temp_settings);
                     });
 

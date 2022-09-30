@@ -1,11 +1,7 @@
+use colors_transform::{Color, Rgb};
 use egui::Color32;
-use std::{
-    path::Path,
-    fs,
-    io::Write,
-};
 use serde_derive::{Deserialize, Serialize};
-use colors_transform::{Rgb, Color};
+use std::{fs, io::Write, path::Path};
 
 #[derive(Deserialize, Serialize)]
 struct WasabiConfigFile {
@@ -56,8 +52,18 @@ impl WasabiPermanentSettings {
             let s = WasabiPermanentSettings::default();
             let cfg = WasabiConfigFile {
                 note_speed: s.note_speed,
-                bg_color: Rgb::from(s.bg_color.r() as f32, s.bg_color.g() as f32, s.bg_color.b() as f32).to_css_hex_string(),
-                bar_color: Rgb::from(s.bar_color.r() as f32, s.bar_color.g() as f32, s.bar_color.b() as f32).to_css_hex_string(),
+                bg_color: Rgb::from(
+                    s.bg_color.r() as f32,
+                    s.bg_color.g() as f32,
+                    s.bg_color.b() as f32,
+                )
+                .to_css_hex_string(),
+                bar_color: Rgb::from(
+                    s.bar_color.r() as f32,
+                    s.bar_color.g() as f32,
+                    s.bar_color.b() as f32,
+                )
+                .to_css_hex_string(),
                 random_colors: s.random_colors,
                 sfz_path: s.sfz_path.clone(),
                 first_key: s.first_key,
@@ -65,7 +71,8 @@ impl WasabiPermanentSettings {
             };
             let toml: String = toml::to_string(&cfg).unwrap();
             let mut file = fs::File::create(CONFIG_PATH).unwrap();
-            file.write_all(toml.as_bytes()).expect("Error creating config");
+            file.write_all(toml.as_bytes())
+                .expect("Error creating config");
             s
         } else {
             let content = std::fs::read_to_string(CONFIG_PATH).unwrap();
@@ -74,12 +81,16 @@ impl WasabiPermanentSettings {
             let bar_color_tmp = Rgb::from_hex_str(&s.bar_color).unwrap();
             WasabiPermanentSettings {
                 note_speed: s.note_speed,
-                bg_color: Color32::from_rgb(bg_color_tmp.get_red() as u8,
-                                            bg_color_tmp.get_green() as u8,
-                                            bg_color_tmp.get_blue() as u8),
-                bar_color: Color32::from_rgb(bar_color_tmp.get_red() as u8,
-                                             bar_color_tmp.get_green() as u8,
-                                             bar_color_tmp.get_blue() as u8),
+                bg_color: Color32::from_rgb(
+                    bg_color_tmp.get_red() as u8,
+                    bg_color_tmp.get_green() as u8,
+                    bg_color_tmp.get_blue() as u8,
+                ),
+                bar_color: Color32::from_rgb(
+                    bar_color_tmp.get_red() as u8,
+                    bar_color_tmp.get_green() as u8,
+                    bar_color_tmp.get_blue() as u8,
+                ),
                 random_colors: s.random_colors,
                 sfz_path: s.sfz_path,
                 first_key: s.first_key,
@@ -91,8 +102,18 @@ impl WasabiPermanentSettings {
     pub fn save_to_file(&self) {
         let cfg = WasabiConfigFile {
             note_speed: self.note_speed,
-            bg_color: Rgb::from(self.bg_color.r() as f32, self.bg_color.g() as f32, self.bg_color.b() as f32).to_css_hex_string(),
-            bar_color: Rgb::from(self.bar_color.r() as f32, self.bar_color.g() as f32, self.bar_color.b() as f32).to_css_hex_string(),
+            bg_color: Rgb::from(
+                self.bg_color.r() as f32,
+                self.bg_color.g() as f32,
+                self.bg_color.b() as f32,
+            )
+            .to_css_hex_string(),
+            bar_color: Rgb::from(
+                self.bar_color.r() as f32,
+                self.bar_color.g() as f32,
+                self.bar_color.b() as f32,
+            )
+            .to_css_hex_string(),
             random_colors: self.random_colors,
             sfz_path: self.sfz_path.clone(),
             first_key: self.first_key,
@@ -103,7 +124,8 @@ impl WasabiPermanentSettings {
             fs::remove_file(CONFIG_PATH).expect("Error deleting old config");
         }
         let mut file = fs::File::create(CONFIG_PATH).unwrap();
-        file.write_all(toml.as_bytes()).expect("Error creating config");
+        file.write_all(toml.as_bytes())
+            .expect("Error creating config");
     }
 }
 
