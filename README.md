@@ -1,6 +1,6 @@
 <h1 align="center">Wasabi</h1>
-Wasabi is a modern and fast real-time MIDI player written in Rust.
-<img src="https://i.imgur.com/8Sc3yfe.png" width="512"/>
+<p align="center">Wasabi is a modern and fast real-time MIDI player written in Rust.</p>
+<p align="center"><img src="https://i.imgur.com/8Sc3yfe.png" width="512" align="center"/></p>
 
 ## Features
 - Multithreaded
