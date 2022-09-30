@@ -1,7 +1,4 @@
-use std::{
-    sync::{atomic::Ordering, Arc},
-    thread::JoinHandle,
-};
+use std::sync::{atomic::Ordering, Arc};
 
 use atomic_float::AtomicF64;
 use crossbeam_channel::Receiver;

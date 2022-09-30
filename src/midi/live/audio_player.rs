@@ -9,7 +9,7 @@ use crate::{
     audio_playback::SimpleTemporaryPlayer,
     midi::shared::{
         audio::CompressedAudio,
-        timer::{SeekWaitResult, TimeListener, UnpauseWaitResult, WaitResult},
+        timer::{TimeListener, UnpauseWaitResult, WaitResult},
     },
 };
 

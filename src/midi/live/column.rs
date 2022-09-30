@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use super::block::{LiveNoteBlock, LiveRefNoteBlock};
+use super::block::LiveRefNoteBlock;
 
 pub struct InRamNoteColumn {
     pub blocks: VecDeque<LiveRefNoteBlock>,

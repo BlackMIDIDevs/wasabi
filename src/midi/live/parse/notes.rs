@@ -8,7 +8,7 @@ use crossbeam_channel::{Receiver, Sender};
 use midi_toolkit::events::{Event, MIDIEvent, MIDIEventEnum};
 
 use crate::midi::{
-    live::block::{LiveNoteBlock, LiveNoteEnderHandle, LiveRefNoteBlock},
+    live::block::{LiveNoteEnderHandle, LiveRefNoteBlock},
     shared::track_channel::TrackAndChannel,
 };
 

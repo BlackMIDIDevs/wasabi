@@ -18,14 +18,11 @@ use midi_toolkit::{
     },
 };
 
-use crate::{
-    audio_playback::SimpleTemporaryPlayer,
-    midi::shared::{audio::CompressedAudio, timer::TimeKeeper},
-};
+use crate::{audio_playback::SimpleTemporaryPlayer, midi::shared::timer::TimeKeeper};
 
 use self::notes::LiveNoteBlockWithKey;
 
-use super::{audio_player::LiveAudioPlayer, block::LiveNoteEnderHandle};
+use super::audio_player::LiveAudioPlayer;
 
 mod audio;
 mod notes;
