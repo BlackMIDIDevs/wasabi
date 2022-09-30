@@ -4,6 +4,7 @@ mod shared;
 use enum_dispatch::enum_dispatch;
 use palette::convert::FromColorUnclamped;
 
+pub use live::LiveLoadMIDIFile;
 pub use ram::InRamMIDIFile;
 
 use self::shared::timer::TimeKeeper;
@@ -123,4 +124,5 @@ pub struct DisplacedMIDINote {
 #[enum_dispatch(MIDIFileBase)]
 pub enum MIDIFileUnion {
     InRam(ram::InRamMIDIFile),
+    Live(live::LiveLoadMIDIFile),
 }

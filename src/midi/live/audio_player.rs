@@ -57,6 +57,7 @@ impl LiveAudioPlayer {
                     let time = self.timer.get_time().as_secs_f64();
                     if time - event.time > max_fall_time {
                         self.player.push_events(event.iter_control_events());
+                        continue;
                     } else {
                         seek_catching_up = false;
                     }

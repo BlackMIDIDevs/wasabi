@@ -34,7 +34,7 @@ impl TimerState {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct TimeKeeper {
     current_state: TimerState,
     listeners: Vec<crossbeam_channel::Sender<NotifySignal>>,

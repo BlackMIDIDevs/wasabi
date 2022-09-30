@@ -27,7 +27,7 @@ impl LiveNoteBlock {
 
         for track_chan in track_chans_iter {
             notes.push(LiveMIDINote {
-                len: 0.0,
+                len: f32::INFINITY,
                 track_chan,
             });
         }

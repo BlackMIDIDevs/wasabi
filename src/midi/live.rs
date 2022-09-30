@@ -1,4 +1,28 @@
-use self::view::{InRamCurrentNoteViews, InRamNoteViewData};
+use std::{
+    sync::{atomic::Ordering, Arc},
+    thread,
+};
+
+use atomic_float::AtomicF64;
+use midi_toolkit::{
+    events::{Event, MIDIEvent},
+    io::{DiskReader, DiskTrackReader, MIDIFile as TKMIDIFile},
+    pipe,
+    sequence::{
+        event::{
+            cancel_tempo_events, convert_events_into_batches, get_channels_array_statistics,
+            scale_event_time, EventBatch, TrackEvent,
+        },
+        unwrap_items, TimeCaster,
+    },
+};
+
+use crate::audio_playback::SimpleTemporaryPlayer;
+
+use self::{
+    parse::LiveMidiParser,
+    view::{LiveCurrentNoteViews, LiveNoteViewData},
+};
 
 use super::{shared::timer::TimeKeeper, MIDIFile, MIDIFileBase, MIDIViewRange};
 
@@ -9,22 +33,57 @@ mod parse;
 pub mod view;
 
 pub struct LiveLoadMIDIFile {
-    view_data: InRamNoteViewData,
+    view_data: LiveNoteViewData,
     timer: TimeKeeper,
-    length: f64,
+    length: Arc<AtomicF64>,
 }
 
-impl LiveLoadMIDIFile {}
+impl LiveLoadMIDIFile {
+    pub fn load_from_file(path: &str, player: SimpleTemporaryPlayer) -> Self {
+        let midi = TKMIDIFile::open(path, None).unwrap();
+
+        let parse_length_outer = Arc::new(AtomicF64::new(f64::NAN));
+        let parse_length = parse_length_outer.clone();
+
+        let ppq = midi.ppq();
+        let tracks = midi.iter_all_tracks().collect();
+        thread::spawn(move || {
+            let stats = get_channels_array_statistics(tracks);
+            if let Ok(stats) = stats {
+                parse_length.store(
+                    stats.calculate_total_duration(ppq).as_secs_f64(),
+                    Ordering::Relaxed,
+                );
+            }
+        });
+
+        let mut timer = TimeKeeper::new();
+
+        let parer = LiveMidiParser::init(&midi, player, &mut timer);
+        let file = LiveNoteViewData::new(parer, midi.track_count());
+
+        LiveLoadMIDIFile {
+            view_data: file,
+            timer,
+            length: parse_length_outer,
+        }
+    }
+}
 
 macro_rules! impl_file_base {
     ($for_type:ty) => {
         impl MIDIFileBase for $for_type {
             fn midi_length(&self) -> Option<f64> {
-                Some(self.length)
+                let value = self.length.load(Ordering::Relaxed);
+                if value.is_nan() {
+                    None
+                } else {
+                    Some(value)
+                }
             }
 
             fn parsed_up_to(&self) -> Option<f64> {
-                None
+                Some(self.view_data.parse_time())
             }
 
             fn timer(&self) -> &TimeKeeper {
@@ -46,13 +105,13 @@ impl_file_base!(&mut LiveLoadMIDIFile);
 impl_file_base!(LiveLoadMIDIFile);
 
 impl MIDIFile for &mut LiveLoadMIDIFile {
-    type ColumnsViews<'a> = InRamCurrentNoteViews<'a> where Self: 'a;
+    type ColumnsViews<'a> = LiveCurrentNoteViews<'a> where Self: 'a;
 
     fn get_current_column_views(&mut self, range: f64) -> Self::ColumnsViews<'_> {
         let time = self.timer.get_time().as_secs_f64();
         let new_range = MIDIViewRange::new(time, time + range);
         self.view_data.shift_view_range(new_range);
 
-        InRamCurrentNoteViews::new(&self.view_data)
+        LiveCurrentNoteViews::new(&self.view_data)
     }
 }

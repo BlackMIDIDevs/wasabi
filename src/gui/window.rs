@@ -57,6 +57,10 @@ pub struct GuiWasabiWindow {
 
 impl GuiWasabiWindow {
     pub fn new(renderer: &mut GuiRenderer) -> GuiWasabiWindow {
+        // let mut midi_file = MIDIFileUnion::Live(LiveLoadMIDIFile::load_from_file(
+        //     "D:/Midis/The Quarantine Project.mid",
+        //     SimpleTemporaryPlayer::new(),
+        // ));
         let mut midi_file = MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
             "D:/Midis/The Quarantine Project.mid",
             SimpleTemporaryPlayer::new(),
@@ -89,6 +93,11 @@ impl GuiWasabiWindow {
                     let time = self.midi_file.timer().get_time().as_secs_f64();
                     let progress = (time / length) as f32;
                     ui.add(egui::ProgressBar::new(progress));
+
+                    if let Some(parsed) = self.midi_file.parsed_up_to() {
+                        let progress = (parsed / length) as f32;
+                        ui.add(egui::ProgressBar::new(progress));
+                    }
                 }
 
                 ui.add(Label::new(format!("FPS: {}", self.fps.get_fps().round())));
