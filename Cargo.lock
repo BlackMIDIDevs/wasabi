@@ -3198,7 +3198,7 @@ checksum = "114ba2b24d2167ef6d67d7d04c8cc86522b87f490025f39f0303b7db5bf5e3d8"
 [[package]]
 name = "xsynth-core"
 version = "0.1.0"
-source = "git+https://github.com/arduano/xsynth.git?rev=c4dc7ae#c4dc7aefc0ad4c9aeacd002f51f4dee7d789a775"
+source = "git+https://github.com/arduano/xsynth.git?rev=dae6d1b#dae6d1b33021ca058cc33237a7a4133281b0941a"
 dependencies = [
  "atomic_refcell",
  "bytemuck",
@@ -3221,7 +3221,7 @@ dependencies = [
 [[package]]
 name = "xsynth-realtime"
 version = "0.1.0"
-source = "git+https://github.com/arduano/xsynth.git?rev=c4dc7ae#c4dc7aefc0ad4c9aeacd002f51f4dee7d789a775"
+source = "git+https://github.com/arduano/xsynth.git?rev=dae6d1b#dae6d1b33021ca058cc33237a7a4133281b0941a"
 dependencies = [
  "atomic_refcell",
  "bytemuck",
@@ -3244,7 +3244,7 @@ dependencies = [
 [[package]]
 name = "xsynth-soundfonts"
 version = "0.1.0"
-source = "git+https://github.com/arduano/xsynth.git?rev=c4dc7ae#c4dc7aefc0ad4c9aeacd002f51f4dee7d789a775"
+source = "git+https://github.com/arduano/xsynth.git?rev=dae6d1b#dae6d1b33021ca058cc33237a7a4133281b0941a"
 dependencies = [
  "lazy-regex",
 ]
