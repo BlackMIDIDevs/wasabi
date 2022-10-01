@@ -25,7 +25,7 @@ impl SimpleTemporaryPlayer {
         let params = synth.stream_params();
 
         let soundfont: Arc<dyn SoundfontBase> = Arc::new(
-            SampleSoundfont::new("D:/Midis/Loud and Proud Remastered/Kaydax Presets/Loud and Proud Remastered (Realistic).sfz", params.clone()).unwrap(),
+            SampleSoundfont::new("D:/Midis/Soundfonts/Loud and Proud Remastered/Kaydax Presets/Loud and Proud Remastered (Realistic).sfz", params.clone()).unwrap(),
         );
 
         sender.send_config(ChannelConfigEvent::SetSoundfonts(vec![soundfont]));

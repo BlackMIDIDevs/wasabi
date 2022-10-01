@@ -71,8 +71,7 @@ impl LiveNoteViewData {
             }
 
             while let Some(block) = blocks.front() {
-                let end = block.start + block.max_length as f64;
-                if end < new_view_range.start {
+                if block.max_end() < new_view_range.start {
                     data.rendered_notes -= block.notes.len();
                     blocks.pop_front();
 
