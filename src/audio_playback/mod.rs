@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, path::Path};
 
 //use kdmapi::{KDMAPIStream, KDMAPI};
 use xsynth_core::{
@@ -28,10 +28,12 @@ impl SimpleTemporaryPlayer {
 
         let params = synth.stream_params();
 
-        if !sfz_path.is_empty() {
-            let soundfont: Arc<dyn SoundfontBase> =
-                Arc::new(SampleSoundfont::new(sfz_path, params.clone()).unwrap());
-            sender.send_config(ChannelConfigEvent::SetSoundfonts(vec![soundfont]));
+        if !sfz_path.is_empty() && Path::new(sfz_path).exists() {
+            let samplesf = SampleSoundfont::new(sfz_path, params.clone());
+            if let Ok(sf) = samplesf {
+                let soundfont: Arc<dyn SoundfontBase> = Arc::new(sf);
+                sender.send_config(ChannelConfigEvent::SetSoundfonts(vec![soundfont]));
+            }
         }
 
         sender.send_config(ChannelConfigEvent::SetLayerCount(Some(4)));

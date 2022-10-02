@@ -1,7 +1,8 @@
 use colors_transform::{Color, Rgb};
 use egui::Color32;
 use serde_derive::{Deserialize, Serialize};
-use std::{fs, io::Write, path::Path};
+use std::{fs, io::Write, path::{Path, PathBuf}, ops::RangeInclusive};
+use directories::BaseDirs;
 
 #[derive(Deserialize, Serialize)]
 struct WasabiConfigFile {
@@ -10,8 +11,8 @@ struct WasabiConfigFile {
     bar_color: String,
     random_colors: bool,
     sfz_path: String,
-    first_key: usize,
-    last_key: usize,
+    first_key: u8,
+    last_key: u8,
 }
 
 pub struct WasabiPermanentSettings {
@@ -20,8 +21,7 @@ pub struct WasabiPermanentSettings {
     pub bar_color: Color32,
     pub random_colors: bool,
     pub sfz_path: String,
-    pub first_key: usize,
-    pub last_key: usize,
+    pub key_range: RangeInclusive<u8>,
 }
 
 pub struct WasabiTemporarySettings {
@@ -38,8 +38,7 @@ impl Default for WasabiPermanentSettings {
             bar_color: Color32::from_rgb(65, 0, 30),
             random_colors: true,
             sfz_path: "".to_string(),
-            first_key: 0,
-            last_key: 127,
+            key_range: 0..=127,
         }
     }
 }
@@ -48,58 +47,45 @@ static CONFIG_PATH: &str = "wasabi_config.toml";
 
 impl WasabiPermanentSettings {
     pub fn new_or_load() -> Self {
-        if !Path::new(CONFIG_PATH).exists() {
-            let s = WasabiPermanentSettings::default();
-            let cfg = WasabiConfigFile {
-                note_speed: s.note_speed,
-                bg_color: Rgb::from(
-                    s.bg_color.r() as f32,
-                    s.bg_color.g() as f32,
-                    s.bg_color.b() as f32,
-                )
-                .to_css_hex_string(),
-                bar_color: Rgb::from(
-                    s.bar_color.r() as f32,
-                    s.bar_color.g() as f32,
-                    s.bar_color.b() as f32,
-                )
-                .to_css_hex_string(),
-                random_colors: s.random_colors,
-                sfz_path: s.sfz_path.clone(),
-                first_key: s.first_key,
-                last_key: s.last_key,
-            };
-            let toml: String = toml::to_string(&cfg).unwrap();
-            let mut file = fs::File::create(CONFIG_PATH).unwrap();
-            file.write_all(toml.as_bytes())
-                .expect("Error creating config");
-            s
+        let config_path = Self::get_config_path();
+        if !Path::new(&config_path).exists() {
+            Self::load_and_save_defaults()
         } else {
-            let content = std::fs::read_to_string(CONFIG_PATH).unwrap();
-            let s: WasabiConfigFile = toml::from_str(&content).unwrap();
-            let bg_color_tmp = Rgb::from_hex_str(&s.bg_color).unwrap();
-            let bar_color_tmp = Rgb::from_hex_str(&s.bar_color).unwrap();
-            WasabiPermanentSettings {
-                note_speed: s.note_speed,
-                bg_color: Color32::from_rgb(
-                    bg_color_tmp.get_red() as u8,
-                    bg_color_tmp.get_green() as u8,
-                    bg_color_tmp.get_blue() as u8,
-                ),
-                bar_color: Color32::from_rgb(
-                    bar_color_tmp.get_red() as u8,
-                    bar_color_tmp.get_green() as u8,
-                    bar_color_tmp.get_blue() as u8,
-                ),
-                random_colors: s.random_colors,
-                sfz_path: s.sfz_path,
-                first_key: s.first_key,
-                last_key: s.last_key,
+            match fs::read_to_string(&config_path) {
+                Ok(content) => {
+                    match toml::from_str::<WasabiConfigFile>(&content) {
+                        Ok(cfg) => {
+                            if let (Ok(bg), Ok(bar)) = (Rgb::from_hex_str(&cfg.bg_color), Rgb::from_hex_str(&cfg.bar_color)) {
+                                return Self {
+                                    note_speed: cfg.note_speed,
+                                    bg_color: Color32::from_rgb(
+                                        bg.get_red() as u8,
+                                        bg.get_green() as u8,
+                                        bg.get_blue() as u8,
+                                    ),
+                                    bar_color: Color32::from_rgb(
+                                        bar.get_red() as u8,
+                                        bar.get_green() as u8,
+                                        bar.get_blue() as u8,
+                                    ),
+                                    random_colors: cfg.random_colors,
+                                    sfz_path: cfg.sfz_path,
+                                    key_range: cfg.first_key..=cfg.last_key,
+                                }
+                            } else {
+                                return Self::load_and_save_defaults()
+                            }
+                        },
+                        Err(..) => return Self::load_and_save_defaults()
+                    }
+                },
+                Err(..) => return Self::load_and_save_defaults()
             }
         }
     }
 
     pub fn save_to_file(&self) {
+        let config_path = Self::get_config_path();
         let cfg = WasabiConfigFile {
             note_speed: self.note_speed,
             bg_color: Rgb::from(
@@ -116,16 +102,47 @@ impl WasabiPermanentSettings {
             .to_css_hex_string(),
             random_colors: self.random_colors,
             sfz_path: self.sfz_path.clone(),
-            first_key: self.first_key,
-            last_key: self.last_key,
+            first_key: *self.key_range.start(),
+            last_key: *self.key_range.end(),
         };
         let toml: String = toml::to_string(&cfg).unwrap();
-        if Path::new(CONFIG_PATH).exists() {
-            fs::remove_file(CONFIG_PATH).expect("Error deleting old config");
+        if Path::new(&config_path).exists() {
+            fs::remove_file(&config_path).expect("Error deleting old config");
         }
-        let mut file = fs::File::create(CONFIG_PATH).unwrap();
+        let mut file = fs::File::create(&config_path).unwrap();
         file.write_all(toml.as_bytes())
             .expect("Error creating config");
+    }
+
+    fn load_and_save_defaults() -> Self {
+        match fs::remove_file(CONFIG_PATH) {
+            Ok(..) => {
+                let cfg = Self::default();
+                Self::save_to_file(&cfg);
+                cfg
+            },
+            Err(..) => Self::default(),
+        }
+    }
+
+    fn get_config_path() -> String {
+        if let Some(base_dirs) = BaseDirs::new() {
+            let mut path: PathBuf = base_dirs.config_dir().to_path_buf();
+            path.push("wasabi");
+            path.push("wasabi-config.toml");
+
+            if let Ok(..) = std::fs::create_dir_all(path.parent().unwrap()) {
+                if let Some(path) = path.to_str() {
+                    path.to_string()
+                } else {
+                    "wasabi-config.toml".to_string()
+                }
+            } else {
+                "wasabi-config.toml".to_string()
+            }
+        } else {
+            "wasabi-config.toml".to_string()
+        }
     }
 }
 

@@ -451,7 +451,7 @@ version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5069e3065d9ad485706017d12bb4b4318170b8087358c163c2dfce50b6b38275"
 dependencies = [
- "directories",
+ "directories 2.0.2",
  "serde",
  "thiserror",
  "toml",
@@ -709,6 +709,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "551a778172a450d7fc12e629ca3b0428d00f6afa9a43da1b630d54604e97371c"
 dependencies = [
  "cfg-if 0.1.10",
+ "dirs-sys",
+]
+
+[[package]]
+name = "directories"
+version = "4.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f51c5d4ddabd36886dd3e1438cb358cdcb0d7c499cb99cb4ac2e38e18b5cb210"
+dependencies = [
  "dirs-sys",
 ]
 
@@ -3038,6 +3047,7 @@ dependencies = [
  "colors-transform",
  "confy",
  "crossbeam-channel",
+ "directories 4.0.1",
  "egui",
  "egui-winit",
  "egui_demo_lib",
@@ -3485,7 +3495,7 @@ checksum = "114ba2b24d2167ef6d67d7d04c8cc86522b87f490025f39f0303b7db5bf5e3d8"
 [[package]]
 name = "xsynth-core"
 version = "0.1.0"
-source = "git+https://github.com/arduano/xsynth.git?rev=751cbc4#751cbc4407b58b1cd9dc48b13911c540a5080d33"
+source = "git+https://github.com/arduano/xsynth.git?rev=68fab126181d8bac2cc3a836029876a4c25476f7#68fab126181d8bac2cc3a836029876a4c25476f7"
 dependencies = [
  "atomic_refcell",
  "bytemuck",
@@ -3508,7 +3518,7 @@ dependencies = [
 [[package]]
 name = "xsynth-realtime"
 version = "0.1.0"
-source = "git+https://github.com/arduano/xsynth.git?rev=751cbc4#751cbc4407b58b1cd9dc48b13911c540a5080d33"
+source = "git+https://github.com/arduano/xsynth.git?rev=68fab126181d8bac2cc3a836029876a4c25476f7#68fab126181d8bac2cc3a836029876a4c25476f7"
 dependencies = [
  "atomic_refcell",
  "bytemuck",
@@ -3531,7 +3541,7 @@ dependencies = [
 [[package]]
 name = "xsynth-soundfonts"
 version = "0.1.0"
-source = "git+https://github.com/arduano/xsynth.git?rev=751cbc4#751cbc4407b58b1cd9dc48b13911c540a5080d33"
+source = "git+https://github.com/arduano/xsynth.git?rev=68fab126181d8bac2cc3a836029876a4c25476f7#68fab126181d8bac2cc3a836029876a4c25476f7"
 dependencies = [
  "lazy-regex",
 ]

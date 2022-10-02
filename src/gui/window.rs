@@ -126,15 +126,14 @@ impl GuiWasabiWindow {
                             ui.horizontal(|ui| {
                                 ui.add(egui::TextEdit::singleline(&mut perm_settings.sfz_path));
                                 if ui.button("Browse...").clicked() {
-                                    let midi_path: String = FileDialog::new()
+                                    let sfz_path = FileDialog::new()
                                         .add_filter("sfz", &["sfz"])
                                         .set_directory("/")
-                                        .pick_file()
-                                        .unwrap()
-                                        .into_os_string()
-                                        .into_string()
-                                        .unwrap();
-                                    perm_settings.sfz_path = midi_path;
+                                        .pick_file();
+
+                                    if let Some(sfz_path) = sfz_path {
+                                        perm_settings.sfz_path = sfz_path.into_os_string().into_string().unwrap();
+                                    }
                                 }
                             });
                             ui.end_row();
@@ -160,19 +159,24 @@ impl GuiWasabiWindow {
                             ui.end_row();
 
                             ui.label("Keyboard Range: ");
+                            let mut firstkey = *perm_settings.key_range.start();
+                            let mut lastkey = *perm_settings.key_range.end();
                             ui.horizontal(|ui| {
                                 ui.add(
-                                    egui::DragValue::new(&mut perm_settings.first_key)
+                                    egui::DragValue::new(&mut firstkey)
                                         .speed(1)
                                         .clamp_range(RangeInclusive::new(0, 255)),
                                 );
                                 ui.add(
-                                    egui::DragValue::new(&mut perm_settings.last_key)
+                                    egui::DragValue::new(&mut lastkey)
                                         .speed(1)
                                         .clamp_range(RangeInclusive::new(0, 255)),
                                 );
                             });
                             ui.end_row();
+                            if firstkey != *perm_settings.key_range.start() || lastkey != *perm_settings.key_range.end() {
+                                perm_settings.key_range = firstkey..=lastkey;
+                            }
                         });
                     ui.separator();
                     ui.vertical_centered(|ui| {
@@ -274,17 +278,13 @@ impl GuiWasabiWindow {
         // renderer tells us the key colors
         let available = ctx.available_rect();
         let height = available.height();
-        let visible_keys = RangeInclusive::new(
-            perm_settings.first_key as u16,
-            perm_settings.last_key as u16,
-        )
-        .len();
+        let visible_keys = perm_settings.key_range.len();
         let keyboard_height = 11.6 / visible_keys as f32 * available.width() as f32;
         let notes_height = height - keyboard_height;
 
         let key_view = self
             .keyboard_layout
-            .get_view_for_keys(perm_settings.first_key, perm_settings.last_key);
+            .get_view_for_keys(*perm_settings.key_range.start() as usize, *perm_settings.key_range.end() as usize);
 
         let no_frame = Frame::default()
             .inner_margin(Margin::same(0.0))
@@ -357,14 +357,10 @@ impl GuiWasabiWindow {
                     }
                 }
 
-                let colors = if self.midi_file.is_some() {
-                    render_result_data.unwrap().key_colors
+                let colors = if let Some(data) = render_result_data {
+                    data.key_colors
                 } else {
-                    let mut vec = Vec::new();
-                    for _ in 0..=256 {
-                        vec.push(None)
-                    }
-                    vec
+                    vec![None; 256]
                 };
 
                 self.keyboard
