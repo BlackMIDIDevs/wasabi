@@ -16,11 +16,12 @@ To use Wasabi, your system must support Vulkan.
 4) Select a MIDI by clicking "Open MIDI"
 
 ### Keyboard Shortcuts
-Space - Play/Pause MIDI
-Right Arrow - Skip 1 second
-Left Arrow - Go back 1 second
-F - Show/Hide top panel
-G - Show/Hide statisticsW
+
+- **Space** - Play/Pause MIDI
+- **Right Arrow** - Skip 1 second
+- **Left Arrow** - Go back 1 second
+- **F** - Show/Hide top panel
+- **G** - Show/Hide statistics
 
 ## License
 Wasabi is licensed under the [GNU General Public License v3.0](https://github.com/arduano/wasabi/blob/master/LICENSE).
