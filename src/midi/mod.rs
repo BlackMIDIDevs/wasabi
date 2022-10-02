@@ -48,7 +48,10 @@ impl MIDIColor {
 
         let mut vec = Vec::with_capacity(count);
         for i in 0..count {
-            vec.push(MIDIColor::new_from_hue(i as f64 * 360.0 / 16.0 * 15.0));
+            let track = i / 16;
+            let channel = i % 16;
+            let value = track + channel;
+            vec.push(MIDIColor::new_from_hue(value as f64 * -16.0 % 360.0));
         }
 
         vec
