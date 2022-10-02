@@ -1,8 +1,13 @@
 use colors_transform::{Color, Rgb};
+use directories::BaseDirs;
 use egui::Color32;
 use serde_derive::{Deserialize, Serialize};
-use std::{fs, io::Write, path::{Path, PathBuf}, ops::RangeInclusive};
-use directories::BaseDirs;
+use std::{
+    fs,
+    io::Write,
+    ops::RangeInclusive,
+    path::{Path, PathBuf},
+};
 
 #[derive(Deserialize, Serialize)]
 struct WasabiConfigFile {
@@ -52,34 +57,35 @@ impl WasabiPermanentSettings {
             Self::load_and_save_defaults()
         } else {
             match fs::read_to_string(&config_path) {
-                Ok(content) => {
-                    match toml::from_str::<WasabiConfigFile>(&content) {
-                        Ok(cfg) => {
-                            if let (Ok(bg), Ok(bar)) = (Rgb::from_hex_str(&cfg.bg_color), Rgb::from_hex_str(&cfg.bar_color)) {
-                                return Self {
-                                    note_speed: cfg.note_speed,
-                                    bg_color: Color32::from_rgb(
-                                        bg.get_red() as u8,
-                                        bg.get_green() as u8,
-                                        bg.get_blue() as u8,
-                                    ),
-                                    bar_color: Color32::from_rgb(
-                                        bar.get_red() as u8,
-                                        bar.get_green() as u8,
-                                        bar.get_blue() as u8,
-                                    ),
-                                    random_colors: cfg.random_colors,
-                                    sfz_path: cfg.sfz_path,
-                                    key_range: cfg.first_key..=cfg.last_key,
-                                }
-                            } else {
-                                return Self::load_and_save_defaults()
+                Ok(content) => match toml::from_str::<WasabiConfigFile>(&content) {
+                    Ok(cfg) => {
+                        if let (Ok(bg), Ok(bar)) = (
+                            Rgb::from_hex_str(&cfg.bg_color),
+                            Rgb::from_hex_str(&cfg.bar_color),
+                        ) {
+                            Self {
+                                note_speed: cfg.note_speed,
+                                bg_color: Color32::from_rgb(
+                                    bg.get_red() as u8,
+                                    bg.get_green() as u8,
+                                    bg.get_blue() as u8,
+                                ),
+                                bar_color: Color32::from_rgb(
+                                    bar.get_red() as u8,
+                                    bar.get_green() as u8,
+                                    bar.get_blue() as u8,
+                                ),
+                                random_colors: cfg.random_colors,
+                                sfz_path: cfg.sfz_path,
+                                key_range: cfg.first_key..=cfg.last_key,
                             }
-                        },
-                        Err(..) => return Self::load_and_save_defaults()
+                        } else {
+                            Self::load_and_save_defaults()
+                        }
                     }
+                    Err(..) => Self::load_and_save_defaults(),
                 },
-                Err(..) => return Self::load_and_save_defaults()
+                Err(..) => Self::load_and_save_defaults(),
             }
         }
     }
@@ -120,7 +126,7 @@ impl WasabiPermanentSettings {
                 let cfg = Self::default();
                 Self::save_to_file(&cfg);
                 cfg
-            },
+            }
             Err(..) => Self::default(),
         }
     }

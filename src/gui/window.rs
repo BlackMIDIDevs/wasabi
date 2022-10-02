@@ -132,7 +132,8 @@ impl GuiWasabiWindow {
                                         .pick_file();
 
                                     if let Some(sfz_path) = sfz_path {
-                                        perm_settings.sfz_path = sfz_path.into_os_string().into_string().unwrap();
+                                        perm_settings.sfz_path =
+                                            sfz_path.into_os_string().into_string().unwrap();
                                     }
                                 }
                             });
@@ -174,7 +175,9 @@ impl GuiWasabiWindow {
                                 );
                             });
                             ui.end_row();
-                            if firstkey != *perm_settings.key_range.start() || lastkey != *perm_settings.key_range.end() {
+                            if firstkey != *perm_settings.key_range.start()
+                                || lastkey != *perm_settings.key_range.end()
+                            {
                                 perm_settings.key_range = firstkey..=lastkey;
                             }
                         });
@@ -282,9 +285,10 @@ impl GuiWasabiWindow {
         let keyboard_height = 11.6 / visible_keys as f32 * available.width() as f32;
         let notes_height = height - keyboard_height;
 
-        let key_view = self
-            .keyboard_layout
-            .get_view_for_keys(*perm_settings.key_range.start() as usize, *perm_settings.key_range.end() as usize);
+        let key_view = self.keyboard_layout.get_view_for_keys(
+            *perm_settings.key_range.start() as usize,
+            *perm_settings.key_range.end() as usize,
+        );
 
         let no_frame = Frame::default()
             .inner_margin(Margin::same(0.0))
