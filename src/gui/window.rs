@@ -52,6 +52,28 @@ impl Fps {
     }
 }
 
+struct GuiMidiStats {
+    time_passed: f64,
+    time_total: f64,
+    //notes_passed: usize,
+    notes_total: usize,
+    notes_on_screen: u64,
+    //voice_count: usize,
+}
+
+impl GuiMidiStats {
+    fn empty() -> GuiMidiStats {
+        GuiMidiStats {
+            time_passed: 0.0,
+            time_total: 0.0,
+            //notes_passed: 0,
+            notes_total: 0,
+            notes_on_screen: 0,
+            //voice_count: 0,
+        }
+    }
+}
+
 pub struct GuiWasabiWindow {
     render_scene: GuiRenderScene,
     keyboard_layout: keyboard_layout::KeyboardLayout,
@@ -79,22 +101,14 @@ impl GuiWasabiWindow {
         temp_settings: &mut WasabiTemporarySettings,
     ) {
         let ctx = state.gui.context();
-
         let window_size = vec![ctx.available_rect().width(), ctx.available_rect().height()];
-
         self.fps.update();
-
         ctx.set_visuals(Visuals::dark());
-
         let note_speed = perm_settings.note_speed;
 
-        // Settings window
+        // Render the settings window if the value from
+        // the temporary settings allows it
         if temp_settings.settings_visible {
-            let _settings_frame = Frame::default()
-                .inner_margin(egui::style::Margin::same(10.0))
-                .fill(egui::Color32::from_rgba_unmultiplied(0, 0, 0, 170))
-                .rounding(egui::Rounding::same(2.0));
-
             egui::Window::new("Settings")
                 .resizable(true)
                 .collapsible(true)
@@ -169,7 +183,9 @@ impl GuiWasabiWindow {
                 });
         }
 
-        // Render the top panel
+        // Render the top panel if the value from
+        // the temporary settings allows it,
+        // and return its height in a variable
         let panel_height = if temp_settings.panel_visible {
             let panel_height = 40.0;
             let panel_frame = Frame::default()
@@ -258,10 +274,10 @@ impl GuiWasabiWindow {
         // renderer tells us the key colors
         let available = ctx.available_rect();
         let height = available.height();
-        let visible_keys = std::ops::Range {
-            start: perm_settings.first_key,
-            end: perm_settings.last_key + 1,
-        }
+        let visible_keys = RangeInclusive::new(
+            perm_settings.first_key as u16,
+            perm_settings.last_key as u16,
+        )
         .len();
         let keyboard_height = 11.6 / visible_keys as f32 * available.width() as f32;
         let notes_height = height - keyboard_height;
@@ -275,167 +291,137 @@ impl GuiWasabiWindow {
             .fill(perm_settings.bg_color);
 
         let stats_frame = Frame::default()
-            .inner_margin(egui::style::Margin::same(10.0))
-            .fill(egui::Color32::from_rgba_unmultiplied(0, 0, 0, 170))
-            .rounding(egui::Rounding::same(5.0));
+            .inner_margin(egui::style::Margin::same(6.0))
+            .fill(egui::Color32::from_rgba_unmultiplied(15, 15, 15, 200))
+            .rounding(egui::Rounding::same(4.0));
+
+        let mut stats = GuiMidiStats::empty();
 
         let mut render_result_data = None;
 
-        if self.midi_file.is_some() {
-            let stats = self.midi_file.as_ref().unwrap().stats();
-
-            // Render the notes
-            egui::TopBottomPanel::top("Note panel")
-                .height_range(notes_height..=notes_height)
-                .frame(no_frame)
-                .show(&ctx, |ui| {
+        // Render the notes
+        egui::TopBottomPanel::top("Note panel")
+            .height_range(notes_height..=notes_height)
+            .frame(no_frame)
+            .show(&ctx, |ui| {
+                if let Some(midi_file) = self.midi_file.as_mut() {
                     let one_sec = Duration::from_secs(1);
-                    let _five_sec = Duration::from_secs(5);
-                    let time = self.midi_file.as_mut().unwrap().timer().get_time();
+                    let time = midi_file.timer().get_time();
                     let events = ui.input().events.clone();
                     for event in &events {
                         if let egui::Event::Key { key, pressed, .. } = event {
                             if pressed == &true {
                                 match key {
-                                    egui::Key::ArrowRight => self
-                                        .midi_file
-                                        .as_mut()
-                                        .unwrap()
-                                        .timer_mut()
-                                        .seek(time + one_sec),
-                                    egui::Key::ArrowLeft => self
-                                        .midi_file
-                                        .as_mut()
-                                        .unwrap()
-                                        .timer_mut()
-                                        .seek(time - one_sec),
-                                    egui::Key::Space => {
-                                        self.midi_file.as_mut().unwrap().timer_mut().toggle_pause()
+                                    egui::Key::ArrowRight => {
+                                        midi_file.timer_mut().seek(time + one_sec)
                                     }
-                                    egui::Key::F => match temp_settings.panel_visible {
-                                        true => temp_settings.panel_visible = false,
-                                        false => temp_settings.panel_visible = true,
-                                    },
-                                    egui::Key::G => match temp_settings.stats_visible {
-                                        true => temp_settings.stats_visible = false,
-                                        false => temp_settings.stats_visible = true,
-                                    },
+                                    egui::Key::ArrowLeft => {
+                                        midi_file.timer_mut().seek(time - one_sec)
+                                    }
+                                    egui::Key::Space => midi_file.timer_mut().toggle_pause(),
                                     _ => {}
                                 }
                             }
                         }
                     }
-                    let result = self.render_scene.draw(
-                        state,
-                        ui,
-                        &key_view,
-                        self.midi_file.as_mut().unwrap(),
-                        note_speed,
-                    );
+
+                    let result = self
+                        .render_scene
+                        .draw(state, ui, &key_view, midi_file, note_speed);
+                    stats.notes_on_screen = result.notes_rendered;
                     render_result_data = Some(result);
-                });
-            let render_result_data = render_result_data.unwrap();
+                }
+            });
 
-            // Render the keyboard
-            egui::TopBottomPanel::top("Keyboard panel")
-                .height_range(keyboard_height..=keyboard_height)
-                .frame(no_frame)
-                .show(&ctx, |ui| {
-                    self.keyboard.draw(
-                        ui,
-                        &key_view,
-                        &render_result_data.key_colors,
-                        &perm_settings.bar_color,
-                    );
-                });
-
-            // Render the stats
-            if temp_settings.stats_visible {
-                egui::Window::new("Stats")
-                    .resizable(false)
-                    .collapsible(false)
-                    .title_bar(false)
-                    .scroll2([false, false])
-                    .enabled(true)
-                    .frame(stats_frame)
-                    .fixed_pos(egui::Pos2::new(10.0, panel_height + 10.0))
-                    .show(&ctx, |ui| {
-                        if let Some(length) = self.midi_file.as_mut().unwrap().midi_length() {
-                            let time = self
-                                .midi_file
-                                .as_mut()
-                                .unwrap()
-                                .timer()
-                                .get_time()
-                                .as_secs();
-                            let time_sec = time % 60;
-                            let time_min = (time / 60) % 60;
-                            let length_u64 = length as u64;
-                            let length_sec = length_u64 % 60;
-                            let length_min = (length_u64 / 60) % 60;
-                            if time > length_u64 {
-                                ui.add(Label::new(format!(
-                                    "Time: {:0width$}:{:0width$}/{:0width$}:{:0width$}",
-                                    length_min,
-                                    length_sec,
-                                    length_min,
-                                    length_sec,
-                                    width = 2
-                                )));
-                            } else {
-                                ui.add(Label::new(format!(
-                                    "Time: {:0width$}:{:0width$}/{:0width$}:{:0width$}",
-                                    time_min,
-                                    time_sec,
-                                    length_min,
-                                    length_sec,
-                                    width = 2
-                                )));
+        // Render the keyboard
+        egui::TopBottomPanel::top("Keyboard panel")
+            .height_range(keyboard_height..=keyboard_height)
+            .frame(no_frame)
+            .show(&ctx, |ui| {
+                let events = ui.input().events.clone();
+                for event in &events {
+                    if let egui::Event::Key { key, pressed, .. } = event {
+                        if pressed == &true {
+                            match key {
+                                egui::Key::F => match temp_settings.panel_visible {
+                                    true => temp_settings.panel_visible = false,
+                                    false => temp_settings.panel_visible = true,
+                                },
+                                egui::Key::G => match temp_settings.stats_visible {
+                                    true => temp_settings.stats_visible = false,
+                                    false => temp_settings.stats_visible = true,
+                                },
+                                _ => {}
                             }
                         }
-                        ui.add(Label::new(format!("FPS: {}", self.fps.get_fps().round())));
-                        ui.add(Label::new(format!("Total Notes: {}", stats.total_notes)));
-                        //ui.add(Label::new(format!("Passed: {}", -1)));  // TODO
-                        //ui.add(Label::new(format!("Voice Count: {}", self.synth.as_mut().unwrap().get_voice_count())));
-                        ui.add(Label::new(format!(
-                            "Rendered: {}",
-                            render_result_data.notes_rendered
-                        )));
-                    });
-            }
-        } else {
-            // Render the notes
-            egui::TopBottomPanel::top("Note panel")
-                .height_range(notes_height..=notes_height)
-                .frame(no_frame)
-                .show(&ctx, |_| {});
+                    }
+                }
 
-            // Render the keyboard
-            egui::TopBottomPanel::top("Keyboard panel")
-                .height_range(keyboard_height..=keyboard_height)
-                .frame(no_frame)
+                let colors = if self.midi_file.is_some() {
+                    render_result_data.unwrap().key_colors
+                } else {
+                    let mut vec = Vec::new();
+                    for _ in 0..=256 {
+                        vec.push(None)
+                    }
+                    vec
+                };
+
+                self.keyboard
+                    .draw(ui, &key_view, &colors, &perm_settings.bar_color);
+            });
+
+        // Render the stats
+        if temp_settings.stats_visible {
+            egui::Window::new("Stats")
+                .resizable(false)
+                .collapsible(false)
+                .title_bar(false)
+                .scroll2([false, false])
+                .enabled(true)
+                .frame(stats_frame)
+                .fixed_pos(egui::Pos2::new(10.0, panel_height + 10.0))
                 .show(&ctx, |ui| {
-                    self.keyboard
-                        .draw_empty(ui, &key_view, &perm_settings.bar_color);
-                });
+                    let mut time_sec: u64 = 0;
+                    let mut time_min: u64 = 0;
+                    let mut length_sec: u64 = 0;
+                    let mut length_min: u64 = 0;
 
-            // Render the stats
-            if temp_settings.stats_visible {
-                egui::Window::new("Stats")
-                    .resizable(false)
-                    .collapsible(false)
-                    .title_bar(false)
-                    .scroll2([false, false])
-                    .enabled(true)
-                    .frame(stats_frame)
-                    .fixed_pos(egui::Pos2::new(10.0, panel_height + 10.0))
-                    .show(&ctx, |ui| {
-                        ui.add(Label::new("Time: 00:00/00:00"));
-                        ui.add(Label::new(format!("FPS: {}", self.fps.get_fps().round())));
-                        ui.add(Label::new("Total Notes: 0"));
-                        ui.add(Label::new("Rendered:0"));
-                    });
-            }
+                    if let Some(midi_file) = self.midi_file.as_mut() {
+                        stats.time_total = if let Some(length) = midi_file.midi_length() {
+                            length
+                        } else {
+                            0.0
+                        };
+                        let time = midi_file.timer().get_time().as_secs_f64();
+                        let length_u64 = stats.time_total as u64;
+                        length_sec = length_u64 % 60;
+                        length_min = (length_u64 / 60) % 60;
+                        if time > stats.time_total {
+                            stats.time_passed = stats.time_total;
+                        } else {
+                            stats.time_passed = time;
+                        }
+                        let time_u64 = stats.time_passed as u64;
+                        time_sec = time_u64 % 60;
+                        time_min = (time_u64 / 60) % 60;
+
+                        stats.notes_total = midi_file.stats().total_notes;
+                    }
+                    ui.add(Label::new(format!(
+                        "Time: {:0width$}:{:0width$}/{:0width$}:{:0width$}",
+                        time_min,
+                        time_sec,
+                        length_min,
+                        length_sec,
+                        width = 2
+                    )));
+                    ui.add(Label::new(format!("FPS: {}", self.fps.get_fps().round())));
+                    ui.add(Label::new(format!("Total Notes: {}", stats.notes_total)));
+                    //ui.add(Label::new(format!("Passed: {}", -1)));  // TODO
+                    //ui.add(Label::new(format!("Voice Count: {}", self.synth.as_mut().unwrap().get_voice_count())));
+                    ui.add(Label::new(format!("Rendered: {}", stats.notes_on_screen)));
+                });
         }
     }
 }

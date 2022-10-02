@@ -14,8 +14,8 @@ void main() {
     vec3 color = frag_color;
     float aspect = win_size.y / win_size.x;
 
-    float lighten = cos(v_uv.x + 1) - 1 / 4;
-    color += vec3(lighten, lighten, lighten) * 0.3;
+    float lighten = cos(v_uv.x + 1) + 0.5;
+    color *= vec3(lighten, lighten, lighten);
 
     float horiz_width_pixels = v_note_size.x / 2 * win_size.x;
     float vert_width_pixels = v_note_size.y / 2 * win_size.y;
@@ -31,7 +31,7 @@ void main() {
 
     if(border)
     {
-        color = vec3(frag_color * 0.038);
+        color = vec3(frag_color * 0.035);
     }
 
     out_color = vec4(color, 1.0);

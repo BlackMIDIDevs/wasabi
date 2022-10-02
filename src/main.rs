@@ -1,5 +1,4 @@
 #![feature(type_alias_impl_trait)]
-#![feature(generic_associated_types)]
 #![feature(generators)]
 
 mod audio_playback;
