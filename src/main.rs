@@ -6,12 +6,14 @@ mod gui;
 mod midi;
 mod renderer;
 mod scenes;
+mod settings;
 
 use egui_winit_vulkano::Gui;
 use gui::{window::GuiWasabiWindow, GuiRenderer, GuiState};
 use renderer::Renderer;
 use vulkano::swapchain::PresentMode;
 
+use settings::{WasabiPermanentSettings, WasabiTemporarySettings};
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -21,14 +23,13 @@ pub fn main() {
     // Winit event loop
     let event_loop = EventLoop::new();
 
+    // Load the settings values
+    let mut perm_settings = WasabiPermanentSettings::new_or_load();
+    let mut temp_settings = WasabiTemporarySettings::new();
+
     // Create renderer for our scene & ui
     let window_size = [1280, 720];
-    let mut renderer = Renderer::new(
-        &event_loop,
-        window_size,
-        PresentMode::Immediate,
-        "Wholesome",
-    );
+    let mut renderer = Renderer::new(&event_loop, window_size, PresentMode::Immediate, "Wasabi");
 
     // Vulkano & Winit & egui integration
     let mut gui = Gui::new(
@@ -73,7 +74,7 @@ pub fn main() {
                     // Generate egui layouts
                     gui.immediate_ui(|gui| {
                         let mut state = GuiState { gui, frame };
-                        gui_state.layout(&mut state);
+                        gui_state.layout(&mut state, &mut perm_settings, &mut temp_settings);
                     });
 
                     // Render the layouts

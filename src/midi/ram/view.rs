@@ -29,7 +29,7 @@ impl<'a> InRamCurrentNoteViews<'a> {
 }
 
 impl InRamNoteViewData {
-    pub fn new(columns: Vec<InRamNoteColumn>, track_count: usize) -> Self {
+    pub fn new(columns: Vec<InRamNoteColumn>, track_count: usize, random_colors: bool) -> Self {
         let column_view_data = columns
             .iter()
             .map(|_| InRamNoteColumnViewData::new())
@@ -41,7 +41,10 @@ impl InRamNoteViewData {
                 start: 0.0,
                 end: 0.0,
             },
-            default_track_colors: MIDIColor::new_vec_for_tracks(track_count),
+            default_track_colors: match random_colors {
+                true => MIDIColor::new_random_vec_for_tracks(track_count),
+                false => MIDIColor::new_vec_for_tracks(track_count),
+            },
         }
     }
 }

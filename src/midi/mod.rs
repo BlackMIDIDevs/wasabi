@@ -2,8 +2,9 @@ mod ram;
 mod shared;
 use enum_dispatch::enum_dispatch;
 use palette::convert::FromColorUnclamped;
+use rand::Rng;
 
-pub use ram::InRamMIDIFile;
+pub use ram::{InRamMIDIFile, MIDIFileStats};
 
 use self::shared::timer::TimeKeeper;
 
@@ -57,6 +58,20 @@ impl MIDIColor {
         vec
     }
 
+    pub fn new_random_vec_for_tracks(tracks: usize) -> Vec<Self> {
+        let count = tracks * 16;
+
+        let mut vec = Vec::with_capacity(count);
+        for _ in 0..count {
+            let r = rand::thread_rng().gen_range(0..255) as u8;
+            let g = rand::thread_rng().gen_range(0..255) as u8;
+            let b = rand::thread_rng().gen_range(0..255) as u8;
+            vec.push(MIDIColor::new(r, g, b));
+        }
+
+        vec
+    }
+
     pub fn as_u32(&self) -> u32 {
         self.0
     }
@@ -83,6 +98,8 @@ pub trait MIDIFileBase {
 
     fn timer(&self) -> &TimeKeeper;
     fn timer_mut(&mut self) -> &mut TimeKeeper;
+
+    fn stats(&self) -> MIDIFileStats;
 
     fn allows_seeking_backward(&self) -> bool;
 }
