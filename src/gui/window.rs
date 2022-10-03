@@ -5,6 +5,7 @@ mod scene;
 use std::{
     collections::VecDeque,
     time::{Duration, Instant},
+    sync::{Arc, Mutex}
 };
 
 use core::ops::RangeInclusive;
@@ -79,6 +80,7 @@ pub struct GuiWasabiWindow {
     keyboard_layout: keyboard_layout::KeyboardLayout,
     keyboard: GuiKeyboard,
     midi_file: Option<MIDIFileUnion>,
+    synth: Option<Arc<Mutex<SimpleTemporaryPlayer>>>,
     fps: Fps,
 }
 
@@ -89,6 +91,7 @@ impl GuiWasabiWindow {
             keyboard_layout: keyboard_layout::KeyboardLayout::new(&Default::default()),
             keyboard: GuiKeyboard::new(),
             midi_file: None,
+            synth: None,
             fps: Fps::new(),
         }
     }
@@ -142,10 +145,7 @@ impl GuiWasabiWindow {
 
                             ui.label("Note speed: ");
                             ui.spacing_mut().slider_width = 150.0;
-                            ui.add(
-                                egui::Slider::new(&mut perm_settings.note_speed, 2.0..=0.001)
-                                    .show_value(false),
-                            );
+                            ui.add(egui::Slider::new(&mut perm_settings.note_speed, 2.0..=0.001));
                             ui.end_row();
 
                             ui.label("Background Color: ");
@@ -211,11 +211,24 @@ impl GuiWasabiWindow {
                                 .pick_file();
 
                             if let Some(midi_path) = midi_path {
+                                if let Some(midi_file) = self.midi_file.as_mut() {
+                                    midi_file.timer_mut().pause();
+                                }
+                                self.reset_synth();
+
+                                self.midi_file = None;
+                                self.synth = None;
+
+                                let synth = SimpleTemporaryPlayer::new(&perm_settings.sfz_path);
+                                let synth = Mutex::new(synth);
+                                let synth = Arc::new(synth);
+                                self.synth = Some(synth.clone());
+
                                 if let Ok(path) = midi_path.into_os_string().into_string() {
                                     let mut midi_file =
                                         MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
                                             &path,
-                                            SimpleTemporaryPlayer::new(&perm_settings.sfz_path),
+                                            synth,
                                             perm_settings.random_colors,
                                         ));
                                     midi_file.timer_mut().play();
@@ -223,8 +236,12 @@ impl GuiWasabiWindow {
                                 }
                             }
                         }
-                        if self.midi_file.is_some() && ui.button("Close MIDI").clicked() {
-                            self.midi_file = None;
+                        if let Some(midi_file) = self.midi_file.as_mut() {
+                            if ui.button("Close MIDI").clicked() {
+                                midi_file.timer_mut().pause();
+                                self.reset_synth();
+                                self.midi_file = None;
+                            }
                         }
                         if ui.button("Play").clicked() {
                             if let Some(midi_file) = self.midi_file.as_mut() {
@@ -420,9 +437,28 @@ impl GuiWasabiWindow {
                     ui.add(Label::new(format!("FPS: {}", self.fps.get_fps().round())));
                     ui.add(Label::new(format!("Total Notes: {}", stats.notes_total)));
                     //ui.add(Label::new(format!("Passed: {}", -1)));  // TODO
-                    //ui.add(Label::new(format!("Voice Count: {}", self.synth.as_mut().unwrap().get_voice_count())));
+                    let voice_count = if let Some(synth) = &self.synth {
+                        let thread_arc = synth.clone();
+                        let x = if let Ok(player) = thread_arc.lock() {
+                            player.get_voice_count()
+                        } else {
+                            0
+                        }; x
+                    } else {
+                        0
+                    };
+                    ui.add(Label::new(format!("Voice Count: {}", voice_count)));
                     ui.add(Label::new(format!("Rendered: {}", stats.notes_on_screen)));
                 });
         }
+    }
+
+    fn reset_synth(&mut self) {
+        if let Some(synth) = &self.synth {
+            let thread_arc = synth.clone();
+            if let Ok(mut player) = thread_arc.lock() {
+                player.reset()
+            };
+        };
     }
 }

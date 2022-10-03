@@ -48,6 +48,10 @@ impl SimpleTemporaryPlayer {
         SimpleTemporaryPlayer { sender, stats }
     }
 
+    pub fn get_voice_count(&self) -> u64 {
+        self.stats.voice_count()
+    }
+
     pub fn push_events(&mut self, data: impl Iterator<Item = u32>) {
         for e in data {
             self.push_event(e);
