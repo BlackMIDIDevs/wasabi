@@ -1,7 +1,7 @@
 use std::{
+    sync::{Arc, Mutex},
     thread::{self, JoinHandle},
     time::Duration,
-    sync::{Arc, Mutex},
 };
 
 use crate::{

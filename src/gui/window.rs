@@ -4,8 +4,8 @@ mod scene;
 
 use std::{
     collections::VecDeque,
+    sync::{Arc, Mutex},
     time::{Duration, Instant},
-    sync::{Arc, Mutex}
 };
 
 use core::ops::RangeInclusive;
@@ -145,7 +145,10 @@ impl GuiWasabiWindow {
 
                             ui.label("Note speed: ");
                             ui.spacing_mut().slider_width = 150.0;
-                            ui.add(egui::Slider::new(&mut perm_settings.note_speed, 2.0..=0.001));
+                            ui.add(egui::Slider::new(
+                                &mut perm_settings.note_speed,
+                                2.0..=0.001,
+                            ));
                             ui.end_row();
 
                             ui.label("Background Color: ");
@@ -443,7 +446,8 @@ impl GuiWasabiWindow {
                             player.get_voice_count()
                         } else {
                             0
-                        }; x
+                        };
+                        x
                     } else {
                         0
                     };
