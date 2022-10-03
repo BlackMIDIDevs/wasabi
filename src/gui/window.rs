@@ -132,8 +132,9 @@ impl GuiWasabiWindow {
                                         .pick_file();
 
                                     if let Some(sfz_path) = sfz_path {
-                                        perm_settings.sfz_path =
-                                            sfz_path.into_os_string().into_string().unwrap();
+                                        if let Ok(path) = sfz_path.into_os_string().into_string() {
+                                            perm_settings.sfz_path = path;
+                                        }
                                     }
                                 }
                             });
@@ -210,24 +211,30 @@ impl GuiWasabiWindow {
                                 .pick_file();
 
                             if let Some(midi_path) = midi_path {
-                                let mut midi_file =
-                                    MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
-                                        &midi_path.into_os_string().into_string().unwrap(),
-                                        SimpleTemporaryPlayer::new(&perm_settings.sfz_path),
-                                        perm_settings.random_colors,
-                                    ));
-                                midi_file.timer_mut().play();
-                                self.midi_file = Some(midi_file);
+                                if let Ok(path) = midi_path.into_os_string().into_string() {
+                                    let mut midi_file =
+                                        MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
+                                            &path,
+                                            SimpleTemporaryPlayer::new(&perm_settings.sfz_path),
+                                            perm_settings.random_colors,
+                                        ));
+                                    midi_file.timer_mut().play();
+                                    self.midi_file = Some(midi_file);
+                                }
                             }
                         }
                         if self.midi_file.is_some() && ui.button("Close MIDI").clicked() {
                             self.midi_file = None;
                         }
                         if ui.button("Play").clicked() {
-                            self.midi_file.as_mut().unwrap().timer_mut().play();
+                            if let Some(midi_file) = self.midi_file.as_mut() {
+                                midi_file.timer_mut().play();
+                            }
                         }
                         if ui.button("Pause").clicked() {
-                            self.midi_file.as_mut().unwrap().timer_mut().pause();
+                            if let Some(midi_file) = self.midi_file.as_mut() {
+                                midi_file.timer_mut().pause();
+                            }
                         }
                         if ui.button("Settings").clicked() {
                             match temp_settings.settings_visible {
@@ -244,15 +251,9 @@ impl GuiWasabiWindow {
                         })
                     });
 
-                    if self.midi_file.is_some() {
-                        if let Some(length) = self.midi_file.as_ref().unwrap().midi_length() {
-                            let time = self
-                                .midi_file
-                                .as_ref()
-                                .unwrap()
-                                .timer()
-                                .get_time()
-                                .as_secs_f64();
+                    if let Some(midi_file) = self.midi_file.as_mut() {
+                        if let Some(length) = midi_file.midi_length() {
+                            let time = midi_file.timer().get_time().as_secs_f64();
                             let mut progress = time / length;
                             let progress_prev = progress;
                             let slider =
@@ -261,7 +262,7 @@ impl GuiWasabiWindow {
                             ui.add(slider);
                             if progress_prev != progress {
                                 let position = Duration::from_secs_f64(progress * length);
-                                self.midi_file.as_mut().unwrap().timer_mut().seek(position);
+                                midi_file.timer_mut().seek(position);
                             }
                         }
                     } else {
