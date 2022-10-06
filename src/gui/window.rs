@@ -15,7 +15,7 @@ use rfd::FileDialog;
 
 use crate::{
     audio_playback::SimpleTemporaryPlayer,
-    midi::{InRamMIDIFile, LiveLoadMIDIFile, MIDIFileBase, MIDIFileUnion},
+    midi::{InRamMIDIFile, MIDIFileBase, MIDIFileUnion},
 };
 
 use self::{keyboard::GuiKeyboard, scene::GuiRenderScene};

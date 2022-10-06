@@ -5,10 +5,7 @@ use midi_toolkit::{
     io::MIDIFile as TKMIDIFile,
     pipe,
     sequence::{
-        event::{
-            cancel_tempo_events, convert_events_into_batches, scale_event_time, Delta, EventBatch,
-            Track,
-        },
+        event::{cancel_tempo_events, scale_event_time, Delta, EventBatch, Track},
         unwrap_items, TimeCaster,
     },
 };
