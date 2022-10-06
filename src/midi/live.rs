@@ -13,7 +13,7 @@ use self::{
     view::{LiveCurrentNoteViews, LiveNoteViewData},
 };
 
-use super::{shared::timer::TimeKeeper, MIDIFile, MIDIFileBase, MIDIViewRange};
+use super::{shared::timer::TimeKeeper, MIDIFile, MIDIFileBase, MIDIFileStats, MIDIViewRange};
 
 mod audio_player;
 pub mod block;
@@ -85,6 +85,10 @@ macro_rules! impl_file_base {
 
             fn allows_seeking_backward(&self) -> bool {
                 false
+            }
+
+            fn stats(&self) -> MIDIFileStats {
+                MIDIFileStats::new(0)
             }
         }
     };

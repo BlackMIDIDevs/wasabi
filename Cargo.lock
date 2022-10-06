@@ -1522,11 +1522,11 @@ dependencies = [
 [[package]]
 name = "midi-toolkit-rs"
 version = "0.1.0"
-source = "git+https://github.com/arduano/midi-toolkit-rs?rev=f30ca8a#f30ca8a2e5aeabd8bae94f1811f42b1dad7a25bf"
+source = "git+https://github.com/arduano/midi-toolkit-rs?rev=8e18089#8e180890b081459727df7e6d7a74bb95a0899cda"
 dependencies = [
  "crossbeam-channel",
  "gen-iter",
- "midi-toolkit-rs-derive 0.1.0 (git+https://github.com/arduano/midi-toolkit-rs?rev=f30ca8a)",
+ "midi-toolkit-rs-derive 0.1.0 (git+https://github.com/arduano/midi-toolkit-rs?rev=8e18089)",
  "num-traits",
  "rayon",
 ]
@@ -1534,11 +1534,11 @@ dependencies = [
 [[package]]
 name = "midi-toolkit-rs"
 version = "0.1.0"
-source = "git+https://github.com/arduano/midi-toolkit-rs?rev=ff530d9#ff530d97bce0b4bdf25250dd1c9c6a586e600e45"
+source = "git+https://github.com/arduano/midi-toolkit-rs?rev=f30ca8a#f30ca8a2e5aeabd8bae94f1811f42b1dad7a25bf"
 dependencies = [
  "crossbeam-channel",
  "gen-iter",
- "midi-toolkit-rs-derive 0.1.0 (git+https://github.com/arduano/midi-toolkit-rs?rev=ff530d9)",
+ "midi-toolkit-rs-derive 0.1.0 (git+https://github.com/arduano/midi-toolkit-rs?rev=f30ca8a)",
  "num-traits",
  "rayon",
 ]
@@ -1559,7 +1559,7 @@ dependencies = [
 [[package]]
 name = "midi-toolkit-rs-derive"
 version = "0.1.0"
-source = "git+https://github.com/arduano/midi-toolkit-rs?rev=f30ca8a#f30ca8a2e5aeabd8bae94f1811f42b1dad7a25bf"
+source = "git+https://github.com/arduano/midi-toolkit-rs?rev=8e18089#8e180890b081459727df7e6d7a74bb95a0899cda"
 dependencies = [
  "convert_case",
  "num-traits",
@@ -1572,7 +1572,7 @@ dependencies = [
 [[package]]
 name = "midi-toolkit-rs-derive"
 version = "0.1.0"
-source = "git+https://github.com/arduano/midi-toolkit-rs?rev=ff530d9#ff530d97bce0b4bdf25250dd1c9c6a586e600e45"
+source = "git+https://github.com/arduano/midi-toolkit-rs?rev=f30ca8a#f30ca8a2e5aeabd8bae94f1811f42b1dad7a25bf"
 dependencies = [
  "convert_case",
  "num-traits",
@@ -3087,7 +3087,7 @@ dependencies = [
  "enum_dispatch",
  "gen-iter",
  "kdmapi",
- "midi-toolkit-rs 0.1.0 (git+https://github.com/arduano/midi-toolkit-rs?rev=ff530d9)",
+ "midi-toolkit-rs 0.1.0 (git+https://github.com/arduano/midi-toolkit-rs?rev=8e18089)",
  "palette",
  "rand 0.8.5",
  "rayon",

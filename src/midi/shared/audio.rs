@@ -3,7 +3,7 @@ use std::sync::Arc;
 use gen_iter::GenIter;
 use midi_toolkit::{
     events::{Event, MIDIEvent, MIDIEventEnum},
-    sequence::event::EventBatch,
+    sequence::event::{Delta, EventBatch, Track},
 };
 
 pub struct CompressedAudio {
@@ -21,7 +21,10 @@ const EV_CHAN_PRESSURE: u8 = 0xD0;
 const EV_PITCH_BEND: u8 = 0xE0;
 
 impl CompressedAudio {
-    pub fn build_blocks<Iter: Iterator<Item = Arc<EventBatch<f64, E>>>, E: MIDIEventEnum<f64>>(
+    pub fn build_blocks<
+        Iter: Iterator<Item = Arc<Delta<f64, Track<EventBatch<E>>>>>,
+        E: MIDIEventEnum,
+    >(
         iter: Iter,
     ) -> impl Iterator<Item = CompressedAudio> {
         let mut builder_vec: Vec<u8> = Vec::new();
@@ -30,14 +33,14 @@ impl CompressedAudio {
             let mut time = 0.0;
 
             for block in iter {
-                time += block.delta();
+                time += block.delta;
 
                 let min_len: usize = block.count() * 3;
 
                 builder_vec.reserve(min_len);
                 builder_vec.clear();
 
-                for event in block.iter() {
+                for event in block.iter_events() {
                     match event.as_event() {
                         Event::NoteOn(e) => {
                             let head = EV_ON | e.channel;

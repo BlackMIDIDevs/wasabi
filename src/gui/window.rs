@@ -15,7 +15,7 @@ use rfd::FileDialog;
 
 use crate::{
     audio_playback::SimpleTemporaryPlayer,
-    midi::{InRamMIDIFile, MIDIFileBase, MIDIFileUnion},
+    midi::{InRamMIDIFile, LiveLoadMIDIFile, MIDIFileBase, MIDIFileUnion},
 };
 
 use self::{keyboard::GuiKeyboard, scene::GuiRenderScene};
@@ -106,21 +106,90 @@ impl GuiWasabiWindow {
         ctx.set_visuals(Visuals::dark());
         let note_speed = perm_settings.note_speed;
 
-        // Render the top panel
-        egui::TopBottomPanel::top("Top panel")
-            .height_range(100.0..=100.0)
-            .show(&ctx, |ui| {
-                if let Some(length) = self.midi_file.midi_length() {
-                    let time = self.midi_file.timer().get_time().as_secs_f64();
-                    let progress = (time / length) as f32;
-                    ui.add(egui::ProgressBar::new(progress));
-                }
+        // Render the settings window if the value from
+        // the temporary settings allows it
+        if temp_settings.settings_visible {
+            egui::Window::new("Settings")
+                .resizable(true)
+                .collapsible(true)
+                .title_bar(true)
+                .scroll2([false, true])
+                .enabled(true)
+                .open(&mut temp_settings.settings_visible)
+                .show(&ctx, |ui| {
+                    egui::Grid::new("settings_grid")
+                        .num_columns(2)
+                        .spacing([40.0, 4.0])
+                        .striped(true)
+                        .show(ui, |ui| {
+                            ui.label("SFZ Path: ");
+                            ui.horizontal(|ui| {
+                                ui.add(egui::TextEdit::singleline(&mut perm_settings.sfz_path));
+                                if ui.button("Browse...").clicked() {
+                                    let sfz_path = FileDialog::new()
+                                        .add_filter("sfz", &["sfz"])
+                                        .set_directory("/")
+                                        .pick_file();
 
-                ui.add(Label::new(format!("FPS: {}", self.fps.get_fps().round())));
+                                    if let Some(sfz_path) = sfz_path {
+                                        if let Ok(path) = sfz_path.into_os_string().into_string() {
+                                            perm_settings.sfz_path = path;
+                                        }
+                                    }
+                                }
+                            });
+                            ui.end_row();
 
-                if ui.small_button("Toggle Pause").clicked() {
-                    self.midi_file.timer_mut().toggle_pause();
-                }
+                            ui.label("Note speed: ");
+                            ui.spacing_mut().slider_width = 150.0;
+                            ui.add(
+                                egui::Slider::new(&mut perm_settings.note_speed, 2.0..=0.001)
+                                    .show_value(false),
+                            );
+                            ui.end_row();
+
+                            ui.label("Background Color: ");
+                            ui.color_edit_button_srgba(&mut perm_settings.bg_color);
+                            ui.end_row();
+
+                            ui.label("Bar Color: ");
+                            ui.color_edit_button_srgba(&mut perm_settings.bar_color);
+                            ui.end_row();
+
+                            ui.label("Random Track Colors: ");
+                            ui.checkbox(&mut perm_settings.random_colors, "");
+                            ui.end_row();
+
+                            ui.label("Keyboard Range: ");
+                            let mut firstkey = *perm_settings.key_range.start();
+                            let mut lastkey = *perm_settings.key_range.end();
+                            ui.horizontal(|ui| {
+                                ui.add(
+                                    egui::DragValue::new(&mut firstkey)
+                                        .speed(1)
+                                        .clamp_range(RangeInclusive::new(0, 255)),
+                                );
+                                ui.add(
+                                    egui::DragValue::new(&mut lastkey)
+                                        .speed(1)
+                                        .clamp_range(RangeInclusive::new(0, 255)),
+                                );
+                            });
+                            ui.end_row();
+                            if firstkey != *perm_settings.key_range.start()
+                                || lastkey != *perm_settings.key_range.end()
+                            {
+                                perm_settings.key_range = firstkey..=lastkey;
+                            }
+                        });
+                    ui.separator();
+                    ui.vertical_centered(|ui| {
+                        if ui.button("Save").clicked() {
+                            perm_settings.save_to_file();
+                        }
+                    });
+                });
+        }
 
         // Render the top panel if the value from
         // the temporary settings allows it,
@@ -147,7 +216,6 @@ impl GuiWasabiWindow {
                                         MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
                                             &path,
                                             SimpleTemporaryPlayer::new(&perm_settings.sfz_path),
-                                            perm_settings.random_colors,
                                         ));
                                     midi_file.timer_mut().play();
                                     self.midi_file = Some(midi_file);

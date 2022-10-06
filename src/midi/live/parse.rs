@@ -12,8 +12,8 @@ use midi_toolkit::{
     pipe,
     sequence::{
         event::{
-            cancel_tempo_events, convert_events_into_batches, scale_event_time, EventBatch,
-            TrackEvent,
+            cancel_tempo_events, convert_events_into_batches, scale_event_time, Delta, EventBatch,
+            Track,
         },
         unwrap_items, TimeCaster,
     },
@@ -31,7 +31,7 @@ use super::audio_player::LiveAudioPlayer;
 mod audio;
 mod notes;
 
-pub type TrackEventBatch = EventBatch<f64, TrackEvent<f64, Event<f64>>>;
+pub type TrackEventBatch = Delta<f64, Track<EventBatch<Event>>>;
 
 pub struct ThreadManager {
     parse_time: Arc<AtomicF64>,
@@ -53,10 +53,9 @@ impl LiveMidiParser {
     ) -> Self {
         let ppq = midi.ppq();
         let merged = pipe!(
-            midi.iter_all_track_events_merged()
+            midi.iter_all_track_events_merged_batches()
             |>TimeCaster::<f64>::cast_event_delta()
             |>cancel_tempo_events(250000)
-            |>convert_events_into_batches()
             |>scale_event_time(1.0 / ppq as f64)
             |>unwrap_items()
         );
@@ -76,8 +75,8 @@ impl LiveMidiParser {
         let file_handle = thread::spawn(move || {
             let mut time = 0.0;
             for block in merged {
-                if block.delta() > 0.0 {
-                    time += block.delta();
+                if block.delta > 0.0 {
+                    time += block.delta;
                     parse_time.store(time, Ordering::Relaxed);
                 }
 

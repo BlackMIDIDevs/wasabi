@@ -155,15 +155,15 @@ pub fn init_note_manager(blocks: Receiver<Arc<TrackEventBatch>>) -> NoteParserRe
     let join_handle = std::thread::spawn(move || {
         let mut time: f64 = 0.0;
         for block in blocks.into_iter() {
-            if block.delta() > 0.0 {
+            if block.delta > 0.0 {
                 let result = state.flush(time);
                 if result.is_err() {
                     break;
                 }
-                time += block.delta();
+                time += block.delta;
             }
 
-            for event in block.iter() {
+            for event in block.iter_events() {
                 match event.as_event() {
                     Event::NoteOn(e) => {
                         state.add_note(e.key, TrackAndChannel::new(event.track, e.channel));

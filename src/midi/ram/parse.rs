@@ -6,8 +6,8 @@ use midi_toolkit::{
     pipe,
     sequence::{
         event::{
-            cancel_tempo_events, convert_events_into_batches, scale_event_time, EventBatch,
-            TrackEvent,
+            cancel_tempo_events, convert_events_into_batches, scale_event_time, Delta, EventBatch,
+            Track,
         },
         unwrap_items, TimeCaster,
     },
@@ -96,20 +96,19 @@ impl Key {
 }
 
 impl InRamMIDIFile {
-    pub fn load_from_file(path: &str, player: SimpleTemporaryPlayer, random_colors: bool) -> Self {
+    pub fn load_from_file(path: &str, player: SimpleTemporaryPlayer) -> Self {
         let midi = TKMIDIFile::open(path, None).unwrap();
 
         let ppq = midi.ppq();
         let merged = pipe!(
-            midi.iter_all_track_events_merged()
+            midi.iter_all_track_events_merged_batches()
             |>TimeCaster::<f64>::cast_event_delta()
             |>cancel_tempo_events(250000)
-            |>convert_events_into_batches()
             |>scale_event_time(1.0 / ppq as f64)
             |>unwrap_items()
         );
 
-        type Ev = EventBatch<f64, TrackEvent<f64, Event<f64>>>;
+        type Ev = Delta<f64, Track<EventBatch<Event>>>;
         let (key_snd, key_rcv) = crossbeam_channel::bounded::<Arc<Ev>>(1000);
         let (audio_snd, audio_rcv) = crossbeam_channel::bounded::<Arc<Ev>>(1000);
 
@@ -127,12 +126,12 @@ impl InRamMIDIFile {
             }
 
             for batch in key_rcv.into_iter() {
-                if batch.delta() > 0.0 {
+                if batch.delta > 0.0 {
                     flush_keys(time, &mut keys);
-                    time += batch.delta();
+                    time += batch.delta;
                 }
 
-                for event in batch.iter() {
+                for event in batch.iter_events() {
                     let track = event.track;
                     match event.as_event() {
                         Event::NoteOn(e) => {
@@ -167,7 +166,7 @@ impl InRamMIDIFile {
 
         // Write events to the threads
         for batch in merged {
-            length += batch.delta();
+            length += batch.delta;
             let batch = Arc::new(batch);
             key_snd.send(batch.clone()).unwrap();
             audio_snd.send(batch).unwrap();
@@ -189,7 +188,7 @@ impl InRamMIDIFile {
             .collect();
 
         InRamMIDIFile {
-            view_data: InRamNoteViewData::new(columns, midi.track_count(), random_colors),
+            view_data: InRamNoteViewData::new(columns, midi.track_count()),
             timer,
             length,
             note_count,
