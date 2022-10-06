@@ -1,7 +1,7 @@
 use std::{collections::VecDeque, sync::Arc, thread};
 
 use midi_toolkit::{
-    events::{Event, MIDIEvent, MIDIEventEnum},
+    events::{Event, MIDIEventEnum},
     io::MIDIFile as TKMIDIFile,
     pipe,
     sequence::{

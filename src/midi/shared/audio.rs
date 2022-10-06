@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use gen_iter::GenIter;
 use midi_toolkit::{
-    events::{Event, MIDIEvent, MIDIEventEnum},
+    events::{Event, MIDIEventEnum},
     sequence::event::{Delta, EventBatch, Track},
 };
 

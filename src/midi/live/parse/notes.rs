@@ -5,7 +5,7 @@ use std::{
 
 use atomic_float::AtomicF64;
 use crossbeam_channel::{Receiver, Sender};
-use midi_toolkit::events::{Event, MIDIEvent, MIDIEventEnum};
+use midi_toolkit::events::{Event, MIDIEventEnum};
 
 use crate::midi::{
     live::block::{LiveNoteEnderHandle, LiveRefNoteBlock},
