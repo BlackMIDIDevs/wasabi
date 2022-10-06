@@ -24,7 +24,11 @@ impl<'a> InRamCurrentNoteViews<'a> {
 }
 
 impl InRamNoteViewData {
-    pub fn new(columns: Vec<InRamNoteColumn>, track_count: usize) -> Self {
+    pub fn new(columns: Vec<InRamNoteColumn>, track_count: usize, random_colors: bool) -> Self {
+        let column_view_data = columns
+            .iter()
+            .map(|_| InRamNoteColumnViewData::new())
+            .collect();
         InRamNoteViewData {
             columns,
             view_range: MIDIViewRange {
@@ -34,7 +38,32 @@ impl InRamNoteViewData {
             default_track_colors: MIDIColor::new_vec_for_tracks(track_count),
         }
     }
+}
 
+pub struct InRamNoteColumnViewData {
+    notes_to_end: usize,
+    notes_to_start: usize,
+    block_range: Range<usize>,
+}
+
+impl InRamNoteColumnViewData {
+    pub fn new() -> Self {
+        InRamNoteColumnViewData {
+            notes_to_end: 0,
+            notes_to_start: 0,
+            block_range: 0..0,
+        }
+    }
+}
+
+pub struct InRamNoteColumnView<'a> {
+    view: &'a InRamNoteViewData,
+    column: &'a InRamNoteColumn,
+    data: &'a InRamNoteColumnViewData,
+    view_range: MIDIViewRange,
+}
+
+impl InRamNoteViewData {
     pub fn shift_view_range(&mut self, new_view_range: MIDIViewRange) {
         let old_view_range = self.view_range;
         self.view_range = new_view_range;

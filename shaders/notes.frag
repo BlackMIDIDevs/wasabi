@@ -7,15 +7,20 @@ layout(location = 3) in vec2 win_size;
 
 layout(location = 0) out vec4 out_color;
 
-const float border = 2.0;
+const float border = 2;
 
 void main() {
     vec2 v_uv = frag_tex_coord;
-    vec3 color = frag_color * 1.3;
+    vec3 color = frag_color;
     float aspect = win_size.y / win_size.x;
 
-    float lighten = cos(v_uv.x + 1) + 0.7;
-    color *= vec3(lighten, lighten, lighten);
+    float gradient = cos(v_uv.x + 1);
+    vec3 color_grad = vec3(gradient, gradient, gradient) * color;
+
+    vec3 desaturated = 1 - (1 - color) * (1 - gradient);
+
+    color *= desaturated;
+    color += color_grad;
 
     float horiz_width_pixels = v_note_size.x / 2 * win_size.x;
     float vert_width_pixels = v_note_size.y / 2 * win_size.y;
@@ -31,7 +36,7 @@ void main() {
 
     if(border)
     {
-        color = vec3(frag_color * 0.27);
+        color = vec3(frag_color * 0.034);
     }
 
     out_color = vec4(color, 1.0);

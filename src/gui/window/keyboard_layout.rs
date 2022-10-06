@@ -17,7 +17,7 @@ impl Default for KeyboardParams {
         KeyboardParams::Classic {
             black_key_2_set_offset: 0.3,
             black_key_3_set_offset: 0.5,
-            black_key_scale: 0.6,
+            black_key_scale: 0.7,
         }
     }
 }
