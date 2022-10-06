@@ -1522,11 +1522,11 @@ dependencies = [
 [[package]]
 name = "midi-toolkit-rs"
 version = "0.1.0"
-source = "git+https://github.com/arduano/midi-toolkit-rs?rev=8e18089#8e180890b081459727df7e6d7a74bb95a0899cda"
+source = "git+https://github.com/arduano/midi-toolkit-rs?rev=907dec1#907dec12bd10e248f1a5b927a45190de70844751"
 dependencies = [
  "crossbeam-channel",
  "gen-iter",
- "midi-toolkit-rs-derive 0.1.0 (git+https://github.com/arduano/midi-toolkit-rs?rev=8e18089)",
+ "midi-toolkit-rs-derive 0.1.0 (git+https://github.com/arduano/midi-toolkit-rs?rev=907dec1)",
  "num-traits",
  "rayon",
 ]
@@ -1559,7 +1559,7 @@ dependencies = [
 [[package]]
 name = "midi-toolkit-rs-derive"
 version = "0.1.0"
-source = "git+https://github.com/arduano/midi-toolkit-rs?rev=8e18089#8e180890b081459727df7e6d7a74bb95a0899cda"
+source = "git+https://github.com/arduano/midi-toolkit-rs?rev=907dec1#907dec12bd10e248f1a5b927a45190de70844751"
 dependencies = [
  "convert_case",
  "num-traits",
@@ -3087,7 +3087,7 @@ dependencies = [
  "enum_dispatch",
  "gen-iter",
  "kdmapi",
- "midi-toolkit-rs 0.1.0 (git+https://github.com/arduano/midi-toolkit-rs?rev=8e18089)",
+ "midi-toolkit-rs 0.1.0 (git+https://github.com/arduano/midi-toolkit-rs?rev=907dec1)",
  "palette",
  "rand 0.8.5",
  "rayon",
