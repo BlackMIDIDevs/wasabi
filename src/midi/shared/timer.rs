@@ -34,7 +34,7 @@ impl TimerState {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct TimeKeeper {
     current_state: TimerState,
     listeners: Vec<crossbeam_channel::Sender<NotifySignal>>,
@@ -235,5 +235,9 @@ impl TimeListener {
                 Err(_) => return SeekWaitResult::Killed,
             }
         }
+    }
+
+    pub fn get_time(&self) -> Duration {
+        self.current.get_time()
     }
 }

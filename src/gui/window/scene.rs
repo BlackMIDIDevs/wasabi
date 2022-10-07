@@ -38,6 +38,7 @@ impl GuiRenderScene {
 
         let result = match midi_file {
             MIDIFileUnion::InRam(file) => self.draw_system.draw(key_view, frame, file, view_range),
+            MIDIFileUnion::Live(file) => self.draw_system.draw(key_view, frame, file, view_range),
         };
 
         ui.image(scene_image.id, [size[0] as f32, size[1] as f32]);

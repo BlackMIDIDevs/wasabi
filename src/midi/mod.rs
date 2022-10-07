@@ -1,9 +1,14 @@
+#[allow(dead_code)]
+mod live;
+#[allow(dead_code)]
 mod ram;
+
 mod shared;
 use enum_dispatch::enum_dispatch;
 use palette::convert::FromColorUnclamped;
 use rand::Rng;
 
+pub use live::LiveLoadMIDIFile;
 pub use ram::{InRamMIDIFile, MIDIFileStats};
 
 use self::shared::timer::TimeKeeper;
@@ -58,6 +63,7 @@ impl MIDIColor {
         vec
     }
 
+    #[allow(dead_code)]
     pub fn new_random_vec_for_tracks(tracks: usize) -> Vec<Self> {
         let count = tracks * 16;
 
@@ -142,4 +148,5 @@ pub struct DisplacedMIDINote {
 #[enum_dispatch(MIDIFileBase)]
 pub enum MIDIFileUnion {
     InRam(ram::InRamMIDIFile),
+    Live(live::LiveLoadMIDIFile),
 }

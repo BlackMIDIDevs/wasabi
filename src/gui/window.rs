@@ -216,7 +216,6 @@ impl GuiWasabiWindow {
                                         MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
                                             &path,
                                             SimpleTemporaryPlayer::new(&perm_settings.sfz_path),
-                                            perm_settings.random_colors,
                                         ));
                                     midi_file.timer_mut().play();
                                     self.midi_file = Some(midi_file);

@@ -1,27 +1,21 @@
-use std::{
-    collections::{HashMap, VecDeque},
-    sync::Arc,
-    thread,
-};
+use std::{collections::VecDeque, sync::Arc, thread};
 
 use midi_toolkit::{
-    events::{Event, MIDIEvent, MIDIEventEnum},
+    events::{Event, MIDIEventEnum},
     io::MIDIFile as TKMIDIFile,
     pipe,
     sequence::{
-        event::{
-            cancel_tempo_events, convert_events_into_batches, scale_event_time, EventBatch,
-            TrackEvent,
-        },
+        event::{cancel_tempo_events, scale_event_time, Delta, EventBatch, Track},
         unwrap_items, TimeCaster,
     },
 };
+use rustc_hash::FxHashMap;
 
 use crate::{
     audio_playback::SimpleTemporaryPlayer,
     midi::{
         ram::{audio_player::InRamAudioPlayer, column::InRamNoteColumn, view::InRamNoteViewData},
-        shared::{audio::CompressedAudio, timer::TimeKeeper},
+        shared::{audio::CompressedAudio, timer::TimeKeeper, track_channel::TrackAndChannel},
     },
 };
 
@@ -34,8 +28,8 @@ struct UnendedNote {
 
 struct Key {
     column: Vec<InRamNoteBlock>,
-    block_builder: Vec<u32>,
-    unended_notes: HashMap<u32, VecDeque<UnendedNote>>,
+    block_builder: Vec<TrackAndChannel>,
+    unended_notes: FxHashMap<TrackAndChannel, VecDeque<UnendedNote>>,
 }
 
 impl Key {
@@ -43,11 +37,11 @@ impl Key {
         Key {
             column: Vec::new(),
             block_builder: Vec::new(),
-            unended_notes: HashMap::new(),
+            unended_notes: FxHashMap::default(),
         }
     }
 
-    fn add_note(&mut self, track_chan: u32) {
+    fn add_note(&mut self, track_chan: TrackAndChannel) {
         let block_index = self.block_builder.len();
         let column_index = self.column.len();
         self.block_builder.push(track_chan);
@@ -61,7 +55,7 @@ impl Key {
         });
     }
 
-    pub fn end_note(&mut self, track_chan: u32, time: f64) {
+    pub fn end_note(&mut self, track_chan: TrackAndChannel, time: f64) {
         let note = self
             .unended_notes
             .get_mut(&track_chan)
@@ -99,20 +93,19 @@ impl Key {
 }
 
 impl InRamMIDIFile {
-    pub fn load_from_file(path: &str, player: SimpleTemporaryPlayer, random_colors: bool) -> Self {
+    pub fn load_from_file(path: &str, player: SimpleTemporaryPlayer) -> Self {
         let midi = TKMIDIFile::open(path, None).unwrap();
 
         let ppq = midi.ppq();
         let merged = pipe!(
-            midi.iter_all_track_events_merged()
+            midi.iter_all_track_events_merged_batches()
             |>TimeCaster::<f64>::cast_event_delta()
             |>cancel_tempo_events(250000)
-            |>convert_events_into_batches()
             |>scale_event_time(1.0 / ppq as f64)
             |>unwrap_items()
         );
 
-        type Ev = EventBatch<f64, TrackEvent<f64, Event<f64>>>;
+        type Ev = Delta<f64, Track<EventBatch<Event>>>;
         let (key_snd, key_rcv) = crossbeam_channel::bounded::<Arc<Ev>>(1000);
         let (audio_snd, audio_rcv) = crossbeam_channel::bounded::<Arc<Ev>>(1000);
 
@@ -130,21 +123,21 @@ impl InRamMIDIFile {
             }
 
             for batch in key_rcv.into_iter() {
-                if batch.delta() > 0.0 {
+                if batch.delta > 0.0 {
                     flush_keys(time, &mut keys);
-                    time += batch.delta();
+                    time += batch.delta;
                 }
 
-                for event in batch.iter() {
+                for event in batch.iter_events() {
                     let track = event.track;
                     match event.as_event() {
                         Event::NoteOn(e) => {
-                            let track_chan = track * 16 + e.channel as u32;
+                            let track_chan = TrackAndChannel::new(track, e.channel);
                             keys[e.key as usize].add_note(track_chan);
                             notes += 1;
                         }
                         Event::NoteOff(e) => {
-                            let track_chan = track * 16 + e.channel as u32;
+                            let track_chan = TrackAndChannel::new(track, e.channel);
                             keys[e.key as usize].end_note(track_chan, time);
                         }
                         _ => {}
@@ -170,7 +163,7 @@ impl InRamMIDIFile {
 
         // Write events to the threads
         for batch in merged {
-            length += batch.delta();
+            length += batch.delta;
             let batch = Arc::new(batch);
             key_snd.send(batch.clone()).unwrap();
             audio_snd.send(batch).unwrap();
@@ -192,7 +185,7 @@ impl InRamMIDIFile {
             .collect();
 
         InRamMIDIFile {
-            view_data: InRamNoteViewData::new(columns, midi.track_count(), random_colors),
+            view_data: InRamNoteViewData::new(columns, midi.track_count()),
             timer,
             length,
             note_count,
