@@ -360,14 +360,14 @@ impl GuiWasabiWindow {
 
         stats.voice_count = if let Some(synth) = &self.synth {
             let x = if let Ok(player) = synth.read() {
-                    player.get_voice_count()
-                } else {
-                    0
-                };
-                x
+                player.get_voice_count()
             } else {
                 0
             };
+            x
+        } else {
+            0
+        };
 
         // Render the keyboard
         egui::TopBottomPanel::top("Keyboard panel")
