@@ -51,7 +51,7 @@ macro_rules! impl_file_base {
             }
 
             fn allows_seeking_backward(&self) -> bool {
-                true
+                false
             }
 
             fn stats(&self) -> MIDIFileStats {

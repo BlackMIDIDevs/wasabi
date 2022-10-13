@@ -162,6 +162,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "atomic_float"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "62af46d040ba9df09edc6528dae9d8e49f5f3e82f55b7d2ec31a733c38dbc49d"
+
+[[package]]
 name = "atomic_refcell"
 version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1516,6 +1522,18 @@ dependencies = [
 [[package]]
 name = "midi-toolkit-rs"
 version = "0.1.0"
+source = "git+https://github.com/arduano/midi-toolkit-rs?rev=907dec1#907dec12bd10e248f1a5b927a45190de70844751"
+dependencies = [
+ "crossbeam-channel",
+ "gen-iter",
+ "midi-toolkit-rs-derive 0.1.0 (git+https://github.com/arduano/midi-toolkit-rs?rev=907dec1)",
+ "num-traits",
+ "rayon",
+]
+
+[[package]]
+name = "midi-toolkit-rs"
+version = "0.1.0"
 source = "git+https://github.com/arduano/midi-toolkit-rs?rev=f30ca8a#f30ca8a2e5aeabd8bae94f1811f42b1dad7a25bf"
 dependencies = [
  "crossbeam-channel",
@@ -1529,6 +1547,19 @@ dependencies = [
 name = "midi-toolkit-rs-derive"
 version = "0.1.0"
 source = "git+https://github.com/arduano/midi-toolkit-rs?rev=51ff0dc#51ff0dcef32451d022bc240c190f0eb31d494765"
+dependencies = [
+ "convert_case",
+ "num-traits",
+ "proc-macro-error",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "midi-toolkit-rs-derive"
+version = "0.1.0"
+source = "git+https://github.com/arduano/midi-toolkit-rs?rev=907dec1#907dec12bd10e248f1a5b927a45190de70844751"
 dependencies = [
  "convert_case",
  "num-traits",
@@ -3043,6 +3074,7 @@ dependencies = [
 name = "wasabi"
 version = "0.1.0"
 dependencies = [
+ "atomic_float",
  "bytemuck",
  "colors-transform",
  "confy",
@@ -3055,11 +3087,12 @@ dependencies = [
  "enum_dispatch",
  "gen-iter",
  "kdmapi",
- "midi-toolkit-rs 0.1.0 (git+https://github.com/arduano/midi-toolkit-rs?rev=f30ca8a)",
+ "midi-toolkit-rs 0.1.0 (git+https://github.com/arduano/midi-toolkit-rs?rev=907dec1)",
  "palette",
  "rand 0.8.5",
  "rayon",
  "rfd",
+ "rustc-hash",
  "serde",
  "serde_derive",
  "toml",

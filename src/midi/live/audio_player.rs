@@ -1,0 +1,84 @@
+use std::{
+    thread::{self, JoinHandle},
+    time::Duration,
+};
+
+use crossbeam_channel::Receiver;
+
+use crate::{
+    audio_playback::SimpleTemporaryPlayer,
+    midi::shared::{
+        audio::CompressedAudio,
+        timer::{TimeListener, UnpauseWaitResult, WaitResult},
+    },
+};
+
+pub struct LiveAudioPlayer {
+    events: Receiver<CompressedAudio>,
+    timer: TimeListener,
+    player: SimpleTemporaryPlayer,
+}
+
+impl LiveAudioPlayer {
+    pub fn new(
+        events: Receiver<CompressedAudio>,
+        timer: TimeListener,
+        player: SimpleTemporaryPlayer,
+    ) -> Self {
+        LiveAudioPlayer {
+            events,
+            timer,
+            player,
+        }
+    }
+
+    pub fn spawn_playback(mut self) -> JoinHandle<()> {
+        thread::spawn(move || {
+            let mut seek_catching_up = false;
+
+            let max_fall_time = 0.1;
+
+            for event in self.events.into_iter() {
+                if self.timer.is_paused() {
+                    match self.timer.wait_until_unpause() {
+                        UnpauseWaitResult::Unpaused => {}
+                        UnpauseWaitResult::UnpausedAndSeeked(time) => {
+                            if time.as_secs_f64() - event.time > max_fall_time {
+                                seek_catching_up = true;
+                                self.player.reset();
+                            }
+                            continue;
+                        }
+                        UnpauseWaitResult::Killed => break,
+                    }
+                }
+
+                if seek_catching_up {
+                    let time = self.timer.get_time().as_secs_f64();
+                    if time - event.time > max_fall_time {
+                        self.player.push_events(event.iter_control_events());
+                        continue;
+                    } else {
+                        seek_catching_up = false;
+                    }
+                }
+
+                let time = Duration::from_secs_f64(event.time);
+                match self.timer.wait_until(time) {
+                    WaitResult::Ok => {}
+                    WaitResult::Paused => continue,
+                    WaitResult::Seeked(time) => {
+                        if time.as_secs_f64() - event.time > max_fall_time {
+                            seek_catching_up = true;
+                            self.player.reset();
+                        }
+                        continue;
+                    }
+                    WaitResult::Killed => break,
+                }
+
+                self.player.push_events(event.iter_events());
+            }
+        })
+    }
+}
