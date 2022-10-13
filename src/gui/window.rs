@@ -4,7 +4,7 @@ mod scene;
 
 use std::{
     collections::VecDeque,
-    sync::{Arc, Mutex},
+    sync::{Arc, RwLock},
     time::{Duration, Instant},
 };
 
@@ -59,7 +59,7 @@ struct GuiMidiStats {
     //notes_passed: usize,
     notes_total: usize,
     notes_on_screen: u64,
-    //voice_count: usize,
+    voice_count: u64,
 }
 
 impl GuiMidiStats {
@@ -70,7 +70,7 @@ impl GuiMidiStats {
             //notes_passed: 0,
             notes_total: 0,
             notes_on_screen: 0,
-            //voice_count: 0,
+            voice_count: 0,
         }
     }
 }
@@ -80,7 +80,7 @@ pub struct GuiWasabiWindow {
     keyboard_layout: keyboard_layout::KeyboardLayout,
     keyboard: GuiKeyboard,
     midi_file: Option<MIDIFileUnion>,
-    synth: Option<Arc<Mutex<SimpleTemporaryPlayer>>>,
+    synth: Option<Arc<RwLock<SimpleTemporaryPlayer>>>,
     fps: Fps,
 }
 
@@ -223,7 +223,7 @@ impl GuiWasabiWindow {
                                 self.synth = None;
 
                                 let synth = SimpleTemporaryPlayer::new(&perm_settings.sfz_path);
-                                let synth = Mutex::new(synth);
+                                let synth = RwLock::new(synth);
                                 let synth = Arc::new(synth);
                                 self.synth = Some(synth.clone());
 
@@ -358,6 +358,17 @@ impl GuiWasabiWindow {
                 }
             });
 
+        stats.voice_count = if let Some(synth) = &self.synth {
+            let x = if let Ok(player) = synth.read() {
+                    player.get_voice_count()
+                } else {
+                    0
+                };
+                x
+            } else {
+                0
+            };
+
         // Render the keyboard
         egui::TopBottomPanel::top("Keyboard panel")
             .height_range(keyboard_height..=keyboard_height)
@@ -440,18 +451,7 @@ impl GuiWasabiWindow {
                     ui.add(Label::new(format!("FPS: {}", self.fps.get_fps().round())));
                     ui.add(Label::new(format!("Total Notes: {}", stats.notes_total)));
                     //ui.add(Label::new(format!("Passed: {}", -1)));  // TODO
-                    let voice_count = if let Some(synth) = &self.synth {
-                        let thread_arc = synth.clone();
-                        let x = if let Ok(player) = thread_arc.lock() {
-                            player.get_voice_count()
-                        } else {
-                            0
-                        };
-                        x
-                    } else {
-                        0
-                    };
-                    ui.add(Label::new(format!("Voice Count: {}", voice_count)));
+                    ui.add(Label::new(format!("Voice Count: {}", stats.voice_count)));
                     ui.add(Label::new(format!("Rendered: {}", stats.notes_on_screen)));
                 });
         }
@@ -459,8 +459,7 @@ impl GuiWasabiWindow {
 
     fn reset_synth(&mut self) {
         if let Some(synth) = &self.synth {
-            let thread_arc = synth.clone();
-            if let Ok(mut player) = thread_arc.lock() {
+            if let Ok(mut player) = synth.write() {
                 player.reset()
             };
         };

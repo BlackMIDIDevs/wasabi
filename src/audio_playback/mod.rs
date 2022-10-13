@@ -18,8 +18,8 @@ pub struct SimpleTemporaryPlayer {
 impl SimpleTemporaryPlayer {
     pub fn new(sfz_path: &str) -> Self {
         let config = XSynthRealtimeConfig {
-            render_window_ms: 1000.0 / 60.0,
-            use_threadpool: true,
+            render_window_ms: 5.0,
+            use_threadpool: false,
             ..Default::default()
         };
 

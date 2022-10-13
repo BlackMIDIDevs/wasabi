@@ -1,6 +1,6 @@
 use std::{
     collections::{HashMap, VecDeque},
-    sync::{Arc, Mutex},
+    sync::{Arc, RwLock},
     thread,
 };
 
@@ -101,7 +101,7 @@ impl Key {
 impl InRamMIDIFile {
     pub fn load_from_file(
         path: &str,
-        player: Arc<Mutex<SimpleTemporaryPlayer>>,
+        player: Arc<RwLock<SimpleTemporaryPlayer>>,
         random_colors: bool,
     ) -> Self {
         let midi = TKMIDIFile::open(path, None).unwrap();
