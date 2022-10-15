@@ -63,7 +63,6 @@ impl MIDIColor {
         vec
     }
 
-    #[allow(dead_code)]
     pub fn new_random_vec_for_tracks(tracks: usize) -> Vec<Self> {
         let count = tracks * 16;
 

@@ -303,7 +303,7 @@ impl GuiWasabiWindow {
         let available = ctx.available_rect();
         let height = available.height();
         let visible_keys = perm_settings.key_range.len();
-        let keyboard_height = 11.6 / visible_keys as f32 * available.width() as f32;
+        let keyboard_height = 11.6 / visible_keys as f32 * available.width();
         let notes_height = height - keyboard_height;
 
         let key_view = self.keyboard_layout.get_view_for_keys(

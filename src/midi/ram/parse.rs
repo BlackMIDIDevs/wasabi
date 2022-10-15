@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, VecDeque},
+    collections::VecDeque,
     sync::{Arc, RwLock},
     thread,
 };
@@ -193,7 +193,7 @@ impl InRamMIDIFile {
             .collect();
 
         InRamMIDIFile {
-            view_data: InRamNoteViewData::new(columns, midi.track_count()),
+            view_data: InRamNoteViewData::new(columns, midi.track_count(), random_colors),
             timer,
             length,
             note_count,
