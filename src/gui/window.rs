@@ -4,6 +4,7 @@ mod scene;
 
 use std::{
     collections::VecDeque,
+    sync::{Arc, RwLock},
     time::{Duration, Instant},
 };
 
@@ -58,7 +59,7 @@ struct GuiMidiStats {
     //notes_passed: usize,
     notes_total: usize,
     notes_on_screen: u64,
-    //voice_count: usize,
+    voice_count: u64,
 }
 
 impl GuiMidiStats {
@@ -69,7 +70,7 @@ impl GuiMidiStats {
             //notes_passed: 0,
             notes_total: 0,
             notes_on_screen: 0,
-            //voice_count: 0,
+            voice_count: 0,
         }
     }
 }
@@ -79,6 +80,7 @@ pub struct GuiWasabiWindow {
     keyboard_layout: keyboard_layout::KeyboardLayout,
     keyboard: GuiKeyboard,
     midi_file: Option<MIDIFileUnion>,
+    synth: Option<Arc<RwLock<SimpleTemporaryPlayer>>>,
     fps: Fps,
 }
 
@@ -89,6 +91,7 @@ impl GuiWasabiWindow {
             keyboard_layout: keyboard_layout::KeyboardLayout::new(&Default::default()),
             keyboard: GuiKeyboard::new(),
             midi_file: None,
+            synth: None,
             fps: Fps::new(),
         }
     }
@@ -142,10 +145,10 @@ impl GuiWasabiWindow {
 
                             ui.label("Note speed: ");
                             ui.spacing_mut().slider_width = 150.0;
-                            ui.add(
-                                egui::Slider::new(&mut perm_settings.note_speed, 2.0..=0.001)
-                                    .show_value(false),
-                            );
+                            ui.add(egui::Slider::new(
+                                &mut perm_settings.note_speed,
+                                2.0..=0.001,
+                            ));
                             ui.end_row();
 
                             ui.label("Background Color: ");
@@ -211,19 +214,37 @@ impl GuiWasabiWindow {
                                 .pick_file();
 
                             if let Some(midi_path) = midi_path {
+                                if let Some(midi_file) = self.midi_file.as_mut() {
+                                    midi_file.timer_mut().pause();
+                                }
+                                self.reset_synth();
+
+                                self.midi_file = None;
+                                self.synth = None;
+
+                                let synth = SimpleTemporaryPlayer::new(&perm_settings.sfz_path);
+                                let synth = RwLock::new(synth);
+                                let synth = Arc::new(synth);
+                                self.synth = Some(synth.clone());
+
                                 if let Ok(path) = midi_path.into_os_string().into_string() {
                                     let mut midi_file =
                                         MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
                                             &path,
-                                            SimpleTemporaryPlayer::new(&perm_settings.sfz_path),
+                                            synth,
+                                            perm_settings.random_colors,
                                         ));
                                     midi_file.timer_mut().play();
                                     self.midi_file = Some(midi_file);
                                 }
                             }
                         }
-                        if self.midi_file.is_some() && ui.button("Close MIDI").clicked() {
-                            self.midi_file = None;
+                        if let Some(midi_file) = self.midi_file.as_mut() {
+                            if ui.button("Close MIDI").clicked() {
+                                midi_file.timer_mut().pause();
+                                self.reset_synth();
+                                self.midi_file = None;
+                            }
                         }
                         if ui.button("Play").clicked() {
                             if let Some(midi_file) = self.midi_file.as_mut() {
@@ -282,7 +303,7 @@ impl GuiWasabiWindow {
         let available = ctx.available_rect();
         let height = available.height();
         let visible_keys = perm_settings.key_range.len();
-        let keyboard_height = 11.6 / visible_keys as f32 * available.width() as f32;
+        let keyboard_height = 11.6 / visible_keys as f32 * available.width();
         let notes_height = height - keyboard_height;
 
         let key_view = self.keyboard_layout.get_view_for_keys(
@@ -336,6 +357,17 @@ impl GuiWasabiWindow {
                     render_result_data = Some(result);
                 }
             });
+
+        stats.voice_count = if let Some(synth) = &self.synth {
+            let x = if let Ok(player) = synth.read() {
+                player.get_voice_count()
+            } else {
+                0
+            };
+            x
+        } else {
+            0
+        };
 
         // Render the keyboard
         egui::TopBottomPanel::top("Keyboard panel")
@@ -419,9 +451,17 @@ impl GuiWasabiWindow {
                     ui.add(Label::new(format!("FPS: {}", self.fps.get_fps().round())));
                     ui.add(Label::new(format!("Total Notes: {}", stats.notes_total)));
                     //ui.add(Label::new(format!("Passed: {}", -1)));  // TODO
-                    //ui.add(Label::new(format!("Voice Count: {}", self.synth.as_mut().unwrap().get_voice_count())));
+                    ui.add(Label::new(format!("Voice Count: {}", stats.voice_count)));
                     ui.add(Label::new(format!("Rendered: {}", stats.notes_on_screen)));
                 });
         }
+    }
+
+    fn reset_synth(&mut self) {
+        if let Some(synth) = &self.synth {
+            if let Ok(mut player) = synth.write() {
+                player.reset()
+            };
+        };
     }
 }

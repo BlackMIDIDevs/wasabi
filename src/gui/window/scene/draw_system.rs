@@ -127,7 +127,7 @@ impl NoteRenderer {
                             return 0;
                         }
 
-                        let remaining_buffer_space = buffer_length - offset as usize;
+                        let remaining_buffer_space = buffer_length - offset;
                         let iter_length = column.remaining;
 
                         let allowed_to_write = if iter_length > remaining_buffer_space {

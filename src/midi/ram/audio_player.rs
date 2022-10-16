@@ -1,4 +1,5 @@
 use std::{
+    sync::{Arc, RwLock},
     thread::{self, JoinHandle},
     time::Duration,
 };
@@ -14,7 +15,7 @@ use crate::{
 pub struct InRamAudioPlayer {
     events: Vec<CompressedAudio>,
     timer: TimeListener,
-    player: SimpleTemporaryPlayer,
+    player: Arc<RwLock<SimpleTemporaryPlayer>>,
     index: usize,
 }
 
@@ -22,7 +23,7 @@ impl InRamAudioPlayer {
     pub fn new(
         events: Vec<CompressedAudio>,
         timer: TimeListener,
-        player: SimpleTemporaryPlayer,
+        player: Arc<RwLock<SimpleTemporaryPlayer>>,
     ) -> Self {
         InRamAudioPlayer {
             events,
@@ -68,7 +69,9 @@ impl InRamAudioPlayer {
                 WaitResult::Killed => break,
             }
 
-            self.player.push_events(event.iter_events());
+            if let Ok(mut player) = self.player.clone().write() {
+                player.push_events(event.iter_events());
+            }
             self.index += 1;
         })
     }
@@ -108,10 +111,11 @@ impl InRamAudioPlayer {
         self.index = self.find_time_index(time);
 
         // Reset and push all control events before
-        self.player.reset();
-        for i in 0..(self.index) {
-            self.player
-                .push_events(self.events[i].iter_control_events());
-        }
+        if let Ok(mut player) = self.player.clone().write() {
+            player.reset();
+            for i in 0..(self.index) {
+                player.push_events(self.events[i].iter_control_events());
+            }
+        };
     }
 }

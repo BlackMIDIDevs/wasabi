@@ -41,7 +41,7 @@ impl Default for WasabiPermanentSettings {
             note_speed: 0.25,
             bg_color: Color32::from_rgb(90, 90, 90),
             bar_color: Color32::from_rgb(65, 0, 30),
-            random_colors: true,
+            random_colors: false,
             sfz_path: "".to_string(),
             key_range: 0..=127,
         }

@@ -18,8 +18,8 @@ pub struct SimpleTemporaryPlayer {
 impl SimpleTemporaryPlayer {
     pub fn new(sfz_path: &str) -> Self {
         let config = XSynthRealtimeConfig {
-            render_window_ms: 1000.0 / 60.0,
-            use_threadpool: true,
+            render_window_ms: 5.0,
+            use_threadpool: false,
             ..Default::default()
         };
 
@@ -46,6 +46,10 @@ impl SimpleTemporaryPlayer {
 
         //let kdmapi = KDMAPI.open_stream();
         SimpleTemporaryPlayer { sender, stats }
+    }
+
+    pub fn get_voice_count(&self) -> u64 {
+        self.stats.voice_count()
     }
 
     pub fn push_events(&mut self, data: impl Iterator<Item = u32>) {
