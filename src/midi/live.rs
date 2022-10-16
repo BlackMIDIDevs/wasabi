@@ -28,7 +28,11 @@ pub struct LiveLoadMIDIFile {
 }
 
 impl LiveLoadMIDIFile {
-    pub fn load_from_file(path: &str, player: Arc<RwLock<SimpleTemporaryPlayer>>, random_colors: bool,) -> Self {
+    pub fn load_from_file(
+        path: &str,
+        player: Arc<RwLock<SimpleTemporaryPlayer>>,
+        random_colors: bool,
+    ) -> Self {
         let midi = TKMIDIFile::open(path, None).unwrap();
 
         let parse_length_outer = Arc::new(AtomicF64::new(f64::NAN));

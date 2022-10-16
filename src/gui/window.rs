@@ -311,11 +311,9 @@ impl GuiWasabiWindow {
                                 if perm_settings.midi_loading == 0 {
                                     let position = Duration::from_secs_f64(progress * length);
                                     midi_file.timer_mut().seek(position);
-                                } else {
-                                    if progress_prev < progress {
-                                        let position = Duration::from_secs_f64(progress * length);
-                                        midi_file.timer_mut().seek(position);
-                                    }
+                                } else if progress_prev < progress {
+                                    let position = Duration::from_secs_f64(progress * length);
+                                    midi_file.timer_mut().seek(position);
                                 }
                             }
                         }

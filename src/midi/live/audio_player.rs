@@ -1,7 +1,7 @@
 use std::{
+    sync::{Arc, RwLock},
     thread::{self, JoinHandle},
     time::Duration,
-    sync::{Arc, RwLock}
 };
 
 use crossbeam_channel::Receiver;
