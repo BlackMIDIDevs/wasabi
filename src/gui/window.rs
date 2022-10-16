@@ -308,10 +308,9 @@ impl GuiWasabiWindow {
                             ui.spacing_mut().slider_width = window_size[0] - 20.0;
                             ui.add(slider);
                             if progress_prev != progress {
-                                if perm_settings.midi_loading == 0 {
-                                    let position = Duration::from_secs_f64(progress * length);
-                                    midi_file.timer_mut().seek(position);
-                                } else if progress_prev < progress {
+                                if !(!midi_file.allows_seeking_backward()
+                                    && progress_prev > progress)
+                                {
                                     let position = Duration::from_secs_f64(progress * length);
                                     midi_file.timer_mut().seek(position);
                                 }
@@ -373,7 +372,9 @@ impl GuiWasabiWindow {
                                         midi_file.timer_mut().seek(time + one_sec)
                                     }
                                     egui::Key::ArrowLeft => {
-                                        midi_file.timer_mut().seek(time - one_sec)
+                                        if midi_file.allows_seeking_backward() {
+                                            midi_file.timer_mut().seek(time - one_sec)
+                                        }
                                     }
                                     egui::Key::Space => midi_file.timer_mut().toggle_pause(),
                                     _ => {}
@@ -482,7 +483,6 @@ impl GuiWasabiWindow {
                     )));
                     ui.add(Label::new(format!("FPS: {}", self.fps.get_fps().round())));
                     ui.add(Label::new(format!("Total Notes: {}", stats.notes_total)));
-                    //ui.add(Label::new(format!("Passed: {}", -1)));  // TODO
                     ui.add(Label::new(format!("Voice Count: {}", stats.voice_count)));
                     ui.add(Label::new(format!("Rendered: {}", stats.notes_on_screen)));
                 });
