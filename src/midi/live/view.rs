@@ -25,7 +25,7 @@ impl<'a> LiveCurrentNoteViews<'a> {
 }
 
 impl LiveNoteViewData {
-    pub fn new(parser: LiveMidiParser, track_count: usize) -> Self {
+    pub fn new(parser: LiveMidiParser, track_count: usize, random_colors: bool) -> Self {
         let mut columns = Vec::with_capacity(256);
         columns.resize_with(256, LiveNoteColumn::new);
         LiveNoteViewData {
@@ -35,7 +35,11 @@ impl LiveNoteViewData {
                 start: 0.0,
                 end: 0.0,
             },
-            default_track_colors: MIDIColor::new_vec_for_tracks(track_count),
+            default_track_colors: if random_colors {
+                MIDIColor::new_random_vec_for_tracks(track_count)
+            } else {
+                MIDIColor::new_vec_for_tracks(track_count)
+            },
         }
     }
 

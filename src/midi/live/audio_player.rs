@@ -1,6 +1,7 @@
 use std::{
     thread::{self, JoinHandle},
     time::Duration,
+    sync::{Arc, RwLock}
 };
 
 use crossbeam_channel::Receiver;
@@ -16,14 +17,14 @@ use crate::{
 pub struct LiveAudioPlayer {
     events: Receiver<CompressedAudio>,
     timer: TimeListener,
-    player: SimpleTemporaryPlayer,
+    player: Arc<RwLock<SimpleTemporaryPlayer>>,
 }
 
 impl LiveAudioPlayer {
     pub fn new(
         events: Receiver<CompressedAudio>,
         timer: TimeListener,
-        player: SimpleTemporaryPlayer,
+        player: Arc<RwLock<SimpleTemporaryPlayer>>,
     ) -> Self {
         LiveAudioPlayer {
             events,
@@ -45,7 +46,9 @@ impl LiveAudioPlayer {
                         UnpauseWaitResult::UnpausedAndSeeked(time) => {
                             if time.as_secs_f64() - event.time > max_fall_time {
                                 seek_catching_up = true;
-                                self.player.reset();
+                                if let Ok(mut player) = self.player.clone().write() {
+                                    player.reset();
+                                };
                             }
                             continue;
                         }
@@ -56,7 +59,9 @@ impl LiveAudioPlayer {
                 if seek_catching_up {
                     let time = self.timer.get_time().as_secs_f64();
                     if time - event.time > max_fall_time {
-                        self.player.push_events(event.iter_control_events());
+                        if let Ok(mut player) = self.player.clone().write() {
+                            player.push_events(event.iter_control_events());
+                        }
                         continue;
                     } else {
                         seek_catching_up = false;
@@ -70,14 +75,18 @@ impl LiveAudioPlayer {
                     WaitResult::Seeked(time) => {
                         if time.as_secs_f64() - event.time > max_fall_time {
                             seek_catching_up = true;
-                            self.player.reset();
+                            if let Ok(mut player) = self.player.clone().write() {
+                                player.reset();
+                            };
                         }
                         continue;
                     }
                     WaitResult::Killed => break,
                 }
 
-                self.player.push_events(event.iter_events());
+                if let Ok(mut player) = self.player.clone().write() {
+                    player.push_events(event.iter_events());
+                }
             }
         })
     }

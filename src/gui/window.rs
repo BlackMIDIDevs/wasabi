@@ -16,7 +16,7 @@ use rfd::FileDialog;
 
 use crate::{
     audio_playback::SimpleTemporaryPlayer,
-    midi::{InRamMIDIFile, MIDIFileBase, MIDIFileUnion},
+    midi::{InRamMIDIFile, LiveLoadMIDIFile, MIDIFileBase, MIDIFileUnion},
 };
 
 use self::{keyboard::GuiKeyboard, scene::GuiRenderScene};
@@ -125,7 +125,7 @@ impl GuiWasabiWindow {
                         .spacing([40.0, 4.0])
                         .striped(true)
                         .show(ui, |ui| {
-                            ui.label("SFZ Path: ");
+                            ui.label("SFZ Path*: ");
                             ui.horizontal(|ui| {
                                 ui.add(egui::TextEdit::singleline(&mut perm_settings.sfz_path));
                                 if ui.button("Browse...").clicked() {
@@ -159,7 +159,7 @@ impl GuiWasabiWindow {
                             ui.color_edit_button_srgba(&mut perm_settings.bar_color);
                             ui.end_row();
 
-                            ui.label("Random Track Colors: ");
+                            ui.label("Random Track Colors*: ");
                             ui.checkbox(&mut perm_settings.random_colors, "");
                             ui.end_row();
 
@@ -184,9 +184,19 @@ impl GuiWasabiWindow {
                             {
                                 perm_settings.key_range = firstkey..=lastkey;
                             }
+
+                            ui.label("MIDI Loading*: ");
+                            let midi_loading = ["In RAM", "Live"];
+                            egui::ComboBox::from_label("").show_index(
+                                ui,
+                                &mut perm_settings.midi_loading,
+                                midi_loading.len(),
+                                |i| midi_loading[i].to_owned(),
+                            );
                         });
                     ui.separator();
                     ui.vertical_centered(|ui| {
+                        ui.label("Options marked with (*) require a MIDI reload / restart.");
                         if ui.button("Save").clicked() {
                             perm_settings.save_to_file();
                         }
@@ -228,14 +238,31 @@ impl GuiWasabiWindow {
                                 self.synth = Some(synth.clone());
 
                                 if let Ok(path) = midi_path.into_os_string().into_string() {
-                                    let mut midi_file =
-                                        MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
-                                            &path,
-                                            synth,
-                                            perm_settings.random_colors,
-                                        ));
-                                    midi_file.timer_mut().play();
-                                    self.midi_file = Some(midi_file);
+                                    match perm_settings.midi_loading {
+                                        0 => {
+                                            let mut midi_file = MIDIFileUnion::InRam(
+                                                InRamMIDIFile::load_from_file(
+                                                    &path,
+                                                    synth,
+                                                    perm_settings.random_colors,
+                                                ),
+                                            );
+                                            midi_file.timer_mut().play();
+                                            self.midi_file = Some(midi_file);
+                                        }
+                                        1 => {
+                                            let mut midi_file = MIDIFileUnion::Live(
+                                                LiveLoadMIDIFile::load_from_file(
+                                                    &path,
+                                                    synth,
+                                                    perm_settings.random_colors,
+                                                ),
+                                            );
+                                            midi_file.timer_mut().play();
+                                            self.midi_file = Some(midi_file);
+                                        }
+                                        _ => {}
+                                    }
                                 }
                             }
                         }
@@ -281,8 +308,15 @@ impl GuiWasabiWindow {
                             ui.spacing_mut().slider_width = window_size[0] - 20.0;
                             ui.add(slider);
                             if progress_prev != progress {
-                                let position = Duration::from_secs_f64(progress * length);
-                                midi_file.timer_mut().seek(position);
+                                if perm_settings.midi_loading == 0 {
+                                    let position = Duration::from_secs_f64(progress * length);
+                                    midi_file.timer_mut().seek(position);
+                                } else {
+                                    if progress_prev < progress {
+                                        let position = Duration::from_secs_f64(progress * length);
+                                        midi_file.timer_mut().seek(position);
+                                    }
+                                }
                             }
                         }
                     } else {

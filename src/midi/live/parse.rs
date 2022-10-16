@@ -1,5 +1,5 @@
 use std::{
-    sync::{atomic::Ordering, Arc},
+    sync::{atomic::Ordering, Arc, RwLock},
     thread::{self, JoinHandle},
     time::Duration,
 };
@@ -45,7 +45,7 @@ pub struct LiveMidiParser {
 impl LiveMidiParser {
     pub fn init(
         midi: &TKMIDIFile<DiskReader, DiskTrackReader>,
-        player: SimpleTemporaryPlayer,
+        player: Arc<RwLock<SimpleTemporaryPlayer>>,
         timer: &mut TimeKeeper,
     ) -> Self {
         let ppq = midi.ppq();

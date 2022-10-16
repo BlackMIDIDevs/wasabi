@@ -1,5 +1,5 @@
 use std::{
-    sync::{atomic::Ordering, Arc},
+    sync::{atomic::Ordering, Arc, RwLock},
     thread,
 };
 
@@ -28,7 +28,7 @@ pub struct LiveLoadMIDIFile {
 }
 
 impl LiveLoadMIDIFile {
-    pub fn load_from_file(path: &str, player: SimpleTemporaryPlayer) -> Self {
+    pub fn load_from_file(path: &str, player: Arc<RwLock<SimpleTemporaryPlayer>>, random_colors: bool,) -> Self {
         let midi = TKMIDIFile::open(path, None).unwrap();
 
         let parse_length_outer = Arc::new(AtomicF64::new(f64::NAN));
@@ -49,7 +49,7 @@ impl LiveLoadMIDIFile {
         let mut timer = TimeKeeper::new();
 
         let parer = LiveMidiParser::init(&midi, player, &mut timer);
-        let file = LiveNoteViewData::new(parer, midi.track_count());
+        let file = LiveNoteViewData::new(parer, midi.track_count(), random_colors);
 
         LiveLoadMIDIFile {
             view_data: file,
