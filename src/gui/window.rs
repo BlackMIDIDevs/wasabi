@@ -307,13 +307,12 @@ impl GuiWasabiWindow {
                                 egui::Slider::new(&mut progress, 0.0..=1.0).show_value(false);
                             ui.spacing_mut().slider_width = window_size[0] - 20.0;
                             ui.add(slider);
-                            if progress_prev != progress {
-                                if !(!midi_file.allows_seeking_backward()
-                                    && progress_prev > progress)
-                                {
-                                    let position = Duration::from_secs_f64(progress * length);
-                                    midi_file.timer_mut().seek(position);
-                                }
+                            if (progress_prev != progress)
+                                && (midi_file.allows_seeking_backward()
+                                    || !(progress_prev > progress))
+                            {
+                                let position = Duration::from_secs_f64(progress * length);
+                                midi_file.timer_mut().seek(position);
                             }
                         }
                     } else {
