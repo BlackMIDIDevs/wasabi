@@ -18,6 +18,7 @@ struct WasabiConfigFile {
     sfz_path: String,
     first_key: u8,
     last_key: u8,
+    midi_loading: usize,
 }
 
 pub struct WasabiPermanentSettings {
@@ -27,6 +28,7 @@ pub struct WasabiPermanentSettings {
     pub random_colors: bool,
     pub sfz_path: String,
     pub key_range: RangeInclusive<u8>,
+    pub midi_loading: usize,
 }
 
 pub struct WasabiTemporarySettings {
@@ -44,6 +46,7 @@ impl Default for WasabiPermanentSettings {
             random_colors: false,
             sfz_path: "".to_string(),
             key_range: 0..=127,
+            midi_loading: 0,
         }
     }
 }
@@ -78,6 +81,7 @@ impl WasabiPermanentSettings {
                                 random_colors: cfg.random_colors,
                                 sfz_path: cfg.sfz_path,
                                 key_range: cfg.first_key..=cfg.last_key,
+                                midi_loading: cfg.midi_loading,
                             }
                         } else {
                             Self::load_and_save_defaults()
@@ -110,6 +114,7 @@ impl WasabiPermanentSettings {
             sfz_path: self.sfz_path.clone(),
             first_key: *self.key_range.start(),
             last_key: *self.key_range.end(),
+            midi_loading: self.midi_loading,
         };
         let toml: String = toml::to_string(&cfg).unwrap();
         if Path::new(&config_path).exists() {
