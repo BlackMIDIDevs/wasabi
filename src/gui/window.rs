@@ -90,18 +90,26 @@ impl GuiWasabiWindow {
         perm_settings: &mut WasabiPermanentSettings,
     ) -> GuiWasabiWindow {
         let synth = match perm_settings.synth {
-            1 => {
-                Arc::new(RwLock::new(SimpleTemporaryPlayer::new(AudioPlayerType::Kdmapi)))
-            },
+            1 => Arc::new(RwLock::new(SimpleTemporaryPlayer::new(
+                AudioPlayerType::Kdmapi,
+            ))),
             _ => {
-                let synth = Arc::new(RwLock::new(SimpleTemporaryPlayer::new(AudioPlayerType::XSynth(perm_settings.buffer_ms))));
-                synth.write().unwrap().set_soundfont(&perm_settings.sfz_path);
-                synth.write().unwrap().set_layer_count(match perm_settings.layer_count {
-                    0 => None,
-                    _ => Some(perm_settings.layer_count),
-                });
+                let synth = Arc::new(RwLock::new(SimpleTemporaryPlayer::new(
+                    AudioPlayerType::XSynth(perm_settings.buffer_ms),
+                )));
                 synth
-            },
+                    .write()
+                    .unwrap()
+                    .set_soundfont(&perm_settings.sfz_path);
+                synth
+                    .write()
+                    .unwrap()
+                    .set_layer_count(match perm_settings.layer_count {
+                        0 => None,
+                        _ => Some(perm_settings.layer_count),
+                    });
+                synth
+            }
         };
         GuiWasabiWindow {
             render_scene: GuiRenderScene::new(renderer),
@@ -161,12 +169,20 @@ impl GuiWasabiWindow {
                                         ));
                                     }
                                     _ => {
-                                        self.synth = Arc::new(RwLock::new(SimpleTemporaryPlayer::new(AudioPlayerType::XSynth(perm_settings.buffer_ms))));
-                                        self.synth.write().unwrap().set_soundfont(&perm_settings.sfz_path);
-                                        self.synth.write().unwrap().set_layer_count(match perm_settings.layer_count {
-                                            0 => None,
-                                            _ => Some(perm_settings.layer_count),
-                                        });
+                                        self.synth =
+                                            Arc::new(RwLock::new(SimpleTemporaryPlayer::new(
+                                                AudioPlayerType::XSynth(perm_settings.buffer_ms),
+                                            )));
+                                        self.synth
+                                            .write()
+                                            .unwrap()
+                                            .set_soundfont(&perm_settings.sfz_path);
+                                        self.synth.write().unwrap().set_layer_count(
+                                            match perm_settings.layer_count {
+                                                0 => None,
+                                                _ => Some(perm_settings.layer_count),
+                                            },
+                                        );
                                     }
                                 }
                             }
@@ -206,16 +222,18 @@ impl GuiWasabiWindow {
                                 ui.horizontal(|ui| {
                                     ui.add(
                                         egui::DragValue::new(&mut perm_settings.layer_count)
-                                        .speed(1)
-                                        .clamp_range(RangeInclusive::new(0, 1024)),
+                                            .speed(1)
+                                            .clamp_range(RangeInclusive::new(0, 1024)),
                                     );
                                     ui.label("(0 = No Limit)");
                                 });
                                 if perm_settings.layer_count != layer_count_prev {
-                                    self.synth.write().unwrap().set_layer_count(match perm_settings.layer_count {
-                                        0 => None,
-                                        _ => Some(perm_settings.layer_count),
-                                    });
+                                    self.synth.write().unwrap().set_layer_count(
+                                        match perm_settings.layer_count {
+                                            0 => None,
+                                            _ => Some(perm_settings.layer_count),
+                                        },
+                                    );
                                 }
                             });
                             ui.end_row();
