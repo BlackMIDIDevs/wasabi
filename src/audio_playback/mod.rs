@@ -2,7 +2,7 @@ use kdmapi::{KDMAPIStream, KDMAPI};
 mod xsynth;
 
 pub enum AudioPlayerType {
-    XSynth(String, f64),
+    XSynth(f64),
     Kdmapi,
 }
 
@@ -15,8 +15,8 @@ pub struct SimpleTemporaryPlayer {
 impl SimpleTemporaryPlayer {
     pub fn new(player_type: AudioPlayerType) -> Self {
         let (xsynth, kdmapi) = match player_type {
-            AudioPlayerType::XSynth(ref sfz, buf) => {
-                let xsynth = xsynth::XSynthPlayer::new(sfz, buf);
+            AudioPlayerType::XSynth(buf) => {
+                let xsynth = xsynth::XSynthPlayer::new(buf);
                 (Some(xsynth), None)
             }
             AudioPlayerType::Kdmapi => {

@@ -89,14 +89,26 @@ impl GuiWasabiWindow {
         renderer: &mut GuiRenderer,
         perm_settings: &mut WasabiPermanentSettings,
     ) -> GuiWasabiWindow {
+        let synth = match perm_settings.synth {
+            1 => {
+                Arc::new(RwLock::new(SimpleTemporaryPlayer::new(AudioPlayerType::Kdmapi)))
+            },
+            _ => {
+                let synth = Arc::new(RwLock::new(SimpleTemporaryPlayer::new(AudioPlayerType::XSynth(perm_settings.buffer_ms))));
+                synth.write().unwrap().set_soundfont(&perm_settings.sfz_path);
+                synth.write().unwrap().set_layer_count(match perm_settings.layer_count {
+                    0 => None,
+                    _ => Some(perm_settings.layer_count),
+                });
+                synth
+            },
+        };
         GuiWasabiWindow {
             render_scene: GuiRenderScene::new(renderer),
             keyboard_layout: keyboard_layout::KeyboardLayout::new(&Default::default()),
             keyboard: GuiKeyboard::new(),
             midi_file: None,
-            synth: Arc::new(RwLock::new(SimpleTemporaryPlayer::new(
-                AudioPlayerType::XSynth(perm_settings.sfz_path.clone(), perm_settings.buffer_ms),
-            ))),
+            synth,
             fps: Fps::new(),
         }
     }
@@ -143,20 +155,19 @@ impl GuiWasabiWindow {
                             );
                             if perm_settings.synth != synth_prev {
                                 match perm_settings.synth {
-                                    0 => {
-                                        self.synth = Arc::new(RwLock::new(
-                                            SimpleTemporaryPlayer::new(AudioPlayerType::XSynth(
-                                                perm_settings.sfz_path.clone(),
-                                                perm_settings.buffer_ms,
-                                            )),
-                                        ));
-                                    }
                                     1 => {
                                         self.synth = Arc::new(RwLock::new(
                                             SimpleTemporaryPlayer::new(AudioPlayerType::Kdmapi),
                                         ));
                                     }
-                                    _ => {}
+                                    _ => {
+                                        self.synth = Arc::new(RwLock::new(SimpleTemporaryPlayer::new(AudioPlayerType::XSynth(perm_settings.buffer_ms))));
+                                        self.synth.write().unwrap().set_soundfont(&perm_settings.sfz_path);
+                                        self.synth.write().unwrap().set_layer_count(match perm_settings.layer_count {
+                                            0 => None,
+                                            _ => Some(perm_settings.layer_count),
+                                        });
+                                    }
                                 }
                             }
                             ui.end_row();
@@ -192,20 +203,19 @@ impl GuiWasabiWindow {
                             ui.label("Synth Layer Count: ");
                             ui.add_enabled_ui(perm_settings.synth == 0, |ui| {
                                 let layer_count_prev = perm_settings.layer_count;
-                                ui.add(
-                                    egui::DragValue::new(&mut perm_settings.layer_count)
+                                ui.horizontal(|ui| {
+                                    ui.add(
+                                        egui::DragValue::new(&mut perm_settings.layer_count)
                                         .speed(1)
                                         .clamp_range(RangeInclusive::new(0, 1024)),
-                                );
+                                    );
+                                    ui.label("(0 = No Limit)");
+                                });
                                 if perm_settings.layer_count != layer_count_prev {
-                                    match perm_settings.layer_count {
-                                        0 => self.synth.write().unwrap().set_layer_count(None),
-                                        _ => self
-                                            .synth
-                                            .write()
-                                            .unwrap()
-                                            .set_layer_count(Some(perm_settings.layer_count)),
-                                    }
+                                    self.synth.write().unwrap().set_layer_count(match perm_settings.layer_count {
+                                        0 => None,
+                                        _ => Some(perm_settings.layer_count),
+                                    });
                                 }
                             });
                             ui.end_row();
@@ -221,6 +231,7 @@ impl GuiWasabiWindow {
                             ui.end_row();
                         });
 
+                    ui.add_space(5.0);
                     ui.heading("MIDI");
                     ui.separator();
 
@@ -273,6 +284,7 @@ impl GuiWasabiWindow {
                             );
                         });
 
+                    ui.add_space(5.0);
                     ui.heading("Visual");
                     ui.separator();
 
@@ -435,8 +447,8 @@ impl GuiWasabiWindow {
 
         let stats_frame = Frame::default()
             .inner_margin(egui::style::Margin::same(6.0))
-            .fill(egui::Color32::from_rgba_unmultiplied(15, 15, 15, 200))
-            .rounding(egui::Rounding::same(4.0));
+            .fill(egui::Color32::from_rgba_unmultiplied(20, 20, 20, 175))
+            .rounding(egui::Rounding::same(6.0));
 
         let mut stats = GuiMidiStats::empty();
 
@@ -558,18 +570,18 @@ impl GuiWasabiWindow {
 
                         stats.notes_total = midi_file.stats().total_notes;
                     }
-                    ui.add(Label::new(format!(
+                    ui.monospace(format!(
                         "Time: {:0width$}:{:0width$}/{:0width$}:{:0width$}",
                         time_min,
                         time_sec,
                         length_min,
                         length_sec,
                         width = 2
-                    )));
-                    ui.add(Label::new(format!("FPS: {}", self.fps.get_fps().round())));
-                    ui.add(Label::new(format!("Total Notes: {}", stats.notes_total)));
-                    ui.add(Label::new(format!("Voice Count: {}", stats.voice_count)));
-                    ui.add(Label::new(format!("Rendered: {}", stats.notes_on_screen)));
+                    ));
+                    ui.monospace(format!("FPS: {}", self.fps.get_fps().round()));
+                    ui.monospace(format!("Total Notes: {}", stats.notes_total));
+                    ui.monospace(format!("Voice Count: {}", stats.voice_count));
+                    ui.monospace(format!("Rendered: {}", stats.notes_on_screen));
                 });
         }
     }

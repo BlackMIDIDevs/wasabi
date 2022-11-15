@@ -16,7 +16,7 @@ pub struct XSynthPlayer {
 }
 
 impl XSynthPlayer {
-    pub fn new(sfz_path: &str, buffer: f64) -> Self {
+    pub fn new(buffer: f64) -> Self {
         let config = XSynthRealtimeConfig {
             render_window_ms: buffer,
             use_threadpool: false,
@@ -24,20 +24,8 @@ impl XSynthPlayer {
         };
 
         let synth = RealtimeSynth::open_with_default_output(config);
-        let mut sender = synth.get_senders();
-
+        let sender = synth.get_senders();
         let stream_params = synth.stream_params().clone();
-
-        if !sfz_path.is_empty() && Path::new(sfz_path).exists() {
-            let samplesf = SampleSoundfont::new(sfz_path, stream_params.clone());
-            if let Ok(sf) = samplesf {
-                let soundfont: Arc<dyn SoundfontBase> = Arc::new(sf);
-                sender.send_config(ChannelConfigEvent::SetSoundfonts(vec![soundfont]));
-            }
-        }
-
-        sender.send_config(ChannelConfigEvent::SetLayerCount(Some(4)));
-
         let stats = synth.get_stats();
 
         // FIXME: Basically I'm leaking a pointer because the synth can't be sent between
