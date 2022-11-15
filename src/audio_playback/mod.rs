@@ -1,4 +1,4 @@
-mod kdmapi;
+use kdmapi::{KDMAPIStream, KDMAPI};
 mod xsynth;
 
 pub enum AudioPlayerType {
@@ -9,7 +9,7 @@ pub enum AudioPlayerType {
 pub struct SimpleTemporaryPlayer {
     player_type: AudioPlayerType,
     xsynth: Option<xsynth::XSynthPlayer>,
-    kdmapi: Option<kdmapi::KDMAPIPlayer>,
+    kdmapi: Option<KDMAPIStream>,
 }
 
 impl SimpleTemporaryPlayer {
@@ -20,7 +20,7 @@ impl SimpleTemporaryPlayer {
                 (Some(xsynth), None)
             }
             AudioPlayerType::Kdmapi => {
-                let kdmapi = kdmapi::KDMAPIPlayer::new();
+                let kdmapi = KDMAPI.open_stream();
                 (None, Some(kdmapi))
             }
         };
@@ -59,7 +59,7 @@ impl SimpleTemporaryPlayer {
             }
             AudioPlayerType::Kdmapi => {
                 if let Some(kdmapi) = self.kdmapi.as_mut() {
-                    kdmapi.push_event(data)
+                    kdmapi.send_direct_data(data);
                 }
             }
         }
