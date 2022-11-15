@@ -10,7 +10,7 @@ use std::{
 
 use core::ops::RangeInclusive;
 
-use egui::{style::Margin, Frame, Label, Visuals};
+use egui::{style::Margin, Frame, Visuals};
 
 use rfd::FileDialog;
 
@@ -268,10 +268,12 @@ impl GuiWasabiWindow {
                                 );
                             });
                             ui.end_row();
-                            if firstkey != *perm_settings.key_range.start()
-                                || lastkey != *perm_settings.key_range.end()
+                            let new_range = firstkey..=lastkey;
+                            if (firstkey != *perm_settings.key_range.start()
+                                || lastkey != *perm_settings.key_range.end())
+                                && new_range.len() > 24
                             {
-                                perm_settings.key_range = firstkey..=lastkey;
+                                perm_settings.key_range = new_range;
                             }
 
                             ui.label("MIDI Loading*: ");
@@ -472,7 +474,11 @@ impl GuiWasabiWindow {
                                     }
                                     egui::Key::ArrowLeft => {
                                         if midi_file.allows_seeking_backward() {
-                                            midi_file.timer_mut().seek(time - one_sec)
+                                            midi_file.timer_mut().seek(if time <= one_sec {
+                                                Duration::from_secs(0)
+                                            } else {
+                                                time - one_sec
+                                            })
                                         }
                                     }
                                     egui::Key::Space => midi_file.timer_mut().toggle_pause(),
