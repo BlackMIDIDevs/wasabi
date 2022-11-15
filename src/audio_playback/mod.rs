@@ -4,6 +4,7 @@ use std::{path::Path, sync::Arc};
 use xsynth_core::{
     channel::ChannelConfigEvent,
     soundfont::{SampleSoundfont, SoundfontBase},
+    AudioStreamParams,
 };
 use xsynth_realtime::{
     config::XSynthRealtimeConfig, RealtimeEventSender, RealtimeSynth, RealtimeSynthStatsReader,
@@ -13,12 +14,13 @@ pub struct SimpleTemporaryPlayer {
     //kdmapi: KDMAPIStream,
     sender: RealtimeEventSender,
     pub stats: RealtimeSynthStatsReader,
+    stream_params: AudioStreamParams,
 }
 
 impl SimpleTemporaryPlayer {
-    pub fn new(sfz_path: &str) -> Self {
+    pub fn new(sfz_path: &str, buffer: f64) -> Self {
         let config = XSynthRealtimeConfig {
-            render_window_ms: 5.0,
+            render_window_ms: buffer,
             use_threadpool: false,
             ..Default::default()
         };
@@ -26,10 +28,10 @@ impl SimpleTemporaryPlayer {
         let synth = RealtimeSynth::open_with_default_output(config);
         let mut sender = synth.get_senders();
 
-        let params = synth.stream_params();
+        let stream_params = synth.stream_params().clone();
 
         if !sfz_path.is_empty() && Path::new(sfz_path).exists() {
-            let samplesf = SampleSoundfont::new(sfz_path, params.clone());
+            let samplesf = SampleSoundfont::new(sfz_path, stream_params.clone());
             if let Ok(sf) = samplesf {
                 let soundfont: Arc<dyn SoundfontBase> = Arc::new(sf);
                 sender.send_config(ChannelConfigEvent::SetSoundfonts(vec![soundfont]));
@@ -45,7 +47,7 @@ impl SimpleTemporaryPlayer {
         Box::leak(Box::new(synth));
 
         //let kdmapi = KDMAPI.open_stream();
-        SimpleTemporaryPlayer { sender, stats }
+        SimpleTemporaryPlayer { sender, stats, stream_params: stream_params.clone() }
     }
 
     pub fn get_voice_count(&self) -> u64 {
@@ -66,5 +68,15 @@ impl SimpleTemporaryPlayer {
     pub fn reset(&mut self) {
         self.sender.reset_synth();
         // self.kdmapi.reset();
+    }
+
+    pub fn set_soundfont(&mut self, path: &str) {
+        if !path.is_empty() && Path::new(path).exists() {
+            let samplesf = SampleSoundfont::new(path, self.stream_params.clone());
+            if let Ok(sf) = samplesf {
+                let soundfont: Arc<dyn SoundfontBase> = Arc::new(sf);
+                self.sender.send_config(ChannelConfigEvent::SetSoundfonts(vec![soundfont]));
+            }
+        }
     }
 }
