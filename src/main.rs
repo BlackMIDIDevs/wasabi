@@ -47,7 +47,7 @@ pub fn main() {
         format: renderer.format(),
     };
 
-    let mut gui_state = GuiWasabiWindow::new(&mut gui_render_data);
+    let mut gui_state = GuiWasabiWindow::new(&mut gui_render_data, &mut perm_settings);
 
     event_loop.run(move |event, _, control_flow| {
         // Update Egui integration so the UI works!

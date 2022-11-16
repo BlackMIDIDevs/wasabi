@@ -19,6 +19,9 @@ struct WasabiConfigFile {
     first_key: u8,
     last_key: u8,
     midi_loading: usize,
+    buffer_ms: f64,
+    layer_count: usize,
+    synth: usize,
 }
 
 pub struct WasabiPermanentSettings {
@@ -29,6 +32,9 @@ pub struct WasabiPermanentSettings {
     pub sfz_path: String,
     pub key_range: RangeInclusive<u8>,
     pub midi_loading: usize,
+    pub buffer_ms: f64,
+    pub layer_count: usize,
+    pub synth: usize,
 }
 
 pub struct WasabiTemporarySettings {
@@ -47,6 +53,9 @@ impl Default for WasabiPermanentSettings {
             sfz_path: "".to_string(),
             key_range: 0..=127,
             midi_loading: 0,
+            buffer_ms: 10.0,
+            layer_count: 4,
+            synth: 0,
         }
     }
 }
@@ -82,6 +91,9 @@ impl WasabiPermanentSettings {
                                 sfz_path: cfg.sfz_path,
                                 key_range: cfg.first_key..=cfg.last_key,
                                 midi_loading: cfg.midi_loading,
+                                buffer_ms: cfg.buffer_ms,
+                                layer_count: cfg.layer_count,
+                                synth: cfg.synth,
                             }
                         } else {
                             Self::load_and_save_defaults()
@@ -115,6 +127,9 @@ impl WasabiPermanentSettings {
             first_key: *self.key_range.start(),
             last_key: *self.key_range.end(),
             midi_loading: self.midi_loading,
+            buffer_ms: self.buffer_ms,
+            layer_count: self.layer_count,
+            synth: self.synth,
         };
         let toml: String = toml::to_string(&cfg).unwrap();
         if Path::new(&config_path).exists() {
