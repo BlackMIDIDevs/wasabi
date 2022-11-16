@@ -152,7 +152,7 @@ impl GuiWasabiWindow {
                         .spacing([40.0, 4.0])
                         .striped(true)
                         .show(ui, |ui| {
-                            ui.label("Synth: ");
+                            ui.label("Synth*: ");
                             let synth_prev = perm_settings.synth;
                             let synth = ["XSynth", "KDMAPI"];
                             egui::ComboBox::from_id_source("synth_select").show_index(
@@ -189,7 +189,7 @@ impl GuiWasabiWindow {
                             ui.end_row();
 
                             ui.label("SFZ Path: ");
-                            ui.add_enabled_ui(perm_settings.synth == 0, |ui| {
+                            ui.add_visible_ui(perm_settings.synth == 0, |ui| {
                                 ui.horizontal(|ui| {
                                     ui.add(egui::TextEdit::singleline(&mut perm_settings.sfz_path));
                                     if ui.button("Browse...").clicked() {
