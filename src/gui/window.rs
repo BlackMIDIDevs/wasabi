@@ -1,79 +1,26 @@
 mod keyboard;
 mod keyboard_layout;
 mod scene;
+mod fps;
+mod stats;
+
+mod settings_window;
+mod top_panel;
 
 use std::{
-    collections::VecDeque,
     sync::{Arc, RwLock},
-    time::{Duration, Instant},
+    time::Duration,
 };
-
-use core::ops::RangeInclusive;
 
 use egui::{style::Margin, Frame, Visuals};
 
-use rfd::FileDialog;
-
 use crate::{
+    GuiRenderer, GuiState,
     audio_playback::{AudioPlayerType, SimpleTemporaryPlayer},
-    midi::{InRamMIDIFile, LiveLoadMIDIFile, MIDIFileBase, MIDIFileUnion},
+    midi::{MIDIFileBase, MIDIFileUnion},
+    settings::{WasabiPermanentSettings, WasabiTemporarySettings},
+    gui::window::{keyboard::GuiKeyboard, scene::GuiRenderScene},
 };
-
-use self::{keyboard::GuiKeyboard, scene::GuiRenderScene};
-
-use super::{GuiRenderer, GuiState};
-use crate::settings::{WasabiPermanentSettings, WasabiTemporarySettings};
-
-struct Fps(VecDeque<Instant>);
-
-const FPS_WINDOW: f64 = 0.5;
-
-impl Fps {
-    fn new() -> Self {
-        Self(VecDeque::new())
-    }
-
-    fn update(&mut self) {
-        self.0.push_back(Instant::now());
-        while let Some(front) = self.0.front() {
-            if front.elapsed().as_secs_f64() > FPS_WINDOW {
-                self.0.pop_front();
-            } else {
-                break;
-            }
-        }
-    }
-
-    fn get_fps(&self) -> f64 {
-        if self.0.is_empty() {
-            0.0
-        } else {
-            self.0.len() as f64 / self.0.front().unwrap().elapsed().as_secs_f64()
-        }
-    }
-}
-
-struct GuiMidiStats {
-    time_passed: f64,
-    time_total: f64,
-    //notes_passed: usize,
-    notes_total: usize,
-    notes_on_screen: u64,
-    voice_count: u64,
-}
-
-impl GuiMidiStats {
-    fn empty() -> GuiMidiStats {
-        GuiMidiStats {
-            time_passed: 0.0,
-            time_total: 0.0,
-            //notes_passed: 0,
-            notes_total: 0,
-            notes_on_screen: 0,
-            voice_count: 0,
-        }
-    }
-}
 
 pub struct GuiWasabiWindow {
     render_scene: GuiRenderScene,
@@ -81,7 +28,7 @@ pub struct GuiWasabiWindow {
     keyboard: GuiKeyboard,
     midi_file: Option<MIDIFileUnion>,
     synth: Arc<RwLock<SimpleTemporaryPlayer>>,
-    fps: Fps,
+    fps: fps::Fps,
 }
 
 impl GuiWasabiWindow {
@@ -117,7 +64,7 @@ impl GuiWasabiWindow {
             keyboard: GuiKeyboard::new(),
             midi_file: None,
             synth,
-            fps: Fps::new(),
+            fps: fps::Fps::new(),
         }
     }
 
@@ -129,320 +76,19 @@ impl GuiWasabiWindow {
         temp_settings: &mut WasabiTemporarySettings,
     ) {
         let ctx = state.gui.context();
-        let window_size = vec![ctx.available_rect().width(), ctx.available_rect().height()];
+        //let window_size = vec![ctx.available_rect().width(), ctx.available_rect().height()];
         self.fps.update();
         ctx.set_visuals(Visuals::dark());
         let note_speed = perm_settings.note_speed;
 
-        // Render the settings window if the value from
-        // the temporary settings allows it
         if temp_settings.settings_visible {
-            egui::Window::new("Settings")
-                .resizable(true)
-                .collapsible(true)
-                .title_bar(true)
-                .scroll2([false, true])
-                .enabled(true)
-                .open(&mut temp_settings.settings_visible)
-                .show(&ctx, |ui| {
-                    ui.heading("Synth");
-                    ui.separator();
-                    egui::Grid::new("synth_settings_grid")
-                        .num_columns(2)
-                        .spacing([40.0, 4.0])
-                        .striped(true)
-                        .show(ui, |ui| {
-                            ui.label("Synth*: ");
-                            let synth_prev = perm_settings.synth;
-                            let synth = ["XSynth", "KDMAPI"];
-                            egui::ComboBox::from_id_source("synth_select").show_index(
-                                ui,
-                                &mut perm_settings.synth,
-                                synth.len(),
-                                |i| synth[i].to_owned(),
-                            );
-                            if perm_settings.synth != synth_prev {
-                                match perm_settings.synth {
-                                    1 => {
-                                        self.synth = Arc::new(RwLock::new(
-                                            SimpleTemporaryPlayer::new(AudioPlayerType::Kdmapi),
-                                        ));
-                                    }
-                                    _ => {
-                                        self.synth =
-                                            Arc::new(RwLock::new(SimpleTemporaryPlayer::new(
-                                                AudioPlayerType::XSynth(perm_settings.buffer_ms),
-                                            )));
-                                        self.synth
-                                            .write()
-                                            .unwrap()
-                                            .set_soundfont(&perm_settings.sfz_path);
-                                        self.synth.write().unwrap().set_layer_count(
-                                            match perm_settings.layer_count {
-                                                0 => None,
-                                                _ => Some(perm_settings.layer_count),
-                                            },
-                                        );
-                                    }
-                                }
-                            }
-                            ui.end_row();
-
-                            ui.label("SFZ Path: ");
-                            ui.add_visible_ui(perm_settings.synth == 0, |ui| {
-                                ui.horizontal(|ui| {
-                                    ui.add(egui::TextEdit::singleline(&mut perm_settings.sfz_path));
-                                    if ui.button("Browse...").clicked() {
-                                        let sfz_path = FileDialog::new()
-                                            .add_filter("sfz", &["sfz"])
-                                            .set_directory("/")
-                                            .pick_file();
-
-                                        if let Some(sfz_path) = sfz_path {
-                                            if let Ok(path) =
-                                                sfz_path.into_os_string().into_string()
-                                            {
-                                                perm_settings.sfz_path = path;
-                                            }
-                                        }
-                                    }
-                                    if ui.button("Load").clicked() {
-                                        self.synth
-                                            .write()
-                                            .unwrap()
-                                            .set_soundfont(&perm_settings.sfz_path);
-                                    }
-                                });
-                            });
-                            ui.end_row();
-
-                            ui.label("Synth Layer Count: ");
-                            ui.add_enabled_ui(perm_settings.synth == 0, |ui| {
-                                let layer_count_prev = perm_settings.layer_count;
-                                ui.horizontal(|ui| {
-                                    ui.add(
-                                        egui::DragValue::new(&mut perm_settings.layer_count)
-                                            .speed(1)
-                                            .clamp_range(RangeInclusive::new(0, 1024)),
-                                    );
-                                    ui.label("(0 = No Limit)");
-                                });
-                                if perm_settings.layer_count != layer_count_prev {
-                                    self.synth.write().unwrap().set_layer_count(
-                                        match perm_settings.layer_count {
-                                            0 => None,
-                                            _ => Some(perm_settings.layer_count),
-                                        },
-                                    );
-                                }
-                            });
-                            ui.end_row();
-
-                            ui.label("Synth Render Buffer (ms)*: ");
-                            ui.add_enabled_ui(perm_settings.synth == 0, |ui| {
-                                ui.add(
-                                    egui::DragValue::new(&mut perm_settings.buffer_ms)
-                                        .speed(0.1)
-                                        .clamp_range(RangeInclusive::new(1.0, 1000.0)),
-                                );
-                            });
-                            ui.end_row();
-                        });
-
-                    ui.add_space(5.0);
-                    ui.heading("MIDI");
-                    ui.separator();
-
-                    egui::Grid::new("midi_settings_grid")
-                        .num_columns(2)
-                        .spacing([40.0, 4.0])
-                        .striped(true)
-                        .show(ui, |ui| {
-                            ui.label("Note speed: ");
-                            ui.spacing_mut().slider_width = 150.0;
-                            ui.add(egui::Slider::new(
-                                &mut perm_settings.note_speed,
-                                2.0..=0.001,
-                            ));
-                            ui.end_row();
-
-                            ui.label("Random Track Colors*: ");
-                            ui.checkbox(&mut perm_settings.random_colors, "");
-                            ui.end_row();
-
-                            ui.label("Keyboard Range: ");
-                            let mut firstkey = *perm_settings.key_range.start();
-                            let mut lastkey = *perm_settings.key_range.end();
-                            ui.horizontal(|ui| {
-                                ui.add(
-                                    egui::DragValue::new(&mut firstkey)
-                                        .speed(1)
-                                        .clamp_range(RangeInclusive::new(0, 254)),
-                                );
-                                ui.add(
-                                    egui::DragValue::new(&mut lastkey)
-                                        .speed(1)
-                                        .clamp_range(RangeInclusive::new(0, 254)),
-                                );
-                            });
-                            ui.end_row();
-                            let new_range = firstkey..=lastkey;
-                            if (firstkey != *perm_settings.key_range.start()
-                                || lastkey != *perm_settings.key_range.end())
-                                && new_range.len() > 24
-                            {
-                                perm_settings.key_range = new_range;
-                            }
-
-                            ui.label("MIDI Loading*: ");
-                            let midi_loading = ["In RAM", "Live"];
-                            egui::ComboBox::from_id_source("midiload_select").show_index(
-                                ui,
-                                &mut perm_settings.midi_loading,
-                                midi_loading.len(),
-                                |i| midi_loading[i].to_owned(),
-                            );
-                        });
-
-                    ui.add_space(5.0);
-                    ui.heading("Visual");
-                    ui.separator();
-
-                    egui::Grid::new("visual_settings_grid")
-                        .num_columns(2)
-                        .spacing([40.0, 4.0])
-                        .striped(true)
-                        .show(ui, |ui| {
-                            ui.label("Background Color: ");
-                            ui.color_edit_button_srgba(&mut perm_settings.bg_color);
-                            ui.end_row();
-
-                            ui.label("Bar Color: ");
-                            ui.color_edit_button_srgba(&mut perm_settings.bar_color);
-                            ui.end_row();
-                        });
-
-                    ui.separator();
-                    ui.vertical_centered(|ui| {
-                        ui.label("Options marked with (*) require a restart.");
-                        if ui.button("Save").clicked() {
-                            perm_settings.save_to_file();
-                        }
-                    });
-                });
+            settings_window::draw_settings(self, perm_settings, temp_settings, &ctx);
         }
 
-        // Render the top panel if the value from
-        // the temporary settings allows it,
-        // and return its height in a variable
         let panel_height = if temp_settings.panel_visible {
-            let panel_height = 40.0;
-            let panel_frame = Frame::default()
-                .inner_margin(egui::style::Margin::same(10.0))
-                .fill(egui::Color32::from_rgb(42, 42, 42));
-            egui::TopBottomPanel::top("Top panel")
-                .height_range(panel_height..=panel_height)
-                .frame(panel_frame)
-                .show(&ctx, |ui| {
-                    ui.horizontal(|ui| {
-                        if ui.button("Open MIDI").clicked() {
-                            let midi_path = FileDialog::new()
-                                .add_filter("midi", &["mid"])
-                                .set_directory("/")
-                                .pick_file();
-
-                            if let Some(midi_path) = midi_path {
-                                if let Some(midi_file) = self.midi_file.as_mut() {
-                                    midi_file.timer_mut().pause();
-                                }
-                                self.reset_synth();
-                                self.midi_file = None;
-
-                                if let Ok(path) = midi_path.into_os_string().into_string() {
-                                    match perm_settings.midi_loading {
-                                        0 => {
-                                            let mut midi_file = MIDIFileUnion::InRam(
-                                                InRamMIDIFile::load_from_file(
-                                                    &path,
-                                                    self.synth.clone(),
-                                                    perm_settings.random_colors,
-                                                ),
-                                            );
-                                            midi_file.timer_mut().play();
-                                            self.midi_file = Some(midi_file);
-                                        }
-                                        1 => {
-                                            let mut midi_file = MIDIFileUnion::Live(
-                                                LiveLoadMIDIFile::load_from_file(
-                                                    &path,
-                                                    self.synth.clone(),
-                                                    perm_settings.random_colors,
-                                                ),
-                                            );
-                                            midi_file.timer_mut().play();
-                                            self.midi_file = Some(midi_file);
-                                        }
-                                        _ => {}
-                                    }
-                                }
-                            }
-                        }
-                        if let Some(midi_file) = self.midi_file.as_mut() {
-                            if ui.button("Close MIDI").clicked() {
-                                midi_file.timer_mut().pause();
-                                self.reset_synth();
-                                self.midi_file = None;
-                            }
-                        }
-                        if ui.button("Play").clicked() {
-                            if let Some(midi_file) = self.midi_file.as_mut() {
-                                midi_file.timer_mut().play();
-                            }
-                        }
-                        if ui.button("Pause").clicked() {
-                            if let Some(midi_file) = self.midi_file.as_mut() {
-                                midi_file.timer_mut().pause();
-                            }
-                        }
-                        if ui.button("Settings").clicked() {
-                            match temp_settings.settings_visible {
-                                true => temp_settings.settings_visible = false,
-                                false => temp_settings.settings_visible = true,
-                            }
-                        }
-                        ui.horizontal(|ui| {
-                            ui.label("Note speed: ");
-                            ui.add(
-                                egui::Slider::new(&mut perm_settings.note_speed, 2.0..=0.001)
-                                    .show_value(false),
-                            );
-                        })
-                    });
-
-                    if let Some(midi_file) = self.midi_file.as_mut() {
-                        if let Some(length) = midi_file.midi_length() {
-                            let time = midi_file.timer().get_time().as_secs_f64();
-                            let mut progress = time / length;
-                            let progress_prev = progress;
-                            let slider =
-                                egui::Slider::new(&mut progress, 0.0..=1.0).show_value(false);
-                            ui.spacing_mut().slider_width = window_size[0] - 20.0;
-                            ui.add(slider);
-                            if (progress_prev != progress)
-                                && (midi_file.allows_seeking_backward() || progress_prev < progress)
-                            {
-                                let position = Duration::from_secs_f64(progress * length);
-                                midi_file.timer_mut().seek(position);
-                            }
-                        }
-                    } else {
-                        let mut progress = 0.0;
-                        let slider = egui::Slider::new(&mut progress, 0.0..=1.0).show_value(false);
-                        ui.spacing_mut().slider_width = window_size[0] - 20.0;
-                        ui.add(slider);
-                    }
-                });
-            panel_height + 20.0
+            let height = 40.0;
+            top_panel::draw_panel(self, perm_settings, temp_settings, &ctx, height);
+            height + 20.0
         } else {
             0.0
         };
@@ -465,12 +111,7 @@ impl GuiWasabiWindow {
             .inner_margin(Margin::same(0.0))
             .fill(perm_settings.bg_color);
 
-        let stats_frame = Frame::default()
-            .inner_margin(egui::style::Margin::same(6.0))
-            .fill(egui::Color32::from_rgba_unmultiplied(20, 20, 20, 175))
-            .rounding(egui::Rounding::same(6.0));
-
-        let mut stats = GuiMidiStats::empty();
+        let mut stats = stats::GuiMidiStats::empty();
 
         let mut render_result_data = None;
 
@@ -509,19 +150,11 @@ impl GuiWasabiWindow {
                     let result = self
                         .render_scene
                         .draw(state, ui, &key_view, midi_file, note_speed);
-                    stats.notes_on_screen = result.notes_rendered;
+                    let notes_on_screen = result.notes_rendered;
+                    stats.set_rendered_note_count(notes_on_screen);
                     render_result_data = Some(result);
                 }
             });
-
-        stats.voice_count = {
-            let x = if let Ok(player) = self.synth.read() {
-                player.get_voice_count()
-            } else {
-                0
-            };
-            x
-        };
 
         // Render the keyboard
         egui::TopBottomPanel::top("Keyboard panel")
@@ -559,54 +192,18 @@ impl GuiWasabiWindow {
 
         // Render the stats
         if temp_settings.stats_visible {
-            egui::Window::new("Stats")
-                .resizable(false)
-                .collapsible(false)
-                .title_bar(false)
-                .scroll2([false, false])
-                .enabled(true)
-                .frame(stats_frame)
-                .fixed_pos(egui::Pos2::new(10.0, panel_height + 10.0))
-                .show(&ctx, |ui| {
-                    let mut time_sec: u64 = 0;
-                    let mut time_min: u64 = 0;
-                    let mut length_sec: u64 = 0;
-                    let mut length_min: u64 = 0;
+            let voice_count = {
+                let x = if let Ok(player) = self.synth.read() {
+                    player.get_voice_count()
+                } else {
+                    0
+                };
+                x
+            };
+            stats.set_voice_count(voice_count);
 
-                    if let Some(midi_file) = self.midi_file.as_mut() {
-                        stats.time_total = if let Some(length) = midi_file.midi_length() {
-                            length
-                        } else {
-                            0.0
-                        };
-                        let time = midi_file.timer().get_time().as_secs_f64();
-                        let length_u64 = stats.time_total as u64;
-                        length_sec = length_u64 % 60;
-                        length_min = (length_u64 / 60) % 60;
-                        if time > stats.time_total {
-                            stats.time_passed = stats.time_total;
-                        } else {
-                            stats.time_passed = time;
-                        }
-                        let time_u64 = stats.time_passed as u64;
-                        time_sec = time_u64 % 60;
-                        time_min = (time_u64 / 60) % 60;
-
-                        stats.notes_total = midi_file.stats().total_notes;
-                    }
-                    ui.monospace(format!(
-                        "Time: {:0width$}:{:0width$}/{:0width$}:{:0width$}",
-                        time_min,
-                        time_sec,
-                        length_min,
-                        length_sec,
-                        width = 2
-                    ));
-                    ui.monospace(format!("FPS: {}", self.fps.get_fps().round()));
-                    ui.monospace(format!("Total Notes: {}", stats.notes_total));
-                    ui.monospace(format!("Voice Count: {}", stats.voice_count));
-                    ui.monospace(format!("Rendered: {}", stats.notes_on_screen));
-                });
+            let pos = egui::Pos2::new(10.0, panel_height + 10.0);
+            stats::draw_stats(self, &ctx, pos, stats);
         }
     }
 
