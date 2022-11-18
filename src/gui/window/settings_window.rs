@@ -30,6 +30,8 @@ pub fn draw_settings(
             // Synth settings section
             ui.heading("Synth");
             ui.separator();
+
+            let sfz_path_prev = perm_settings.sfz_path.clone();
             egui::Grid::new("synth_settings_grid")
                 .num_columns(2)
                 .spacing([40.0, 4.0])
@@ -70,15 +72,15 @@ pub fn draw_settings(
                     }
                     ui.end_row();
 
-                    ui.label("SFZ Path: ");
-                    ui.add_visible_ui(perm_settings.synth == 0, |ui| {
+                    if perm_settings.synth == 0 {
+                        ui.label("SFZ Path: ");
                         ui.horizontal(|ui| {
                             ui.add(egui::TextEdit::singleline(&mut perm_settings.sfz_path));
                             if ui.button("Browse...").clicked() {
                                 let sfz_path = FileDialog::new()
-                                    .add_filter("sfz", &["sfz"])
-                                    .set_directory("/")
-                                    .pick_file();
+                                .add_filter("sfz", &["sfz"])
+                                .set_directory("/")
+                                .pick_file();
 
                                 if let Some(sfz_path) = sfz_path {
                                     if let Ok(path) = sfz_path.into_os_string().into_string() {
@@ -86,26 +88,18 @@ pub fn draw_settings(
                                     }
                                 }
                             }
-                            if ui.button("Load").clicked() {
-                                win.synth
-                                    .write()
-                                    .unwrap()
-                                    .set_soundfont(&perm_settings.sfz_path);
-                            }
                         });
-                    });
-                    ui.end_row();
+                        ui.end_row();
 
-                    ui.label("Synth Layer Count: ");
-                    ui.add_enabled_ui(perm_settings.synth == 0, |ui| {
+                        ui.label("Synth Layer Count: ");
                         let layer_count_prev = perm_settings.layer_count;
                         ui.horizontal(|ui| {
                             ui.add(
                                 egui::DragValue::new(&mut perm_settings.layer_count)
-                                    .speed(1)
-                                    .clamp_range(RangeInclusive::new(0, 1024)),
+                                .speed(1)
+                                .clamp_range(RangeInclusive::new(0, 1024)),
                             );
-                            ui.label("(0 = No Limit)");
+                            ui.label("(0 = Infinite)");
                         });
                         if perm_settings.layer_count != layer_count_prev {
                             win.synth.write().unwrap().set_layer_count(
@@ -115,19 +109,17 @@ pub fn draw_settings(
                                 },
                             );
                         }
-                    });
-                    ui.end_row();
+                        ui.end_row();
 
-                    ui.label("Synth Render Buffer (ms)*: ");
-                    ui.add_enabled_ui(perm_settings.synth == 0, |ui| {
+                        ui.label("Synth Render Buffer (ms)*: ");
                         ui.add(
                             egui::DragValue::new(&mut perm_settings.buffer_ms)
-                                .speed(0.1)
-                                .clamp_range(RangeInclusive::new(1.0, 1000.0)),
+                            .speed(0.1)
+                            .clamp_range(RangeInclusive::new(1.0, 1000.0)),
                         );
+                        ui.end_row();
+                    }
                     });
-                    ui.end_row();
-                });
 
             // MIDI settings section
             ui.add_space(5.0);
@@ -158,21 +150,19 @@ pub fn draw_settings(
                         ui.add(
                             egui::DragValue::new(&mut firstkey)
                                 .speed(1)
-                                .clamp_range(RangeInclusive::new(0, 254)),
+                                .clamp_range(RangeInclusive::new(0, 253)),
                         );
                         ui.add(
                             egui::DragValue::new(&mut lastkey)
                                 .speed(1)
-                                .clamp_range(RangeInclusive::new(0, 254)),
+                                .clamp_range(RangeInclusive::new(firstkey + 1, 254)),
                         );
                     });
                     ui.end_row();
-                    let new_range = firstkey..=lastkey;
-                    if (firstkey != *perm_settings.key_range.start()
-                        || lastkey != *perm_settings.key_range.end())
-                        && new_range.len() > 24
+                    if firstkey != *perm_settings.key_range.start()
+                        || lastkey != *perm_settings.key_range.end()
                     {
-                        perm_settings.key_range = new_range;
+                        perm_settings.key_range = firstkey..=lastkey;
                     }
 
                     ui.label("MIDI Loading*: ");
@@ -209,6 +199,12 @@ pub fn draw_settings(
                 ui.label("Options marked with (*) require a restart.");
                 if ui.button("Save").clicked() {
                     perm_settings.save_to_file();
+                    if sfz_path_prev != perm_settings.sfz_path && perm_settings.synth == 0 {
+                        win.synth
+                            .write()
+                            .unwrap()
+                            .set_soundfont(&perm_settings.sfz_path);
+                    }
                 }
             });
         });

@@ -76,30 +76,25 @@ impl GuiWasabiWindow {
         temp_settings: &mut WasabiTemporarySettings,
     ) {
         let ctx = state.gui.context();
-        //let window_size = vec![ctx.available_rect().width(), ctx.available_rect().height()];
         self.fps.update();
         ctx.set_visuals(Visuals::dark());
-        let note_speed = perm_settings.note_speed;
 
         if temp_settings.settings_visible {
             settings_window::draw_settings(self, perm_settings, temp_settings, &ctx);
         }
 
-        let panel_height = if temp_settings.panel_visible {
-            let height = 40.0;
-            top_panel::draw_panel(self, perm_settings, temp_settings, &ctx, height);
-            height + 20.0
-        } else {
-            0.0
-        };
+        let height_prev = ctx.available_rect().height();
+        if temp_settings.panel_visible {
+            top_panel::draw_panel(self, perm_settings, temp_settings, &ctx);
+        }
 
         // Calculate available space left for keyboard and notes
         // We must render notes before keyboard because the notes
         // renderer tells us the key colors
         let available = ctx.available_rect();
         let height = available.height();
-        let visible_keys = perm_settings.key_range.len();
-        let keyboard_height = 11.6 / visible_keys as f32 * available.width();
+        let panel_height = height_prev - height;
+        let keyboard_height = (11.6 / perm_settings.key_range.len() as f32 * available.width()).min(height / 2.0);
         let notes_height = height - keyboard_height;
 
         let key_view = self.keyboard_layout.get_view_for_keys(
@@ -123,6 +118,7 @@ impl GuiWasabiWindow {
                 if let Some(midi_file) = self.midi_file.as_mut() {
                     let one_sec = Duration::from_secs(1);
                     let time = midi_file.timer().get_time();
+
                     let events = ui.input().events.clone();
                     for event in &events {
                         if let egui::Event::Key { key, pressed, .. } = event {
@@ -149,9 +145,8 @@ impl GuiWasabiWindow {
 
                     let result = self
                         .render_scene
-                        .draw(state, ui, &key_view, midi_file, note_speed);
-                    let notes_on_screen = result.notes_rendered;
-                    stats.set_rendered_note_count(notes_on_screen);
+                        .draw(state, ui, &key_view, midi_file, perm_settings.note_speed);
+                    stats.set_rendered_note_count(result.notes_rendered);
                     render_result_data = Some(result);
                 }
             });
@@ -192,24 +187,11 @@ impl GuiWasabiWindow {
 
         // Render the stats
         if temp_settings.stats_visible {
-            let voice_count = {
-                let x = if let Ok(player) = self.synth.read() {
-                    player.get_voice_count()
-                } else {
-                    0
-                };
-                x
-            };
+            let voice_count = self.synth.read().unwrap().get_voice_count();
             stats.set_voice_count(voice_count);
 
             let pos = egui::Pos2::new(10.0, panel_height + 10.0);
             stats::draw_stats(self, &ctx, pos, stats);
         }
-    }
-
-    fn reset_synth(&mut self) {
-        if let Ok(mut player) = self.synth.write() {
-            player.reset()
-        };
     }
 }

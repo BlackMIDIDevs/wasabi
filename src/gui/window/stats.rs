@@ -40,8 +40,8 @@ pub fn draw_stats(
     mut stats: GuiMidiStats,
 ) {
     let stats_frame = Frame::default()
-        .inner_margin(egui::style::Margin::same(6.0))
-        .fill(egui::Color32::from_rgba_unmultiplied(0, 0, 0, 175))
+        .inner_margin(egui::style::Margin::same(8.0))
+        .fill(egui::Color32::from_rgba_unmultiplied(0, 0, 0, 150))
         .rounding(egui::Rounding::same(6.0));
 
     egui::Window::new("Stats")
@@ -65,17 +65,18 @@ pub fn draw_stats(
                     0.0
                 };
                 let time = midi_file.timer().get_time().as_secs_f64();
-                let length_u64 = stats.time_total as u64;
-                length_sec = length_u64 % 60;
-                length_min = (length_u64 / 60) % 60;
+
+                length_sec = stats.time_total as u64 % 60;
+                length_min = (stats.time_total as u64 / 60) % 60;
+
                 if time > stats.time_total {
                     stats.time_passed = stats.time_total;
                 } else {
                     stats.time_passed = time;
                 }
-                let time_u64 = stats.time_passed as u64;
-                time_sec = time_u64 % 60;
-                time_min = (time_u64 / 60) % 60;
+
+                time_sec = stats.time_passed as u64 % 60;
+                time_min = (stats.time_passed as u64 / 60) % 60;
 
                 stats.notes_total = midi_file.stats().total_notes;
             }
