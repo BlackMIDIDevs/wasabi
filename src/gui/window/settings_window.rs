@@ -45,10 +45,18 @@ pub fn draw_settings(
                     if perm_settings.synth != synth_prev {
                         match perm_settings.synth {
                             1 => {
-                                win.synth.write().unwrap().switch_player(AudioPlayerType::Kdmapi);
+                                win.synth
+                                    .write()
+                                    .unwrap()
+                                    .switch_player(AudioPlayerType::Kdmapi);
                             }
                             _ => {
-                                win.synth.write().unwrap().switch_player(AudioPlayerType::XSynth(perm_settings.buffer_ms));
+                                win.synth
+                                    .write()
+                                    .unwrap()
+                                    .switch_player(AudioPlayerType::XSynth(
+                                        perm_settings.buffer_ms,
+                                    ));
                                 win.synth
                                     .write()
                                     .unwrap()
@@ -82,9 +90,9 @@ pub fn draw_settings(
                             }
                             if ui.button("Load").clicked() {
                                 win.synth
-                                .write()
-                                .unwrap()
-                                .set_soundfont(&perm_settings.sfz_path);
+                                    .write()
+                                    .unwrap()
+                                    .set_soundfont(&perm_settings.sfz_path);
                             }
                         });
                         ui.end_row();
@@ -113,15 +121,20 @@ pub fn draw_settings(
                         ui.horizontal(|ui| {
                             ui.add(
                                 egui::DragValue::new(&mut perm_settings.buffer_ms)
-                                .speed(0.1)
-                                .clamp_range(RangeInclusive::new(1.0, 1000.0)),
+                                    .speed(0.1)
+                                    .clamp_range(RangeInclusive::new(1.0, 1000.0)),
                             );
                             if ui.button("Reload").clicked() {
-                                win.synth.write().unwrap().switch_player(AudioPlayerType::XSynth(perm_settings.buffer_ms));
                                 win.synth
-                                .write()
-                                .unwrap()
-                                .set_soundfont(&perm_settings.sfz_path);
+                                    .write()
+                                    .unwrap()
+                                    .switch_player(AudioPlayerType::XSynth(
+                                        perm_settings.buffer_ms,
+                                    ));
+                                win.synth
+                                    .write()
+                                    .unwrap()
+                                    .set_soundfont(&perm_settings.sfz_path);
                                 win.synth.write().unwrap().set_layer_count(
                                     match perm_settings.layer_count {
                                         0 => None,

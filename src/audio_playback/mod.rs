@@ -32,6 +32,7 @@ impl SimpleTemporaryPlayer {
     }
 
     pub fn switch_player(&mut self, player_type: AudioPlayerType) {
+        self.reset();
         self.xsynth = None;
         self.kdmapi = None;
         let new_player = Self::new(player_type);
