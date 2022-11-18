@@ -31,6 +31,16 @@ impl SimpleTemporaryPlayer {
         }
     }
 
+    pub fn switch_player(&mut self, player_type: AudioPlayerType) {
+        self.xsynth = None;
+        self.kdmapi = None;
+        let new_player = Self::new(player_type);
+
+        self.player_type = new_player.player_type;
+        self.xsynth = new_player.xsynth;
+        self.kdmapi = new_player.kdmapi;
+    }
+
     pub fn get_voice_count(&self) -> u64 {
         match self.player_type {
             AudioPlayerType::XSynth(..) => {

@@ -1,12 +1,9 @@
 use egui::Context;
 
-use std::{
-    ops::RangeInclusive,
-    sync::{Arc, RwLock},
-};
+use std::ops::RangeInclusive;
 
 use crate::{
-    audio_playback::{AudioPlayerType, SimpleTemporaryPlayer},
+    audio_playback::AudioPlayerType,
     gui::window::GuiWasabiWindow,
     settings::{WasabiPermanentSettings, WasabiTemporarySettings},
 };
@@ -31,13 +28,12 @@ pub fn draw_settings(
             ui.heading("Synth");
             ui.separator();
 
-            let sfz_path_prev = perm_settings.sfz_path.clone();
             egui::Grid::new("synth_settings_grid")
                 .num_columns(2)
                 .spacing([40.0, 4.0])
                 .striped(true)
                 .show(ui, |ui| {
-                    ui.label("Synth*: ");
+                    ui.label("Synth: ");
                     let synth_prev = perm_settings.synth;
                     let synth = ["XSynth", "KDMAPI"];
                     egui::ComboBox::from_id_source("synth_select").show_index(
@@ -49,14 +45,10 @@ pub fn draw_settings(
                     if perm_settings.synth != synth_prev {
                         match perm_settings.synth {
                             1 => {
-                                win.synth = Arc::new(RwLock::new(SimpleTemporaryPlayer::new(
-                                    AudioPlayerType::Kdmapi,
-                                )));
+                                win.synth.write().unwrap().switch_player(AudioPlayerType::Kdmapi);
                             }
                             _ => {
-                                win.synth = Arc::new(RwLock::new(SimpleTemporaryPlayer::new(
-                                    AudioPlayerType::XSynth(perm_settings.buffer_ms),
-                                )));
+                                win.synth.write().unwrap().switch_player(AudioPlayerType::XSynth(perm_settings.buffer_ms));
                                 win.synth
                                     .write()
                                     .unwrap()
@@ -88,6 +80,12 @@ pub fn draw_settings(
                                     }
                                 }
                             }
+                            if ui.button("Load").clicked() {
+                                win.synth
+                                .write()
+                                .unwrap()
+                                .set_soundfont(&perm_settings.sfz_path);
+                            }
                         });
                         ui.end_row();
 
@@ -111,12 +109,27 @@ pub fn draw_settings(
                         }
                         ui.end_row();
 
-                        ui.label("Synth Render Buffer (ms)*: ");
-                        ui.add(
-                            egui::DragValue::new(&mut perm_settings.buffer_ms)
+                        ui.label("Synth Render Buffer (ms): ");
+                        ui.horizontal(|ui| {
+                            ui.add(
+                                egui::DragValue::new(&mut perm_settings.buffer_ms)
                                 .speed(0.1)
                                 .clamp_range(RangeInclusive::new(1.0, 1000.0)),
-                        );
+                            );
+                            if ui.button("Reload").clicked() {
+                                win.synth.write().unwrap().switch_player(AudioPlayerType::XSynth(perm_settings.buffer_ms));
+                                win.synth
+                                .write()
+                                .unwrap()
+                                .set_soundfont(&perm_settings.sfz_path);
+                                win.synth.write().unwrap().set_layer_count(
+                                    match perm_settings.layer_count {
+                                        0 => None,
+                                        _ => Some(perm_settings.layer_count),
+                                    },
+                                );
+                            }
+                        });
                         ui.end_row();
                     }
                 });
@@ -196,15 +209,9 @@ pub fn draw_settings(
 
             ui.separator();
             ui.vertical_centered(|ui| {
-                ui.label("Options marked with (*) require a restart.");
+                ui.label("Options marked with (*) will apply when a new MIDI is loaded.");
                 if ui.button("Save").clicked() {
                     perm_settings.save_to_file();
-                    if sfz_path_prev != perm_settings.sfz_path && perm_settings.synth == 0 {
-                        win.synth
-                            .write()
-                            .unwrap()
-                            .set_soundfont(&perm_settings.sfz_path);
-                    }
                 }
             });
         });
