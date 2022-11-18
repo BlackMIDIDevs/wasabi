@@ -38,7 +38,8 @@ impl GuiKeyboard {
 
         for (i, key) in key_view.iter_visible_keys() {
             if !key.black {
-                if let Some(color) = colors[i].map(map_color) { // Pressed
+                if let Some(color) = colors[i].map(map_color) {
+                    // Pressed
                     // Surface
                     let top_left = Pos2::new(map_x(key.left), top);
                     let bottom_right = Pos2::new(map_x(key.right), bottom);
@@ -52,7 +53,8 @@ impl GuiKeyboard {
 
                     mesh.add_colored_rect(rect, color);
                     mesh.add_colored_rect(rect2, color2);
-                } else { // Not pressed
+                } else {
+                    // Not pressed
                     let white_key_bottom = md_height;
                     let color = Color32::WHITE;
 
@@ -95,7 +97,8 @@ impl GuiKeyboard {
 
         for (i, key) in key_view.iter_visible_keys() {
             if key.black {
-                if let Some(color) = colors[i].map(map_color) { // Pressed
+                if let Some(color) = colors[i].map(map_color) {
+                    // Pressed
                     // Outline
                     let top_left1 = Pos2::new(map_x(key.left), top);
                     let bottom_right1 = Pos2::new(map_x(key.right), black_bottom);
@@ -109,7 +112,8 @@ impl GuiKeyboard {
 
                     mesh.add_colored_rect(rect1, color1);
                     mesh.add_colored_rect(rect2, color);
-                } else { // Not pressed
+                } else {
+                    // Not pressed
                     let black_key_bottom = md_height;
 
                     // Outline + Bottom part

@@ -1,4 +1,4 @@
-use egui::{Frame, Context};
+use egui::{Context, Frame};
 
 use std::time::Duration;
 
@@ -22,7 +22,7 @@ pub fn draw_panel(
 
     egui::TopBottomPanel::top("Top panel")
         .frame(panel_frame)
-        .show(&ctx, |ui| {
+        .show(ctx, |ui| {
             ui.horizontal(|ui| {
                 if ui.button("Open MIDI").clicked() {
                     let midi_path = FileDialog::new()
@@ -97,7 +97,8 @@ pub fn draw_panel(
             });
 
             ui.spacing_mut().slider_width = ctx.available_rect().width() - 20.0;
-            let mut empty_slider = || ui.add(egui::Slider::new(&mut 0.0, 0.0..=1.0).show_value(false));
+            let mut empty_slider =
+                || ui.add(egui::Slider::new(&mut 0.0, 0.0..=1.0).show_value(false));
             if let Some(midi_file) = win.midi_file.as_mut() {
                 if let Some(length) = midi_file.midi_length() {
                     let mut time = midi_file.timer().get_time().as_secs_f64();

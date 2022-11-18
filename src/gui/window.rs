@@ -1,7 +1,7 @@
+mod fps;
 mod keyboard;
 mod keyboard_layout;
 mod scene;
-mod fps;
 mod stats;
 
 mod settings_window;
@@ -15,11 +15,11 @@ use std::{
 use egui::{style::Margin, Frame, Visuals};
 
 use crate::{
-    GuiRenderer, GuiState,
     audio_playback::{AudioPlayerType, SimpleTemporaryPlayer},
+    gui::window::{keyboard::GuiKeyboard, scene::GuiRenderScene},
     midi::{MIDIFileBase, MIDIFileUnion},
     settings::{WasabiPermanentSettings, WasabiTemporarySettings},
-    gui::window::{keyboard::GuiKeyboard, scene::GuiRenderScene},
+    GuiRenderer, GuiState,
 };
 
 pub struct GuiWasabiWindow {
@@ -94,7 +94,8 @@ impl GuiWasabiWindow {
         let available = ctx.available_rect();
         let height = available.height();
         let panel_height = height_prev - height;
-        let keyboard_height = (11.6 / perm_settings.key_range.len() as f32 * available.width()).min(height / 2.0);
+        let keyboard_height =
+            (11.6 / perm_settings.key_range.len() as f32 * available.width()).min(height / 2.0);
         let notes_height = height - keyboard_height;
 
         let key_view = self.keyboard_layout.get_view_for_keys(
@@ -143,9 +144,13 @@ impl GuiWasabiWindow {
                         }
                     }
 
-                    let result = self
-                        .render_scene
-                        .draw(state, ui, &key_view, midi_file, perm_settings.note_speed);
+                    let result = self.render_scene.draw(
+                        state,
+                        ui,
+                        &key_view,
+                        midi_file,
+                        perm_settings.note_speed,
+                    );
                     stats.set_rendered_note_count(result.notes_rendered);
                     render_result_data = Some(result);
                 }

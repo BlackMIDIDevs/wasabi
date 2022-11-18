@@ -26,7 +26,7 @@ pub fn draw_settings(
         .scroll2([false, true])
         .enabled(true)
         .open(&mut temp_settings.settings_visible)
-        .show(&ctx, |ui| {
+        .show(ctx, |ui| {
             // Synth settings section
             ui.heading("Synth");
             ui.separator();
@@ -78,9 +78,9 @@ pub fn draw_settings(
                             ui.add(egui::TextEdit::singleline(&mut perm_settings.sfz_path));
                             if ui.button("Browse...").clicked() {
                                 let sfz_path = FileDialog::new()
-                                .add_filter("sfz", &["sfz"])
-                                .set_directory("/")
-                                .pick_file();
+                                    .add_filter("sfz", &["sfz"])
+                                    .set_directory("/")
+                                    .pick_file();
 
                                 if let Some(sfz_path) = sfz_path {
                                     if let Ok(path) = sfz_path.into_os_string().into_string() {
@@ -96,8 +96,8 @@ pub fn draw_settings(
                         ui.horizontal(|ui| {
                             ui.add(
                                 egui::DragValue::new(&mut perm_settings.layer_count)
-                                .speed(1)
-                                .clamp_range(RangeInclusive::new(0, 1024)),
+                                    .speed(1)
+                                    .clamp_range(RangeInclusive::new(0, 1024)),
                             );
                             ui.label("(0 = Infinite)");
                         });
@@ -114,12 +114,12 @@ pub fn draw_settings(
                         ui.label("Synth Render Buffer (ms)*: ");
                         ui.add(
                             egui::DragValue::new(&mut perm_settings.buffer_ms)
-                            .speed(0.1)
-                            .clamp_range(RangeInclusive::new(1.0, 1000.0)),
+                                .speed(0.1)
+                                .clamp_range(RangeInclusive::new(1.0, 1000.0)),
                         );
                         ui.end_row();
                     }
-                    });
+                });
 
             // MIDI settings section
             ui.add_space(5.0);

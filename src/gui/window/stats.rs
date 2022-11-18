@@ -1,9 +1,6 @@
-use egui::{Frame, Pos2, Context};
+use egui::{Context, Frame, Pos2};
 
-use crate::{
-    gui::window::GuiWasabiWindow,
-    midi::MIDIFileBase,
-};
+use crate::{gui::window::GuiWasabiWindow, midi::MIDIFileBase};
 
 pub struct GuiMidiStats {
     time_passed: f64,
@@ -33,12 +30,7 @@ impl GuiMidiStats {
     }
 }
 
-pub fn draw_stats(
-    win: &mut GuiWasabiWindow,
-    ctx: &Context,
-    pos: Pos2,
-    mut stats: GuiMidiStats,
-) {
+pub fn draw_stats(win: &mut GuiWasabiWindow, ctx: &Context, pos: Pos2, mut stats: GuiMidiStats) {
     let stats_frame = Frame::default()
         .inner_margin(egui::style::Margin::same(8.0))
         .fill(egui::Color32::from_rgba_unmultiplied(0, 0, 0, 150))
@@ -52,7 +44,7 @@ pub fn draw_stats(
         .enabled(true)
         .frame(stats_frame)
         .fixed_pos(pos)
-        .show(&ctx, |ui| {
+        .show(ctx, |ui| {
             let mut time_sec: u64 = 0;
             let mut time_min: u64 = 0;
             let mut length_sec: u64 = 0;
