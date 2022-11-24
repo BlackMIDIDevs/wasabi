@@ -118,9 +118,6 @@ pub trait MIDIFile: MIDIFileBase {
     fn get_current_column_views(&mut self, range: f64) -> Self::ColumnsViews<'_>;
 }
 
-#[enum_dispatch]
-pub trait MIDINoteViewsBase {}
-
 pub trait MIDINoteViews {
     type View<'a>: 'a + MIDINoteColumnView
     where

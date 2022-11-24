@@ -63,45 +63,38 @@ impl LiveLoadMIDIFile {
     }
 }
 
-macro_rules! impl_file_base {
-    ($for_type:ty) => {
-        impl MIDIFileBase for $for_type {
-            fn midi_length(&self) -> Option<f64> {
-                let value = self.length.load(Ordering::Relaxed);
-                if value.is_nan() {
-                    None
-                } else {
-                    Some(value)
-                }
-            }
-
-            fn parsed_up_to(&self) -> Option<f64> {
-                Some(self.view_data.parse_time())
-            }
-
-            fn timer(&self) -> &TimeKeeper {
-                &self.timer
-            }
-
-            fn timer_mut(&mut self) -> &mut TimeKeeper {
-                &mut self.timer
-            }
-
-            fn allows_seeking_backward(&self) -> bool {
-                false
-            }
-
-            fn stats(&self) -> MIDIFileStats {
-                MIDIFileStats::new(0)
-            }
+impl MIDIFileBase for LiveLoadMIDIFile {
+    fn midi_length(&self) -> Option<f64> {
+        let value = self.length.load(Ordering::Relaxed);
+        if value.is_nan() {
+            None
+        } else {
+            Some(value)
         }
-    };
+    }
+
+    fn parsed_up_to(&self) -> Option<f64> {
+        Some(self.view_data.parse_time())
+    }
+
+    fn timer(&self) -> &TimeKeeper {
+        &self.timer
+    }
+
+    fn timer_mut(&mut self) -> &mut TimeKeeper {
+        &mut self.timer
+    }
+
+    fn allows_seeking_backward(&self) -> bool {
+        false
+    }
+
+    fn stats(&self) -> MIDIFileStats {
+        MIDIFileStats::new(0)
+    }
 }
 
-impl_file_base!(&mut LiveLoadMIDIFile);
-impl_file_base!(LiveLoadMIDIFile);
-
-impl MIDIFile for &mut LiveLoadMIDIFile {
+impl MIDIFile for LiveLoadMIDIFile {
     type ColumnsViews<'a> = LiveCurrentNoteViews<'a> where Self: 'a;
 
     fn get_current_column_views(&mut self, range: f64) -> Self::ColumnsViews<'_> {

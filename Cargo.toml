@@ -19,8 +19,8 @@ egui = "0.19.0"
 winit = "0.27.3"
 rayon = "1.5.3"
 midi-toolkit-rs = { git = "https://github.com/arduano/midi-toolkit-rs", rev = "907dec1" }
-xsynth-core = { git = "https://github.com/arduano/xsynth.git", rev = "68fab126181d8bac2cc3a836029876a4c25476f7" }
-xsynth-realtime = { git = "https://github.com/arduano/xsynth.git", rev = "68fab126181d8bac2cc3a836029876a4c25476f7" }
+xsynth-core = { git = "https://github.com/arduano/xsynth.git", rev = "7875b93" }
+xsynth-realtime = { git = "https://github.com/arduano/xsynth.git", rev = "7875b93" }
 gen-iter = "0.2.1"
 enum_dispatch = "0.3.8"
 palette = "0.6.0"
