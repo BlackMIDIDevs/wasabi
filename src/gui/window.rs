@@ -42,7 +42,7 @@ impl GuiWasabiWindow {
             ))),
             _ => {
                 let synth = Arc::new(RwLock::new(SimpleTemporaryPlayer::new(
-                    AudioPlayerType::XSynth(perm_settings.buffer_ms),
+                    AudioPlayerType::XSynth{buffer: perm_settings.buffer_ms},
                 )));
                 synth
                     .write()

@@ -54,9 +54,9 @@ pub fn draw_settings(
                                 win.synth
                                     .write()
                                     .unwrap()
-                                    .switch_player(AudioPlayerType::XSynth(
-                                        perm_settings.buffer_ms,
-                                    ));
+                                    .switch_player(AudioPlayerType::XSynth{
+                                        buffer: perm_settings.buffer_ms,
+                                    });
                                 win.synth
                                     .write()
                                     .unwrap()
@@ -128,9 +128,9 @@ pub fn draw_settings(
                                 win.synth
                                     .write()
                                     .unwrap()
-                                    .switch_player(AudioPlayerType::XSynth(
-                                        perm_settings.buffer_ms,
-                                    ));
+                                    .switch_player(AudioPlayerType::XSynth{
+                                        buffer: perm_settings.buffer_ms,
+                                });
                                 win.synth
                                     .write()
                                     .unwrap()
