@@ -44,9 +44,12 @@ pub fn draw_stats(win: &mut GuiWasabiWindow, ctx: &Context, pos: Pos2, mut stats
         .enabled(true)
         .frame(stats_frame)
         .fixed_pos(pos)
+        .fixed_size(egui::Vec2::new(200.0, 128.0))
         .show(ctx, |ui| {
+            let mut time_millis: u64 = 0;
             let mut time_sec: u64 = 0;
             let mut time_min: u64 = 0;
+            let mut length_millis: u64 = 0;
             let mut length_sec: u64 = 0;
             let mut length_min: u64 = 0;
 
@@ -58,8 +61,9 @@ pub fn draw_stats(win: &mut GuiWasabiWindow, ctx: &Context, pos: Pos2, mut stats
                 };
                 let time = midi_file.timer().get_time().as_secs_f64();
 
+                length_millis = (stats.time_total * 10.0) as u64 % 10;
                 length_sec = stats.time_total as u64 % 60;
-                length_min = (stats.time_total as u64 / 60) % 60;
+                length_min = stats.time_total as u64 / 60;
 
                 if time > stats.time_total {
                     stats.time_passed = stats.time_total;
@@ -67,22 +71,52 @@ pub fn draw_stats(win: &mut GuiWasabiWindow, ctx: &Context, pos: Pos2, mut stats
                     stats.time_passed = time;
                 }
 
+                time_millis = (stats.time_passed * 10.0) as u64 % 10;
                 time_sec = stats.time_passed as u64 % 60;
-                time_min = (stats.time_passed as u64 / 60) % 60;
+                time_min = stats.time_passed as u64 / 60;
 
                 stats.notes_total = midi_file.stats().total_notes;
             }
-            ui.monospace(format!(
-                "Time: {:0width$}:{:0width$}/{:0width$}:{:0width$}",
-                time_min,
-                time_sec,
-                length_min,
-                length_sec,
-                width = 2
-            ));
-            ui.monospace(format!("FPS: {}", win.fps.get_fps().round()));
-            ui.monospace(format!("Total Notes: {}", stats.notes_total));
-            ui.monospace(format!("Voice Count: {}", stats.voice_count));
-            ui.monospace(format!("Rendered: {}", stats.notes_on_screen));
+
+            ui.horizontal(|ui| {
+                ui.monospace("Time:");
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    ui.monospace(format!(
+                        "{:0width$}:{:0width$}.{} / {:0width$}:{:0width$}.{}",
+                        time_min,
+                        time_sec,
+                        time_millis,
+                        length_min,
+                        length_sec,
+                        length_millis,
+                        width = 2
+                    ));
+                });
+            });
+
+            ui.horizontal(|ui| {
+                ui.monospace("FPS:");
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    ui.monospace(format!("{}", win.fps.get_fps().round()));
+                });
+            });
+
+            ui.horizontal(|ui| {
+                ui.monospace("Voice Count:");
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    ui.monospace(format!("{}", stats.voice_count));
+                });
+            });
+
+            ui.horizontal(|ui| {
+                ui.monospace("Rendered:");
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    ui.monospace(format!("{}", stats.notes_on_screen));
+                });
+            });
+
+            ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
+                ui.monospace(format!("0 / {}", stats.notes_total));
+            });
         });
 }
