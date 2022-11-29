@@ -206,13 +206,13 @@ impl GuiKeyboard {
                     );
 
                     let lightened = Color32::from_rgb(
-                        (color.r() as f32 * 1.2) as u8,
-                        (color.g() as f32 * 1.2) as u8,
-                        (color.b() as f32 * 1.2) as u8,
+                        (color.r() as f32 * 1.3) as u8,
+                        (color.g() as f32 * 1.3) as u8,
+                        (color.b() as f32 * 1.3) as u8,
                     );
 
-                    let md_height = md_height / 2.2;
-                    let black_key_overlap = black_key_overlap / 2.0;
+                    let md_height = md_height / 2.0;
+                    let black_key_overlap = black_key_overlap / 2.2;
 
                     add_rect_triangles(&mut mesh);
                     mesh.colored_vertex(
