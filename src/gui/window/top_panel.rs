@@ -24,7 +24,7 @@ pub fn draw_panel(
         .frame(panel_frame)
         .show(ctx, |ui| {
             ui.horizontal(|ui| {
-                if ui.button("Open MIDI").clicked() {
+                if ui.button("Open").clicked() {
                     let midi_path = FileDialog::new()
                         .add_filter("midi", &["mid"])
                         .set_directory("/")
@@ -65,12 +65,24 @@ pub fn draw_panel(
                     }
                 }
                 if let Some(midi_file) = win.midi_file.as_mut() {
-                    if ui.button("Close MIDI").clicked() {
+                    if ui.button("Unload").clicked() {
                         midi_file.timer_mut().pause();
                         win.synth.write().unwrap().reset();
                         win.midi_file = None;
                     }
                 }
+
+                ui.add_space(10.0);
+
+                if ui.button("Settings").clicked() {
+                    match temp_settings.settings_visible {
+                        true => temp_settings.settings_visible = false,
+                        false => temp_settings.settings_visible = true,
+                    }
+                }
+
+                ui.add_space(10.0);
+
                 if ui.button("Play").clicked() {
                     if let Some(midi_file) = win.midi_file.as_mut() {
                         midi_file.timer_mut().play();
@@ -81,12 +93,9 @@ pub fn draw_panel(
                         midi_file.timer_mut().pause();
                     }
                 }
-                if ui.button("Settings").clicked() {
-                    match temp_settings.settings_visible {
-                        true => temp_settings.settings_visible = false,
-                        false => temp_settings.settings_visible = true,
-                    }
-                }
+
+                ui.add_space(10.0);
+
                 ui.horizontal(|ui| {
                     ui.label("Note speed: ");
                     ui.add(
