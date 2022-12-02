@@ -20,9 +20,8 @@ impl GuiKeyboard {
     ) {
         let (rect, _) = ui.allocate_exact_size(ui.available_size(), Sense::click());
         let mut mesh = Mesh::default();
-        let key_density = ((rect.width() / key_view.visible_range.len() as f32) / 15.0)
-            .max(1.0)
-            .min(5.0);
+        let key_density =
+            ((rect.width() / key_view.visible_range.len() as f32) / 15.0).clamp(1.0, 5.0);
         let onepx = ui.painter().round_to_pixel(key_density);
 
         let md_height = rect.height() * 0.048;
@@ -55,12 +54,24 @@ impl GuiKeyboard {
                     add_rect_triangles(&mut mesh);
                     mesh.colored_vertex(Pos2::new(map_x(key.left), top), darkened2);
                     mesh.colored_vertex(Pos2::new(map_x(key.right), top), darkened2);
-                    mesh.colored_vertex(Pos2::new(map_x(key.left), top + black_key_overlap), darkened);
-                    mesh.colored_vertex(Pos2::new(map_x(key.right), top + black_key_overlap), darkened);
+                    mesh.colored_vertex(
+                        Pos2::new(map_x(key.left), top + black_key_overlap),
+                        darkened,
+                    );
+                    mesh.colored_vertex(
+                        Pos2::new(map_x(key.right), top + black_key_overlap),
+                        darkened,
+                    );
 
                     add_rect_triangles(&mut mesh);
-                    mesh.colored_vertex(Pos2::new(map_x(key.left), top + black_key_overlap), darkened);
-                    mesh.colored_vertex(Pos2::new(map_x(key.right), top + black_key_overlap), darkened);
+                    mesh.colored_vertex(
+                        Pos2::new(map_x(key.left), top + black_key_overlap),
+                        darkened,
+                    );
+                    mesh.colored_vertex(
+                        Pos2::new(map_x(key.right), top + black_key_overlap),
+                        darkened,
+                    );
                     mesh.colored_vertex(Pos2::new(map_x(key.left), bottom), color);
                     mesh.colored_vertex(Pos2::new(map_x(key.right), bottom), color);
 
@@ -362,6 +373,6 @@ impl GuiKeyboard {
 
 fn add_rect_triangles(mesh: &mut Mesh) {
     let idx = mesh.vertices.len() as u32;
-    mesh.add_triangle(idx + 0, idx + 1, idx + 2);
+    mesh.add_triangle(idx, idx + 1, idx + 2);
     mesh.add_triangle(idx + 2, idx + 1, idx + 3);
 }

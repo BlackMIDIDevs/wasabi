@@ -2,7 +2,7 @@ use kdmapi::{KDMAPIStream, KDMAPI};
 mod xsynth;
 
 pub enum AudioPlayerType {
-    XSynth{ buffer: f64 },
+    XSynth { buffer: f64 },
     Kdmapi,
 }
 
@@ -15,7 +15,7 @@ pub struct SimpleTemporaryPlayer {
 impl SimpleTemporaryPlayer {
     pub fn new(player_type: AudioPlayerType) -> Self {
         let (xsynth, kdmapi) = match player_type {
-            AudioPlayerType::XSynth{ buffer: buf } => {
+            AudioPlayerType::XSynth { buffer: buf } => {
                 let xsynth = xsynth::XSynthPlayer::new(buf);
                 (Some(xsynth), None)
             }
@@ -44,7 +44,7 @@ impl SimpleTemporaryPlayer {
 
     pub fn get_voice_count(&self) -> u64 {
         match self.player_type {
-            AudioPlayerType::XSynth{..} => {
+            AudioPlayerType::XSynth { .. } => {
                 if let Some(xsynth) = &self.xsynth {
                     xsynth.get_voice_count()
                 } else {
@@ -63,7 +63,7 @@ impl SimpleTemporaryPlayer {
 
     pub fn push_event(&mut self, data: u32) {
         match self.player_type {
-            AudioPlayerType::XSynth{..} => {
+            AudioPlayerType::XSynth { .. } => {
                 if let Some(xsynth) = self.xsynth.as_mut() {
                     xsynth.push_event(data)
                 }
@@ -78,7 +78,7 @@ impl SimpleTemporaryPlayer {
 
     pub fn reset(&mut self) {
         match self.player_type {
-            AudioPlayerType::XSynth{..} => {
+            AudioPlayerType::XSynth { .. } => {
                 if let Some(xsynth) = self.xsynth.as_mut() {
                     xsynth.reset()
                 }
@@ -92,7 +92,7 @@ impl SimpleTemporaryPlayer {
     }
 
     pub fn set_layer_count(&mut self, layers: Option<usize>) {
-        if let AudioPlayerType::XSynth{..} = self.player_type {
+        if let AudioPlayerType::XSynth { .. } = self.player_type {
             if let Some(xsynth) = self.xsynth.as_mut() {
                 xsynth.set_layer_count(layers)
             }
@@ -100,7 +100,7 @@ impl SimpleTemporaryPlayer {
     }
 
     pub fn set_soundfont(&mut self, path: &str) {
-        if let AudioPlayerType::XSynth{..} = self.player_type {
+        if let AudioPlayerType::XSynth { .. } = self.player_type {
             if let Some(xsynth) = self.xsynth.as_mut() {
                 xsynth.set_soundfont(path)
             }

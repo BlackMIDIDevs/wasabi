@@ -15,7 +15,7 @@ use vulkano::swapchain::PresentMode;
 
 use settings::{WasabiPermanentSettings, WasabiTemporarySettings};
 use winit::{
-    event::{ElementState, Event, VirtualKeyCode, WindowEvent, KeyboardInput},
+    event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::Fullscreen,
 };
@@ -91,7 +91,7 @@ pub fn main() {
                             renderer.window().set_fullscreen(fullscreen);
                         }
                         _ => {}
-                    }
+                    },
                     _ => (),
                 }
             }
