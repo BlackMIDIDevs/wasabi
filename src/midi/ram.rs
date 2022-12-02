@@ -31,40 +31,33 @@ pub struct InRamMIDIFile {
 
 impl InRamMIDIFile {}
 
-macro_rules! impl_file_base {
-    ($for_type:ty) => {
-        impl MIDIFileBase for $for_type {
-            fn midi_length(&self) -> Option<f64> {
-                Some(self.length)
-            }
+impl MIDIFileBase for InRamMIDIFile {
+    fn midi_length(&self) -> Option<f64> {
+        Some(self.length)
+    }
 
-            fn parsed_up_to(&self) -> Option<f64> {
-                None
-            }
+    fn parsed_up_to(&self) -> Option<f64> {
+        None
+    }
 
-            fn timer(&self) -> &TimeKeeper {
-                &self.timer
-            }
+    fn timer(&self) -> &TimeKeeper {
+        &self.timer
+    }
 
-            fn timer_mut(&mut self) -> &mut TimeKeeper {
-                &mut self.timer
-            }
+    fn timer_mut(&mut self) -> &mut TimeKeeper {
+        &mut self.timer
+    }
 
-            fn allows_seeking_backward(&self) -> bool {
-                true
-            }
+    fn allows_seeking_backward(&self) -> bool {
+        true
+    }
 
-            fn stats(&self) -> MIDIFileStats {
-                MIDIFileStats::new(self.note_count)
-            }
-        }
-    };
+    fn stats(&self) -> MIDIFileStats {
+        MIDIFileStats::new(self.note_count)
+    }
 }
 
-impl_file_base!(&mut InRamMIDIFile);
-impl_file_base!(InRamMIDIFile);
-
-impl MIDIFile for &mut InRamMIDIFile {
+impl MIDIFile for InRamMIDIFile {
     type ColumnsViews<'a> = InRamCurrentNoteViews<'a> where Self: 'a;
 
     fn get_current_column_views(&mut self, range: f64) -> Self::ColumnsViews<'_> {

@@ -25,7 +25,7 @@ impl XSynthPlayer {
 
         let synth = RealtimeSynth::open_with_default_output(config);
         let sender = synth.get_senders();
-        let stream_params = synth.stream_params().clone();
+        let stream_params = synth.stream_params();
         let stats = synth.get_stats();
 
         // FIXME: Basically I'm leaking a pointer because the synth can't be sent between
@@ -58,7 +58,7 @@ impl XSynthPlayer {
 
     pub fn set_soundfont(&mut self, path: &str) {
         if !path.is_empty() && Path::new(path).exists() {
-            let samplesf = SampleSoundfont::new(path, self.stream_params.clone());
+            let samplesf = SampleSoundfont::new(path, self.stream_params);
             if let Ok(sf) = samplesf {
                 let soundfont: Arc<dyn SoundfontBase> = Arc::new(sf);
                 self.sender

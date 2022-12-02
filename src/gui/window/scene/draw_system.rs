@@ -50,7 +50,7 @@ impl NoteRenderer {
         &mut self,
         key_view: &KeyboardView,
         final_image: Arc<dyn ImageViewAbstract + 'static>,
-        mut midi_file: impl MIDIFile,
+        midi_file: &mut impl MIDIFile,
         view_range: f64,
     ) -> RenderResultData {
         let note_views = midi_file.get_current_column_views(view_range);
