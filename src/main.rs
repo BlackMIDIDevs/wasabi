@@ -15,8 +15,9 @@ use vulkano::swapchain::PresentMode;
 
 use settings::{WasabiPermanentSettings, WasabiTemporarySettings};
 use winit::{
-    event::{Event, WindowEvent},
+    event::{ElementState, Event, VirtualKeyCode, WindowEvent, KeyboardInput},
     event_loop::{ControlFlow, EventLoop},
+    window::Fullscreen,
 };
 
 pub fn main() {
@@ -49,6 +50,13 @@ pub fn main() {
 
     let mut gui_state = GuiWasabiWindow::new(&mut gui_render_data, &mut perm_settings);
 
+    let monitor = event_loop
+        .available_monitors()
+        .next()
+        .expect("no monitor found!");
+
+    let mode = monitor.video_modes().next().expect("no mode found");
+
     event_loop.run(move |event, _, control_flow| {
         // Update Egui integration so the UI works!
         match event {
@@ -65,6 +73,24 @@ pub fn main() {
                     }
                     WindowEvent::CloseRequested => {
                         *control_flow = ControlFlow::Exit;
+                    }
+                    WindowEvent::KeyboardInput {
+                        input:
+                            KeyboardInput {
+                                virtual_keycode: Some(virtual_code),
+                                state: ElementState::Pressed,
+                                ..
+                            },
+                        ..
+                    } => match virtual_code {
+                        VirtualKeyCode::Return if renderer.window().fullscreen().is_some() => {
+                            renderer.window().set_fullscreen(None);
+                        }
+                        VirtualKeyCode::Return => {
+                            let fullscreen = Some(Fullscreen::Exclusive(mode.clone()));
+                            renderer.window().set_fullscreen(fullscreen);
+                        }
+                        _ => {}
                     }
                     _ => (),
                 }
