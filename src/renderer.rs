@@ -13,7 +13,8 @@ use vulkano::{
     sync::GpuFuture,
     Version, VulkanLibrary,
 };
-use vulkano_win::VkSurfaceBuild;
+use vulkano_util::window::VulkanoWindows;
+use vulkano_win::{create_surface_from_winit, VkSurfaceBuild};
 use winit::{
     event_loop::EventLoop,
     window::{Window, WindowBuilder},
@@ -24,7 +25,8 @@ use self::swapchain::{ManagedSwapchain, SwapchainFrame};
 pub struct Renderer {
     _instance: Arc<Instance>,
     device: Arc<Device>,
-    surface: Arc<Surface<Window>>,
+    surface: Arc<Surface>,
+    window: Arc<Window>,
     queue: Arc<Queue>,
     swap_chain: ManagedSwapchain,
 }
@@ -56,11 +58,15 @@ impl Renderer {
         .expect("Failed to create instance");
 
         // Create rendering surface along with window
-        let surface = WindowBuilder::new()
+        let window = WindowBuilder::new()
             .with_inner_size(winit::dpi::LogicalSize::new(window_size[0], window_size[1]))
             .with_title(name)
-            .build_vk_surface(event_loop, instance.clone())
+            .build(event_loop)
             .expect("Failed to create vulkan surface & window");
+        let window = Arc::new(window);
+
+        let surface =
+            create_surface_from_winit(window.clone(), instance.clone()).expect("Failed to create surface");
 
         // Get most performant physical device (device with most memory)
         let device_extensions = DeviceExtensions {
@@ -120,6 +126,7 @@ impl Renderer {
         // Create swap chain & frame(s) to which we'll render
         let swap_chain = ManagedSwapchain::create(
             surface.clone(),
+            window.clone(),
             physical_device,
             device.clone(),
             present_mode,
@@ -133,6 +140,7 @@ impl Renderer {
             surface,
             queue,
             swap_chain,
+            window,
         }
     }
 
@@ -144,12 +152,12 @@ impl Renderer {
         self.device.clone()
     }
 
-    pub fn surface(&self) -> Arc<Surface<Window>> {
+    pub fn surface(&self) -> Arc<Surface> {
         self.surface.clone()
     }
 
-    pub fn window(&self) -> &Window {
-        self.surface.window()
+    pub fn window(&self) -> Arc<Window> {
+        self.window.clone()
     }
 
     pub fn format(&self) -> Format {

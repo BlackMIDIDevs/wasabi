@@ -3,6 +3,7 @@ use std::sync::Arc;
 use vulkano::{
     device::Device,
     image::{view::ImageView, AttachmentImage},
+    memory::allocator::{GenericMemoryAllocator, StandardMemoryAllocator},
 };
 
 use crate::{gui::GuiState, renderer::swapchain::ImagesState};
@@ -38,15 +39,13 @@ impl SceneSwapchain {
                 state.gui.unregister_user_image(image.id);
             }
 
+            let allocator = StandardMemoryAllocator::new_default(self.device.clone());
+
             // Create new images
             for _ in 0..image_state.count {
                 let image = ImageView::new_default(
-                    AttachmentImage::sampled_input_attachment(
-                        self.device.clone(),
-                        size,
-                        image_state.format,
-                    )
-                    .expect("Failed to create scene image"),
+                    AttachmentImage::sampled_input_attachment(&allocator, size, image_state.format)
+                        .expect("Failed to create scene image"),
                 )
                 .expect("Failed to create scene image view");
 
@@ -59,6 +58,6 @@ impl SceneSwapchain {
             self.scene_view_size = size;
         }
 
-        &self.scene_images[state.frame.image_num]
+        &self.scene_images[state.frame.image_num as usize]
     }
 }
