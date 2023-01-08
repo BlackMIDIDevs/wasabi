@@ -6,6 +6,9 @@ mod stats;
 
 mod settings_window;
 mod top_panel;
+mod xsynth_settings;
+
+use crate::audio_playback::xsynth::{convert_to_sf_init, convert_to_channel_init};
 
 use std::{
     sync::{Arc, RwLock},
@@ -44,12 +47,17 @@ impl GuiWasabiWindow {
                 let synth = Arc::new(RwLock::new(SimpleTemporaryPlayer::new(
                     AudioPlayerType::XSynth {
                         buffer: perm_settings.buffer_ms,
+                        ignore_range: perm_settings.vel_ignore.clone(),
+                        options: convert_to_channel_init(perm_settings),
                     },
                 )));
                 synth
                     .write()
                     .unwrap()
-                    .set_soundfont(&perm_settings.sfz_path);
+                    .set_soundfont(
+                        &perm_settings.sfz_path,
+                        convert_to_sf_init(perm_settings)
+                    );
                 synth
                     .write()
                     .unwrap()
@@ -83,6 +91,9 @@ impl GuiWasabiWindow {
 
         if temp_settings.settings_visible {
             settings_window::draw_settings(self, perm_settings, temp_settings, &ctx);
+        }
+        if temp_settings.xsynth_settings_visible {
+            xsynth_settings::draw_xsynth_settings(self, perm_settings, temp_settings, &ctx);
         }
 
         let height_prev = ctx.available_rect().height();

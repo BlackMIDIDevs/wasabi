@@ -3,12 +3,10 @@ use egui::Context;
 use std::ops::RangeInclusive;
 
 use crate::{
-    audio_playback::AudioPlayerType,
+    audio_playback::{AudioPlayerType, xsynth::{convert_to_sf_init, convert_to_channel_init}},
     gui::window::GuiWasabiWindow,
     settings::{WasabiPermanentSettings, WasabiTemporarySettings},
 };
-
-use rfd::FileDialog;
 
 pub fn draw_settings(
     win: &mut GuiWasabiWindow,
@@ -56,11 +54,16 @@ pub fn draw_settings(
                                     .unwrap()
                                     .switch_player(AudioPlayerType::XSynth {
                                         buffer: perm_settings.buffer_ms,
+                                        ignore_range: perm_settings.vel_ignore.clone(),
+                                        options: convert_to_channel_init(perm_settings)
                                     });
                                 win.synth
                                     .write()
                                     .unwrap()
-                                    .set_soundfont(&perm_settings.sfz_path);
+                                    .set_soundfont(
+                                        &perm_settings.sfz_path,
+                                        convert_to_sf_init(perm_settings)
+                                    );
                                 win.synth.write().unwrap().set_layer_count(
                                     match perm_settings.layer_count {
                                         0 => None,
@@ -72,83 +75,15 @@ pub fn draw_settings(
                     }
                     ui.end_row();
 
-                    if perm_settings.synth == 0 {
-                        ui.label("SFZ Path: ");
-                        ui.horizontal(|ui| {
-                            ui.add(egui::TextEdit::singleline(&mut perm_settings.sfz_path));
-                            if ui.button("Browse...").clicked() {
-                                let sfz_path = FileDialog::new()
-                                    .add_filter("sfz", &["sfz"])
-                                    .set_directory("/")
-                                    .pick_file();
-
-                                if let Some(sfz_path) = sfz_path {
-                                    if let Ok(path) = sfz_path.into_os_string().into_string() {
-                                        perm_settings.sfz_path = path;
-                                    }
-                                }
-                            }
-                            if ui.button("Load").clicked() {
-                                win.synth
-                                    .write()
-                                    .unwrap()
-                                    .set_soundfont(&perm_settings.sfz_path);
-                            }
-                        });
-                        ui.end_row();
-
-                        ui.label("Synth Layer Count: ");
-                        let layer_count_prev = perm_settings.layer_count;
-                        ui.horizontal(|ui| {
-                            ui.add(
-                                egui::DragValue::new(&mut perm_settings.layer_count)
-                                    .speed(1)
-                                    .clamp_range(RangeInclusive::new(0, 1024)),
-                            );
-                            ui.label("(0 = Infinite)");
-                        });
-                        if perm_settings.layer_count != layer_count_prev {
-                            win.synth.write().unwrap().set_layer_count(
-                                match perm_settings.layer_count {
-                                    0 => None,
-                                    _ => Some(perm_settings.layer_count),
-                                },
-                            );
-                        }
-                        ui.end_row();
-
-                        ui.label("Synth Render Buffer (ms): ");
-                        ui.horizontal(|ui| {
-                            ui.add(
-                                egui::DragValue::new(&mut perm_settings.buffer_ms)
-                                    .speed(0.1)
-                                    .clamp_range(RangeInclusive::new(1.0, 1000.0)),
-                            );
-                            if ui.button("Reload").clicked() {
-                                win.synth
-                                    .write()
-                                    .unwrap()
-                                    .switch_player(AudioPlayerType::XSynth {
-                                        buffer: perm_settings.buffer_ms,
-                                    });
-                                win.synth
-                                    .write()
-                                    .unwrap()
-                                    .set_soundfont(&perm_settings.sfz_path);
-                                win.synth.write().unwrap().set_layer_count(
-                                    match perm_settings.layer_count {
-                                        0 => None,
-                                        _ => Some(perm_settings.layer_count),
-                                    },
-                                );
-                            }
-                        });
-                        ui.end_row();
+                    ui.label("Configure:");
+                    if ui.button("Open Synth Settings").clicked() {
+                        temp_settings.xsynth_settings_visible = true;
                     }
+                    ui.end_row();
                 });
 
             // MIDI settings section
-            ui.add_space(5.0);
+            ui.add_space(6.0);
             ui.heading("MIDI");
             ui.separator();
 
@@ -202,7 +137,7 @@ pub fn draw_settings(
                 });
 
             // Visual settings section
-            ui.add_space(5.0);
+            ui.add_space(6.0);
             ui.heading("Visual");
             ui.separator();
 
@@ -211,6 +146,10 @@ pub fn draw_settings(
                 .spacing([40.0, 4.0])
                 .striped(true)
                 .show(ui, |ui| {
+                    ui.label("Fullscreen: ");
+                    ui.checkbox(&mut temp_settings.fullscreen, "");
+                    ui.end_row();
+
                     ui.label("Background Color: ");
                     ui.color_edit_button_srgba(&mut perm_settings.bg_color);
                     ui.end_row();

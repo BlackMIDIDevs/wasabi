@@ -15,7 +15,7 @@ use vulkano::swapchain::PresentMode;
 
 use settings::{WasabiPermanentSettings, WasabiTemporarySettings};
 use winit::{
-    event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
+    event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::Fullscreen,
 };
@@ -26,7 +26,7 @@ pub fn main() {
 
     // Load the settings values
     let mut perm_settings = WasabiPermanentSettings::new_or_load();
-    let mut temp_settings = WasabiTemporarySettings::new();
+    let mut temp_settings = WasabiTemporarySettings::default();
 
     // Create renderer for our scene & ui
     let window_size = [1280, 720];
@@ -74,24 +74,6 @@ pub fn main() {
                     WindowEvent::CloseRequested => {
                         *control_flow = ControlFlow::Exit;
                     }
-                    WindowEvent::KeyboardInput {
-                        input:
-                            KeyboardInput {
-                                virtual_keycode: Some(virtual_code),
-                                state: ElementState::Pressed,
-                                ..
-                            },
-                        ..
-                    } => match virtual_code {
-                        VirtualKeyCode::Return if renderer.window().fullscreen().is_some() => {
-                            renderer.window().set_fullscreen(None);
-                        }
-                        VirtualKeyCode::Return => {
-                            let fullscreen = Some(Fullscreen::Exclusive(mode.clone()));
-                            renderer.window().set_fullscreen(fullscreen);
-                        }
-                        _ => {}
-                    },
                     _ => (),
                 }
             }
@@ -111,6 +93,13 @@ pub fn main() {
                 renderer.window().request_redraw();
             }
             _ => (),
+        }
+
+        if temp_settings.fullscreen {
+            let fullscreen = Some(Fullscreen::Exclusive(mode.clone()));
+            renderer.window().set_fullscreen(fullscreen);
+        } else {
+            renderer.window().set_fullscreen(None);
         }
     });
 }

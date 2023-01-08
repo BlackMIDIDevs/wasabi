@@ -204,6 +204,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "biquad"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "820524f5e3e3add696ddf69f79575772e152c0e78e9f0370b56990a7e808ec3e"
+dependencies = [
+ "libm",
+]
+
+[[package]]
 name = "bitflags"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -450,11 +459,11 @@ dependencies = [
 
 [[package]]
 name = "confy"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5069e3065d9ad485706017d12bb4b4318170b8087358c163c2dfce50b6b38275"
+checksum = "e37668cb35145dcfaa1931a5f37fde375eeae8068b4c0d2f289da28a270b2d2c"
 dependencies = [
- "directories 2.0.2",
+ "directories",
  "serde",
  "thiserror",
  "toml",
@@ -703,16 +712,6 @@ checksum = "73770f8e1fe7d64df17ca66ad28994a0a623ea497fa69486e14984e715c5d174"
 dependencies = [
  "adler32",
  "byteorder",
-]
-
-[[package]]
-name = "directories"
-version = "2.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "551a778172a450d7fc12e629ca3b0428d00f6afa9a43da1b630d54604e97371c"
-dependencies = [
- "cfg-if 0.1.10",
- "dirs-sys",
 ]
 
 [[package]]
@@ -1362,6 +1361,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "libm"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7fc7aa29613bd6a620df431842069224d8bc9011086b1db4c0e0cd47fa03ec9a"
+
+[[package]]
 name = "lock_api"
 version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1425,19 +1430,20 @@ dependencies = [
 [[package]]
 name = "midi-toolkit-rs"
 version = "0.1.0"
-source = "git+https://github.com/arduano/midi-toolkit-rs?rev=907dec1#907dec12bd10e248f1a5b927a45190de70844751"
+source = "git+https://github.com/arduano/midi-toolkit-rs?rev=b6d03da#b6d03dad67d3bd8fcecd66f950ee83224146bd85"
 dependencies = [
  "crossbeam-channel",
  "gen-iter",
  "midi-toolkit-rs-derive",
  "num-traits",
  "rayon",
+ "thiserror",
 ]
 
 [[package]]
 name = "midi-toolkit-rs-derive"
 version = "0.1.0"
-source = "git+https://github.com/arduano/midi-toolkit-rs?rev=907dec1#907dec12bd10e248f1a5b927a45190de70844751"
+source = "git+https://github.com/arduano/midi-toolkit-rs?rev=b6d03da#b6d03dad67d3bd8fcecd66f950ee83224146bd85"
 dependencies = [
  "convert_case",
  "num-traits",
@@ -2692,18 +2698,18 @@ checksum = "222a222a5bfe1bba4a77b45ec488a741b3cb8872e5e499451fd7d0129c9c7c3d"
 
 [[package]]
 name = "thiserror"
-version = "1.0.37"
+version = "1.0.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "10deb33631e3c9018b9baf9dcbbc4f737320d2b576bac10f6aefa048fa407e3e"
+checksum = "6a9cd18aa97d5c45c6603caea1da6628790b37f7a34b6ca89522331c5180fed0"
 dependencies = [
  "thiserror-impl",
 ]
 
 [[package]]
 name = "thiserror-impl"
-version = "1.0.37"
+version = "1.0.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "982d17546b47146b28f7c22e3d08465f6b8903d0ea13c1660d9d84a6e7adcdbb"
+checksum = "1fb327af4685e4d03fa8cbcf1716380da910eeb2bb8be417e7f9fd3fb164f36f"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2951,7 +2957,7 @@ dependencies = [
  "colors-transform",
  "confy",
  "crossbeam-channel",
- "directories 4.0.1",
+ "directories",
  "egui",
  "egui-winit",
  "egui_demo_lib",
@@ -3382,9 +3388,10 @@ checksum = "114ba2b24d2167ef6d67d7d04c8cc86522b87f490025f39f0303b7db5bf5e3d8"
 [[package]]
 name = "xsynth-core"
 version = "0.1.0"
-source = "git+https://github.com/arduano/xsynth.git?rev=7875b93#7875b933e95a9caa971db2624b02e0047edfd0ed"
+source = "git+https://github.com/arduano/xsynth?rev=6fba25c#6fba25c83576539dadb7f2e2e22e2f408afcd211"
 dependencies = [
  "atomic_refcell",
+ "biquad",
  "bytemuck",
  "crossbeam-channel",
  "lazy_static",
@@ -3400,7 +3407,7 @@ dependencies = [
 [[package]]
 name = "xsynth-realtime"
 version = "0.1.0"
-source = "git+https://github.com/arduano/xsynth.git?rev=7875b93#7875b933e95a9caa971db2624b02e0047edfd0ed"
+source = "git+https://github.com/arduano/xsynth?rev=6fba25c#6fba25c83576539dadb7f2e2e22e2f408afcd211"
 dependencies = [
  "atomic_refcell",
  "bytemuck",
@@ -3419,7 +3426,7 @@ dependencies = [
 [[package]]
 name = "xsynth-soundfonts"
 version = "0.1.0"
-source = "git+https://github.com/arduano/xsynth.git?rev=7875b93#7875b933e95a9caa971db2624b02e0047edfd0ed"
+source = "git+https://github.com/arduano/xsynth?rev=6fba25c#6fba25c83576539dadb7f2e2e22e2f408afcd211"
 dependencies = [
  "lazy-regex",
 ]
