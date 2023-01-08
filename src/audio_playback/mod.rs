@@ -1,11 +1,15 @@
-use std::ops::RangeInclusive;
-use xsynth_core::{soundfont::SoundfontInitOptions, channel::ChannelInitOptions};
 use kdmapi::{KDMAPIStream, KDMAPI};
+use std::ops::RangeInclusive;
+use xsynth_core::{channel::ChannelInitOptions, soundfont::SoundfontInitOptions};
 pub mod xsynth;
 
 #[derive(Clone)]
 pub enum AudioPlayerType {
-    XSynth { buffer: f64, ignore_range: RangeInclusive<u8>, options: ChannelInitOptions },
+    XSynth {
+        buffer: f64,
+        ignore_range: RangeInclusive<u8>,
+        options: ChannelInitOptions,
+    },
     Kdmapi,
 }
 
@@ -18,7 +22,11 @@ pub struct SimpleTemporaryPlayer {
 impl SimpleTemporaryPlayer {
     pub fn new(player_type: AudioPlayerType) -> Self {
         let (xsynth, kdmapi) = match player_type.clone() {
-            AudioPlayerType::XSynth { buffer, ignore_range, options } => {
+            AudioPlayerType::XSynth {
+                buffer,
+                ignore_range,
+                options,
+            } => {
                 let xsynth = xsynth::XSynthPlayer::new(buffer, ignore_range, options);
                 (Some(xsynth), None)
             }

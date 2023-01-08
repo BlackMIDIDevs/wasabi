@@ -8,7 +8,7 @@ mod settings_window;
 mod top_panel;
 mod xsynth_settings;
 
-use crate::audio_playback::xsynth::{convert_to_sf_init, convert_to_channel_init};
+use crate::audio_playback::xsynth::{convert_to_channel_init, convert_to_sf_init};
 
 use std::{
     sync::{Arc, RwLock},
@@ -54,10 +54,7 @@ impl GuiWasabiWindow {
                 synth
                     .write()
                     .unwrap()
-                    .set_soundfont(
-                        &perm_settings.sfz_path,
-                        convert_to_sf_init(perm_settings)
-                    );
+                    .set_soundfont(&perm_settings.sfz_path, convert_to_sf_init(perm_settings));
                 synth
                     .write()
                     .unwrap()

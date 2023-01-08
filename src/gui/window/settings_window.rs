@@ -3,7 +3,10 @@ use egui::Context;
 use std::ops::RangeInclusive;
 
 use crate::{
-    audio_playback::{AudioPlayerType, xsynth::{convert_to_sf_init, convert_to_channel_init}},
+    audio_playback::{
+        xsynth::{convert_to_channel_init, convert_to_sf_init},
+        AudioPlayerType,
+    },
     gui::window::GuiWasabiWindow,
     settings::{WasabiPermanentSettings, WasabiTemporarySettings},
 };
@@ -55,15 +58,12 @@ pub fn draw_settings(
                                     .switch_player(AudioPlayerType::XSynth {
                                         buffer: perm_settings.buffer_ms,
                                         ignore_range: perm_settings.vel_ignore.clone(),
-                                        options: convert_to_channel_init(perm_settings)
+                                        options: convert_to_channel_init(perm_settings),
                                     });
-                                win.synth
-                                    .write()
-                                    .unwrap()
-                                    .set_soundfont(
-                                        &perm_settings.sfz_path,
-                                        convert_to_sf_init(perm_settings)
-                                    );
+                                win.synth.write().unwrap().set_soundfont(
+                                    &perm_settings.sfz_path,
+                                    convert_to_sf_init(perm_settings),
+                                );
                                 win.synth.write().unwrap().set_layer_count(
                                     match perm_settings.layer_count {
                                         0 => None,

@@ -1,4 +1,4 @@
-use std::{path::Path, sync::Arc, ops::RangeInclusive};
+use std::{ops::RangeInclusive, path::Path, sync::Arc};
 
 use crate::WasabiPermanentSettings;
 
