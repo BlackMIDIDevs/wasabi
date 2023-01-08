@@ -160,3 +160,12 @@ impl<Iter: Iterator<Item = DisplacedMIDINote>> ExactSizeIterator for LiveNoteBlo
         self.view.column.data.rendered_notes
     }
 }
+
+impl Drop for LiveNoteViewData {
+    fn drop(&mut self) {
+        let data = std::mem::take(&mut self.columns);
+
+        // Drop the columns in a separate thread because often it takes a long time
+        std::thread::spawn(move || drop(data));
+    }
+}
