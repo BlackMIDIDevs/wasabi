@@ -130,7 +130,7 @@ impl CompressedAudio {
                         let val3 = iter.next().unwrap() as u32;
                         (next as u32) | (val2 << 8) | (val3 << 16)
                     }
-                    _ => panic!("Can't reach {:#x}", next),
+                    _ => panic!("Can't reach {next:#x}"),
                 };
 
                 yield val;
