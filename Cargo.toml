@@ -18,7 +18,7 @@ kdmapi = { git = "https://github.com/arduano/kdmapi.git", rev = "9329cfc" }
 egui = "0.19.0"
 winit = "0.27.3"
 rayon = "1.5.3"
-midi-toolkit-rs = { git = "https://github.com/arduano/midi-toolkit-rs", rev = "b6d03da" }
+midi-toolkit-rs = { git = "https://github.com/arduano/midi-toolkit-rs", rev = "c4f1095" }
 xsynth-core = { git = "https://github.com/arduano/xsynth", rev = "6fba25c" }
 xsynth-realtime = { git = "https://github.com/arduano/xsynth", rev = "6fba25c" }
 gen-iter = "0.2.1"

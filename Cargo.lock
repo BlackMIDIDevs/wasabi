@@ -1430,7 +1430,7 @@ dependencies = [
 [[package]]
 name = "midi-toolkit-rs"
 version = "0.1.0"
-source = "git+https://github.com/arduano/midi-toolkit-rs?rev=b6d03da#b6d03dad67d3bd8fcecd66f950ee83224146bd85"
+source = "git+https://github.com/arduano/midi-toolkit-rs?rev=c4f1095#c4f10951fe1aa264ed706f0e8e341c2ca56757bd"
 dependencies = [
  "crossbeam-channel",
  "gen-iter",
@@ -1443,7 +1443,7 @@ dependencies = [
 [[package]]
 name = "midi-toolkit-rs-derive"
 version = "0.1.0"
-source = "git+https://github.com/arduano/midi-toolkit-rs?rev=b6d03da#b6d03dad67d3bd8fcecd66f950ee83224146bd85"
+source = "git+https://github.com/arduano/midi-toolkit-rs?rev=c4f1095#c4f10951fe1aa264ed706f0e8e341c2ca56757bd"
 dependencies = [
  "convert_case",
  "num-traits",
