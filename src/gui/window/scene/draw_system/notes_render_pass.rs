@@ -359,7 +359,7 @@ impl NoteRenderPass {
             if let Some(prev_future) = prev_future.take() {
                 match prev_future.wait(None) {
                     Ok(x) => x,
-                    Err(err) => println!("err: {:?}", err),
+                    Err(err) => println!("err: {err:?}"),
                 }
             }
 
@@ -379,7 +379,7 @@ impl NoteRenderPass {
         if let Some(prev_future) = prev_future {
             match prev_future.wait(None) {
                 Ok(x) => x,
-                Err(err) => println!("err: {:?}", err),
+                Err(err) => println!("err: {err:?}"),
             }
         }
     }
