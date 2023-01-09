@@ -31,10 +31,12 @@ impl GuiMidiStats {
 }
 
 pub fn draw_stats(win: &mut GuiWasabiWindow, ctx: &Context, pos: Pos2, mut stats: GuiMidiStats) {
+    let onepx = ctx.pixels_per_point();
+
     let stats_frame = Frame::default()
         .inner_margin(egui::style::Margin::same(8.0))
         .fill(egui::Color32::from_rgba_unmultiplied(0, 0, 0, 175))
-        .stroke(egui::Stroke::new(1.0, egui::Color32::DARK_GRAY))
+        .stroke(egui::Stroke::new(onepx, egui::Color32::from_rgb(50, 50, 50)))
         .rounding(egui::Rounding::same(6.0));
 
     egui::Window::new("Stats")

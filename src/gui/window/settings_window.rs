@@ -25,6 +25,8 @@ pub fn draw_settings(
         .enabled(true)
         .open(&mut temp_settings.settings_visible)
         .show(ctx, |ui| {
+            let col_width = 160.0;
+
             // Synth settings section
             ui.heading("Synth");
             ui.separator();
@@ -32,7 +34,7 @@ pub fn draw_settings(
             egui::Grid::new("synth_settings_grid")
                 .num_columns(2)
                 .spacing([40.0, 4.0])
-                .striped(true)
+                .min_col_width(col_width)
                 .show(ui, |ui| {
                     ui.label("Synth: ");
                     let synth_prev = perm_settings.synth;
@@ -90,7 +92,7 @@ pub fn draw_settings(
             egui::Grid::new("midi_settings_grid")
                 .num_columns(2)
                 .spacing([40.0, 4.0])
-                .striped(true)
+                .min_col_width(col_width)
                 .show(ui, |ui| {
                     ui.label("Note speed: ");
                     ui.spacing_mut().slider_width = 150.0;
@@ -144,7 +146,7 @@ pub fn draw_settings(
             egui::Grid::new("visual_settings_grid")
                 .num_columns(2)
                 .spacing([40.0, 4.0])
-                .striped(true)
+                .min_col_width(col_width)
                 .show(ui, |ui| {
                     ui.label("Fullscreen: ");
                     ui.checkbox(&mut temp_settings.fullscreen, "");

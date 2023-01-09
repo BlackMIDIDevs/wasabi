@@ -27,13 +27,15 @@ pub fn draw_xsynth_settings(
         .enabled(true)
         .open(&mut temp_settings.xsynth_settings_visible)
         .show(ctx, |ui| {
+            let col_width = 240.0;
+
             ui.heading("Synth");
             ui.separator();
 
             egui::Grid::new("synth_settings_grid")
                 .num_columns(2)
                 .spacing([40.0, 4.0])
-                .striped(true)
+                .min_col_width(col_width)
                 .show(ui, |ui| {
                     ui.label("Synth Render Buffer (ms)*: ");
                     ui.add(
@@ -68,27 +70,28 @@ pub fn draw_xsynth_settings(
                     ui.end_row();
 
                     ui.label("Limit Layers: ");
+                    let layer_limit_prev = perm_settings.limit_layers;
                     ui.checkbox(&mut perm_settings.limit_layers, "");
                     ui.end_row();
 
                     ui.label("Synth Layer Count: ");
+                    let layer_count_prev = perm_settings.layer_count;
                     ui.add_enabled_ui(perm_settings.limit_layers, |ui| {
-                        let layer_count_prev = perm_settings.layer_count;
                         ui.add(
                             egui::DragValue::new(&mut perm_settings.layer_count)
                                 .speed(1)
-                                .clamp_range(RangeInclusive::new(0, 200)),
+                                .clamp_range(RangeInclusive::new(1, 200)),
                         );
-                        if perm_settings.layer_count != layer_count_prev {
-                            win.synth.write().unwrap().set_layer_count(
-                                if perm_settings.limit_layers {
-                                    Some(perm_settings.layer_count)
-                                } else {
-                                    None
-                                },
-                            );
-                        }
                     });
+                    if perm_settings.layer_count != layer_count_prev || layer_limit_prev != perm_settings.limit_layers {
+                        win.synth.write().unwrap().set_layer_count(
+                            if perm_settings.limit_layers {
+                                Some(perm_settings.layer_count)
+                            } else {
+                                None
+                            },
+                        );
+                    }
                     ui.end_row();
 
                     ui.label("Ignore notes with velocities between*: ");
@@ -122,7 +125,7 @@ pub fn draw_xsynth_settings(
             egui::Grid::new("engine_settings_grid")
                 .num_columns(2)
                 .spacing([40.0, 4.0])
-                .striped(true)
+                .min_col_width(col_width)
                 .show(ui, |ui| {
                     ui.label("Fade out voice when killing it*: ");
                     ui.checkbox(&mut perm_settings.fade_out_kill, "");

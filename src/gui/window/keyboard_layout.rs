@@ -169,7 +169,7 @@ impl KeyboardLayout {
         let range = self.get_range_for_keys(first_key, last_key);
 
         let mut left_key = first_key;
-        let mut right_key = last_key;
+        let mut right_key = last_key + 1;
 
         if self.keys[left_key].black {
             left_key -= 1;
