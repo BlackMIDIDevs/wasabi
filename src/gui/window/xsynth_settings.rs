@@ -83,14 +83,17 @@ pub fn draw_xsynth_settings(
                                 .clamp_range(RangeInclusive::new(1, 200)),
                         );
                     });
-                    if perm_settings.layer_count != layer_count_prev || layer_limit_prev != perm_settings.limit_layers {
-                        win.synth.write().unwrap().set_layer_count(
-                            if perm_settings.limit_layers {
+                    if perm_settings.layer_count != layer_count_prev
+                        || layer_limit_prev != perm_settings.limit_layers
+                    {
+                        win.synth
+                            .write()
+                            .unwrap()
+                            .set_layer_count(if perm_settings.limit_layers {
                                 Some(perm_settings.layer_count)
                             } else {
                                 None
-                            },
-                        );
+                            });
                     }
                     ui.end_row();
 
