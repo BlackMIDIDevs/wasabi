@@ -142,32 +142,27 @@ pub fn draw_xsynth_settings(
             ui.separator();
             ui.vertical_centered(|ui| {
                 ui.label("Options marked with (*) will apply when the synth is reloaded.");
-                ui.horizontal(|ui| {
-                    if ui.button("Save").clicked() {
-                        perm_settings.save_to_file();
-                    }
-
-                    if ui.button("Reload").clicked() {
-                        win.synth
-                            .write()
-                            .unwrap()
-                            .switch_player(AudioPlayerType::XSynth {
-                                buffer: perm_settings.buffer_ms,
-                                ignore_range: perm_settings.vel_ignore.clone(),
-                                options: convert_to_channel_init(perm_settings),
-                            });
-                        win.synth.write().unwrap().set_soundfont(
-                            &perm_settings.sfz_path,
-                            convert_to_sf_init(perm_settings),
-                        );
-                        win.synth.write().unwrap().set_layer_count(
-                            match perm_settings.layer_count {
-                                0 => None,
-                                _ => Some(perm_settings.layer_count),
-                            },
-                        );
-                    }
-                });
+                if ui.button("Reload XSynth").clicked() {
+                    win.synth
+                        .write()
+                        .unwrap()
+                        .switch_player(AudioPlayerType::XSynth {
+                            buffer: perm_settings.buffer_ms,
+                            ignore_range: perm_settings.vel_ignore.clone(),
+                            options: convert_to_channel_init(perm_settings),
+                        });
+                    win.synth
+                        .write()
+                        .unwrap()
+                        .set_soundfont(&perm_settings.sfz_path, convert_to_sf_init(perm_settings));
+                    win.synth
+                        .write()
+                        .unwrap()
+                        .set_layer_count(match perm_settings.layer_count {
+                            0 => None,
+                            _ => Some(perm_settings.layer_count),
+                        });
+                }
             });
         });
 }
