@@ -8,7 +8,7 @@ use atomic_float::AtomicF64;
 use crossbeam_channel::Receiver;
 use midi_toolkit::{
     events::Event,
-    io::{DiskReader, DiskTrackReader, MIDIFile as TKMIDIFile},
+    io::{DiskReader, MIDIFile as TKMIDIFile},
     pipe,
     sequence::{
         event::{cancel_tempo_events, scale_event_time, Delta, EventBatch, Track},
@@ -44,7 +44,7 @@ pub struct LiveMidiParser {
 
 impl LiveMidiParser {
     pub fn init(
-        midi: &TKMIDIFile<DiskReader, DiskTrackReader>,
+        midi: &TKMIDIFile<DiskReader>,
         player: Arc<RwLock<SimpleTemporaryPlayer>>,
         timer: &mut TimeKeeper,
     ) -> Self {

@@ -41,14 +41,15 @@ impl LiveAudioPlayer {
 
             for event in self.events.into_iter() {
                 if self.timer.is_paused() {
+                    if let Ok(mut player) = self.player.clone().write() {
+                        player.reset();
+                    };
+
                     match self.timer.wait_until_unpause() {
                         UnpauseWaitResult::Unpaused => {}
                         UnpauseWaitResult::UnpausedAndSeeked(time) => {
                             if time.as_secs_f64() - event.time > max_fall_time {
                                 seek_catching_up = true;
-                                if let Ok(mut player) = self.player.clone().write() {
-                                    player.reset();
-                                };
                             }
                             continue;
                         }
