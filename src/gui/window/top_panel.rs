@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use crate::{
     gui::window::GuiWasabiWindow,
-    midi::{InRamMIDIFile, LiveLoadMIDIFile, MIDIFileBase, MIDIFileUnion},
+    midi::MIDIFileBase,
     settings::{WasabiPermanentSettings, WasabiTemporarySettings},
 };
 
@@ -31,37 +31,7 @@ pub fn draw_panel(
                         .pick_file();
 
                     if let Some(midi_path) = midi_path {
-                        if let Some(midi_file) = win.midi_file.as_mut() {
-                            midi_file.timer_mut().pause();
-                        }
-                        win.synth.write().unwrap().reset();
-                        win.midi_file = None;
-
-                        if let Ok(path) = midi_path.into_os_string().into_string() {
-                            match perm_settings.midi_loading {
-                                0 => {
-                                    let mut midi_file =
-                                        MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
-                                            &path,
-                                            win.synth.clone(),
-                                            perm_settings.random_colors,
-                                        ));
-                                    midi_file.timer_mut().play();
-                                    win.midi_file = Some(midi_file);
-                                }
-                                1 => {
-                                    let mut midi_file =
-                                        MIDIFileUnion::Live(LiveLoadMIDIFile::load_from_file(
-                                            &path,
-                                            win.synth.clone(),
-                                            perm_settings.random_colors,
-                                        ));
-                                    midi_file.timer_mut().play();
-                                    win.midi_file = Some(midi_file);
-                                }
-                                _ => {}
-                            }
-                        }
+                        win.load_midi(perm_settings, midi_path);
                     }
                 }
                 if let Some(midi_file) = win.midi_file.as_mut() {
