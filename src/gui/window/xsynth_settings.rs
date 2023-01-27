@@ -158,9 +158,10 @@ pub fn draw_xsynth_settings(
                     win.synth
                         .write()
                         .unwrap()
-                        .set_layer_count(match perm_settings.layer_count {
-                            0 => None,
-                            _ => Some(perm_settings.layer_count),
+                        .set_layer_count(if perm_settings.limit_layers {
+                            Some(perm_settings.layer_count)
+                        } else {
+                            None
                         });
                 }
             });
