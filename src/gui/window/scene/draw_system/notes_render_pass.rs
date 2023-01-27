@@ -4,12 +4,16 @@ use bytemuck::{Pod, Zeroable};
 use vulkano::{
     buffer::{BufferUsage, CpuAccessibleBuffer, TypedBufferAccess},
     command_buffer::{
-        AutoCommandBufferBuilder, CommandBufferUsage, RenderPassBeginInfo, SubpassContents,
+        allocator::StandardCommandBufferAllocator, AutoCommandBufferBuilder, CommandBufferUsage,
+        RenderPassBeginInfo, SubpassContents,
     },
-    descriptor_set::{PersistentDescriptorSet, WriteDescriptorSet},
+    descriptor_set::{
+        allocator::StandardDescriptorSetAllocator, PersistentDescriptorSet, WriteDescriptorSet,
+    },
     device::{Device, Queue},
     format::Format,
     image::{view::ImageView, AttachmentImage, ImageAccess, ImageViewAbstract},
+    memory::allocator::StandardMemoryAllocator,
     pipeline::{
         graphics::{
             depth_stencil::DepthStencilState,
@@ -64,14 +68,11 @@ const BUFFER_USAGE: BufferUsage = BufferUsage {
 };
 
 fn get_buffer(device: &Arc<Device>) -> Arc<CpuAccessibleBuffer<[NoteVertex]>> {
+    let allocator = StandardMemoryAllocator::new_default(device.clone());
+
     unsafe {
-        CpuAccessibleBuffer::uninitialized_array(
-            device.clone(),
-            NOTE_BUFFER_SIZE,
-            BUFFER_USAGE,
-            false,
-        )
-        .expect("failed to create buffer")
+        CpuAccessibleBuffer::uninitialized_array(&allocator, NOTE_BUFFER_SIZE, BUFFER_USAGE, false)
+            .expect("failed to create buffer")
     }
 }
 
@@ -112,10 +113,15 @@ pub struct NoteRenderPass {
     render_pass_draw_over: Arc<RenderPass>,
     key_locations: Arc<CpuAccessibleBuffer<[[KeyPosition; 256]]>>,
     depth_buffer: Arc<ImageView<AttachmentImage>>,
+    allocator: StandardMemoryAllocator,
+    cb_allocator: StandardCommandBufferAllocator,
+    sd_allocator: StandardDescriptorSetAllocator,
 }
 
 impl NoteRenderPass {
     pub fn new(renderer: &GuiRenderer) -> NoteRenderPass {
+        let allocator = StandardMemoryAllocator::new_default(renderer.device.clone());
+
         let gfx_queue = renderer.queue.clone();
 
         let render_pass_clear = vulkano::ordered_passes_renderpass!(gfx_queue.device().clone(),
@@ -169,17 +175,13 @@ impl NoteRenderPass {
         .unwrap();
 
         let depth_buffer = ImageView::new_default(
-            AttachmentImage::transient_input_attachment(
-                gfx_queue.device().clone(),
-                [1, 1],
-                Format::D16_UNORM,
-            )
-            .unwrap(),
+            AttachmentImage::transient_input_attachment(&allocator, [1, 1], Format::D16_UNORM)
+                .unwrap(),
         )
         .unwrap();
 
         let key_locations = CpuAccessibleBuffer::from_iter(
-            gfx_queue.device().clone(),
+            &allocator,
             BUFFER_USAGE,
             false,
             [[Default::default(); 256]].into_iter(),
@@ -223,6 +225,12 @@ impl NoteRenderPass {
             render_pass_draw_over,
             depth_buffer,
             key_locations,
+            allocator,
+            cb_allocator: StandardCommandBufferAllocator::new(
+                renderer.device.clone(),
+                Default::default(),
+            ),
+            sd_allocator: StandardDescriptorSetAllocator::new(renderer.device.clone()),
         }
     }
 
@@ -237,7 +245,7 @@ impl NoteRenderPass {
         if self.depth_buffer.image().dimensions().width_height() != img_dims {
             self.depth_buffer = ImageView::new_default(
                 AttachmentImage::transient_input_attachment(
-                    self.gfx_queue.device().clone(),
+                    &self.allocator,
                     img_dims,
                     Format::D16_UNORM,
                 )
@@ -277,7 +285,7 @@ impl NoteRenderPass {
             };
 
             let mut command_buffer_builder = AutoCommandBufferBuilder::primary(
-                self.gfx_queue.device().clone(),
+                &self.cb_allocator,
                 self.gfx_queue.queue_family_index(),
                 CommandBufferUsage::OneTimeSubmit,
             )
@@ -311,6 +319,7 @@ impl NoteRenderPass {
 
             let desc_layout = pipeline_layout.set_layouts().get(0).unwrap();
             let set = PersistentDescriptorSet::new(
+                &self.sd_allocator,
                 desc_layout.clone(),
                 [WriteDescriptorSet::buffer(0, self.key_locations.clone())],
             )

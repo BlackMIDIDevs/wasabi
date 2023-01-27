@@ -6,22 +6,21 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-egui_winit_vulkano = "0.20.0"
-vulkano-shaders = "0.31.0"
-egui_demo_lib = "0.19.0"
-vulkano-win = "0.31.0"
-vulkano-util = "0.31.0"
-egui-winit = "0.19.0"
+egui_winit_vulkano = "0.22.0"
+vulkano-shaders = "0.32.0"
+vulkano-win = "0.32.0"
+vulkano-util = "0.32.0"
+egui-winit = "0.20.1"
 bytemuck = "1.8.0"
-vulkano = "0.31.0"
+vulkano = "0.32.3"
 kdmapi = { git = "https://github.com/arduano/kdmapi.git", rev = "9329cfc" }
-egui = "0.19.0"
+egui = "0.20.1"
 winit = "0.27.3"
 rayon = "1.5.3"
-midi-toolkit-rs = { git = "https://github.com/arduano/midi-toolkit-rs", rev = "c4f1095" }
-xsynth-core = { git = "https://github.com/arduano/xsynth", rev = "6060ca6" }
-xsynth-realtime = { git = "https://github.com/arduano/xsynth", rev = "6060ca6" }
-gen-iter = "0.2.1"
+midi-toolkit-rs = { git = "https://github.com/arduano/midi-toolkit-rs", rev = "4482d61" }
+xsynth-core = { git = "https://github.com/arduano/xsynth.git", rev = "6060ca6" }
+xsynth-realtime = { git = "https://github.com/arduano/xsynth.git", rev = "6060ca6" }
+gen-iter = "0.3.0"
 enum_dispatch = "0.3.8"
 palette = "0.6.0"
 crossbeam-channel = "0.5.5"
@@ -29,7 +28,7 @@ rand = "0.8.5"
 confy = "0.5.1"
 serde_derive = "1.0.145"
 serde = "1.0.145"
-toml = "0.5.9"
+toml = "0.6.0"
 rfd = "0.10.0"
 colors-transform = "0.2.11"
 directories = "4.0.1"

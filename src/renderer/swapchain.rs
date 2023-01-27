@@ -5,8 +5,8 @@ use vulkano::{
     format::Format,
     image::{view::ImageView, ImageUsage, SwapchainImage},
     swapchain::{
-        AcquireError, PresentInfo, PresentMode, Surface, Swapchain, SwapchainAcquireFuture,
-        SwapchainCreateInfo, SwapchainCreationError,
+        AcquireError, PresentMode, Surface, Swapchain, SwapchainAcquireFuture, SwapchainCreateInfo,
+        SwapchainCreationError, SwapchainPresentInfo,
     },
     sync::{self, FlushError, GpuFuture},
 };
@@ -25,17 +25,18 @@ pub struct SwapchainState {
 
 pub struct ManagedSwapchain {
     state: SwapchainState,
-    swap_chain: Arc<Swapchain<Window>>,
-    image_views: Vec<Arc<ImageView<SwapchainImage<Window>>>>,
+    swap_chain: Arc<Swapchain>,
+    image_views: Vec<Arc<ImageView<SwapchainImage>>>,
     previous_frame_end: Option<Box<dyn GpuFuture>>,
-    surface: Arc<Surface<Window>>,
+    window: Arc<Window>,
     device: Arc<Device>,
     recreate_on_next_frame: bool,
 }
 
 impl ManagedSwapchain {
     pub fn create(
-        surface: Arc<Surface<Window>>,
+        surface: Arc<Surface>,
+        window: Arc<Window>,
         physical: Arc<PhysicalDevice>,
         device: Arc<Device>,
         present_mode: PresentMode,
@@ -49,11 +50,11 @@ impl ManagedSwapchain {
                 .unwrap()[0]
                 .0,
         );
-        let image_extent = surface.window().inner_size().into();
+        let image_extent = window.inner_size().into();
 
         let (swapchain, images) = Swapchain::new(
             device.clone(),
-            surface.clone(),
+            surface,
             SwapchainCreateInfo {
                 min_image_count: surface_capabilities.min_image_count,
                 image_format,
@@ -89,8 +90,8 @@ impl ManagedSwapchain {
             swap_chain: swapchain,
             image_views: images,
             previous_frame_end: Some(sync::now(device.clone()).boxed()),
-            surface,
             device,
+            window,
             recreate_on_next_frame: false,
         }
     }
@@ -104,7 +105,7 @@ impl ManagedSwapchain {
     }
 
     pub fn recreate(&mut self) {
-        let dimensions: [u32; 2] = self.surface.window().inner_size().into();
+        let dimensions: [u32; 2] = self.window.inner_size().into();
         let (new_swapchain, new_images) = match self.swap_chain.recreate(SwapchainCreateInfo {
             image_extent: dimensions,
             ..self.swap_chain.create_info()
@@ -131,7 +132,7 @@ impl ManagedSwapchain {
         self.previous_frame_end.take()
     }
 
-    pub fn acquire_frame(&mut self) -> (SwapchainFrame, SwapchainAcquireFuture<Window>) {
+    pub fn acquire_frame(&mut self) -> (SwapchainFrame, SwapchainAcquireFuture) {
         if self.recreate_on_next_frame {
             self.recreate();
             self.recreate_on_next_frame = false;
@@ -164,7 +165,7 @@ impl ManagedSwapchain {
             let frame = SwapchainFrame {
                 presented: false,
                 image_num,
-                image: self.image_views[image_num].clone(),
+                image: self.image_views[image_num as usize].clone(),
                 managed_swap_chain: self,
             };
 
@@ -176,8 +177,8 @@ impl ManagedSwapchain {
 pub struct SwapchainFrame<'a> {
     presented: bool,
 
-    pub image_num: usize,
-    pub image: Arc<ImageView<SwapchainImage<Window>>>,
+    pub image_num: u32,
+    pub image: Arc<ImageView<SwapchainImage>>,
 
     managed_swap_chain: &'a mut ManagedSwapchain,
 }
@@ -188,8 +189,8 @@ impl<'a> SwapchainFrame<'a> {
 
         let sc = &mut self.managed_swap_chain;
 
-        let mut present_info = PresentInfo::swapchain(sc.swap_chain.clone());
-        present_info.index = self.image_num;
+        let present_info =
+            SwapchainPresentInfo::swapchain_image_index(sc.swap_chain.clone(), self.image_num);
 
         let future = after_future
             .then_swapchain_present(queue.clone(), present_info)
