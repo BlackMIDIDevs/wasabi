@@ -15,9 +15,9 @@ pub enum KeyboardParams {
 impl Default for KeyboardParams {
     fn default() -> Self {
         KeyboardParams::Classic {
-            black_key_2_set_offset: 0.3,
-            black_key_3_set_offset: 0.5,
-            black_key_scale: 0.7,
+            black_key_2_set_offset: 0.35,
+            black_key_3_set_offset: 0.45,
+            black_key_scale: 0.74,
         }
     }
 }
@@ -169,7 +169,7 @@ impl KeyboardLayout {
         let range = self.get_range_for_keys(first_key, last_key);
 
         let mut left_key = first_key;
-        let mut right_key = last_key;
+        let mut right_key = last_key + 1;
 
         if self.keys[left_key].black {
             left_key -= 1;

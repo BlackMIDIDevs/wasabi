@@ -36,6 +36,10 @@ impl InRamAudioPlayer {
     pub fn spawn_playback(mut self) -> JoinHandle<()> {
         thread::spawn(move || loop {
             if self.timer.is_paused() {
+                if let Ok(mut player) = self.player.clone().write() {
+                    player.reset();
+                };
+
                 match self.timer.wait_until_unpause() {
                     UnpauseWaitResult::Unpaused => {}
                     UnpauseWaitResult::UnpausedAndSeeked(time) => {

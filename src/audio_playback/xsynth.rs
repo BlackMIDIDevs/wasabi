@@ -1,8 +1,10 @@
-use std::{path::Path, sync::Arc};
+use std::{ops::RangeInclusive, path::Path, sync::Arc};
+
+use crate::WasabiPermanentSettings;
 
 use xsynth_core::{
-    channel::ChannelConfigEvent,
-    soundfont::{SampleSoundfont, SoundfontBase},
+    channel::{ChannelConfigEvent, ChannelInitOptions},
+    soundfont::{SampleSoundfont, SoundfontBase, SoundfontInitOptions},
     AudioStreamParams,
 };
 use xsynth_realtime::{
@@ -16,10 +18,12 @@ pub struct XSynthPlayer {
 }
 
 impl XSynthPlayer {
-    pub fn new(buffer: f64) -> Self {
+    pub fn new(buffer: f64, ignore_range: RangeInclusive<u8>, options: ChannelInitOptions) -> Self {
         let config = XSynthRealtimeConfig {
             render_window_ms: buffer,
             use_threadpool: false,
+            channel_init_options: options,
+            ignore_range,
             ..Default::default()
         };
 
@@ -56,14 +60,26 @@ impl XSynthPlayer {
             .send_config(ChannelConfigEvent::SetLayerCount(layers));
     }
 
-    pub fn set_soundfont(&mut self, path: &str) {
+    pub fn set_soundfont(&mut self, path: &str, options: SoundfontInitOptions) {
         if !path.is_empty() && Path::new(path).exists() {
-            let samplesf = SampleSoundfont::new(path, self.stream_params);
+            let samplesf = SampleSoundfont::new(path, self.stream_params, options);
             if let Ok(sf) = samplesf {
                 let soundfont: Arc<dyn SoundfontBase> = Arc::new(sf);
                 self.sender
                     .send_config(ChannelConfigEvent::SetSoundfonts(vec![soundfont]));
             }
         }
+    }
+}
+
+pub fn convert_to_sf_init(settings: &WasabiPermanentSettings) -> SoundfontInitOptions {
+    SoundfontInitOptions {
+        linear_release: settings.linear_envelope,
+    }
+}
+
+pub fn convert_to_channel_init(settings: &WasabiPermanentSettings) -> ChannelInitOptions {
+    ChannelInitOptions {
+        fade_out_killing: settings.fade_out_kill,
     }
 }

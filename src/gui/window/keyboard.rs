@@ -227,140 +227,164 @@ impl GuiKeyboard {
 
                     add_rect_triangles(&mut mesh);
                     mesh.colored_vertex(
-                        Pos2::new(map_x(key.left), black_bottom - md_height),
-                        color,
-                    );
-                    mesh.colored_vertex(
-                        Pos2::new(map_x(key.right), black_bottom - md_height),
-                        color,
-                    );
-                    mesh.colored_vertex(
-                        Pos2::new(map_x(key.left) - key_density, black_bottom),
-                        darkened,
-                    );
-                    mesh.colored_vertex(
-                        Pos2::new(map_x(key.right) + key_density, black_bottom),
-                        darkened,
-                    );
-
-                    add_rect_triangles(&mut mesh);
-                    mesh.colored_vertex(Pos2::new(map_x(key.left) - key_density, top), lightened);
-                    mesh.colored_vertex(
-                        Pos2::new(map_x(key.left) + key_density, top - black_key_overlap),
-                        darkened,
-                    );
-                    mesh.colored_vertex(
-                        Pos2::new(map_x(key.left) - key_density, black_bottom),
-                        lightened,
-                    );
-                    mesh.colored_vertex(
                         Pos2::new(map_x(key.left) + key_density, black_bottom - md_height),
-                        darkened,
-                    );
-
-                    add_rect_triangles(&mut mesh);
-                    mesh.colored_vertex(
-                        Pos2::new(map_x(key.right) - key_density, top - black_key_overlap),
-                        lightened,
-                    );
-                    mesh.colored_vertex(Pos2::new(map_x(key.right) + key_density, top), darkened);
-                    mesh.colored_vertex(
-                        Pos2::new(map_x(key.right) - key_density, black_bottom - md_height),
-                        lightened,
-                    );
-                    mesh.colored_vertex(
-                        Pos2::new(map_x(key.right) + key_density, black_bottom),
-                        darkened,
-                    );
-
-                    add_rect_triangles(&mut mesh);
-                    mesh.colored_vertex(
-                        Pos2::new(map_x(key.left) + key_density, top - black_key_overlap),
                         color,
-                    );
-                    mesh.colored_vertex(
-                        Pos2::new(map_x(key.right) - key_density, top - black_key_overlap),
-                        color,
-                    );
-                    mesh.colored_vertex(
-                        Pos2::new(map_x(key.left) + key_density, black_bottom - md_height),
-                        darkened,
                     );
                     mesh.colored_vertex(
                         Pos2::new(map_x(key.right) - key_density, black_bottom - md_height),
+                        color,
+                    );
+                    mesh.colored_vertex(Pos2::new(map_x(key.left), black_bottom), darkened);
+                    mesh.colored_vertex(Pos2::new(map_x(key.right), black_bottom), darkened);
+
+                    add_rect_triangles(&mut mesh);
+                    mesh.colored_vertex(Pos2::new(map_x(key.left), top), lightened);
+                    mesh.colored_vertex(
+                        Pos2::new(map_x(key.left) + 2.0 * key_density, top - black_key_overlap),
+                        darkened,
+                    );
+                    mesh.colored_vertex(Pos2::new(map_x(key.left), black_bottom), lightened);
+                    mesh.colored_vertex(
+                        Pos2::new(
+                            map_x(key.left) + 2.0 * key_density,
+                            black_bottom - md_height,
+                        ),
+                        darkened,
+                    );
+
+                    add_rect_triangles(&mut mesh);
+                    mesh.colored_vertex(
+                        Pos2::new(
+                            map_x(key.right) - 2.0 * key_density,
+                            top - black_key_overlap,
+                        ),
+                        lightened,
+                    );
+                    mesh.colored_vertex(Pos2::new(map_x(key.right), top), darkened);
+                    mesh.colored_vertex(
+                        Pos2::new(
+                            map_x(key.right) - 2.0 * key_density,
+                            black_bottom - md_height,
+                        ),
+                        lightened,
+                    );
+                    mesh.colored_vertex(Pos2::new(map_x(key.right), black_bottom), darkened);
+
+                    add_rect_triangles(&mut mesh);
+                    mesh.colored_vertex(
+                        Pos2::new(map_x(key.left) + 2.0 * key_density, top - black_key_overlap),
+                        color,
+                    );
+                    mesh.colored_vertex(
+                        Pos2::new(
+                            map_x(key.right) - 2.0 * key_density,
+                            top - black_key_overlap,
+                        ),
+                        color,
+                    );
+                    mesh.colored_vertex(
+                        Pos2::new(
+                            map_x(key.left) + 2.0 * key_density,
+                            black_bottom - md_height,
+                        ),
+                        darkened,
+                    );
+                    mesh.colored_vertex(
+                        Pos2::new(
+                            map_x(key.right) - 2.0 * key_density,
+                            black_bottom - md_height,
+                        ),
                         darkened,
                     );
                 } else {
                     // Not pressed
                     add_rect_triangles(&mut mesh);
                     mesh.colored_vertex(
-                        Pos2::new(map_x(key.left), black_bottom - md_height),
-                        Color32::from_rgb(105, 105, 105),
-                    );
-                    mesh.colored_vertex(
-                        Pos2::new(map_x(key.right), black_bottom - md_height),
-                        Color32::from_rgb(105, 105, 105),
-                    );
-                    mesh.colored_vertex(
-                        Pos2::new(map_x(key.left) - key_density, black_bottom),
-                        Color32::from_rgb(20, 20, 20),
-                    );
-                    mesh.colored_vertex(
-                        Pos2::new(map_x(key.right) + key_density, black_bottom),
-                        Color32::from_rgb(20, 20, 20),
-                    );
-
-                    add_rect_triangles(&mut mesh);
-                    mesh.colored_vertex(
-                        Pos2::new(map_x(key.left) - key_density, top),
-                        Color32::from_rgb(20, 20, 20),
-                    );
-                    mesh.colored_vertex(
-                        Pos2::new(map_x(key.left) + key_density, top - black_key_overlap),
-                        Color32::from_rgb(105, 105, 105),
-                    );
-                    mesh.colored_vertex(
-                        Pos2::new(map_x(key.left) - key_density, black_bottom),
-                        Color32::from_rgb(20, 20, 20),
-                    );
-                    mesh.colored_vertex(
                         Pos2::new(map_x(key.left) + key_density, black_bottom - md_height),
                         Color32::from_rgb(105, 105, 105),
-                    );
-
-                    add_rect_triangles(&mut mesh);
-                    mesh.colored_vertex(
-                        Pos2::new(map_x(key.right) - key_density, top - black_key_overlap),
-                        Color32::from_rgb(105, 105, 105),
-                    );
-                    mesh.colored_vertex(
-                        Pos2::new(map_x(key.right) + key_density, top),
-                        Color32::from_rgb(20, 20, 20),
                     );
                     mesh.colored_vertex(
                         Pos2::new(map_x(key.right) - key_density, black_bottom - md_height),
                         Color32::from_rgb(105, 105, 105),
                     );
                     mesh.colored_vertex(
-                        Pos2::new(map_x(key.right) + key_density, black_bottom),
+                        Pos2::new(map_x(key.left), black_bottom),
+                        Color32::from_rgb(20, 20, 20),
+                    );
+                    mesh.colored_vertex(
+                        Pos2::new(map_x(key.right), black_bottom),
                         Color32::from_rgb(20, 20, 20),
                     );
 
                     add_rect_triangles(&mut mesh);
                     mesh.colored_vertex(
-                        Pos2::new(map_x(key.left) + key_density, top - black_key_overlap),
+                        Pos2::new(map_x(key.left), top),
                         Color32::from_rgb(20, 20, 20),
                     );
                     mesh.colored_vertex(
-                        Pos2::new(map_x(key.right) - key_density, top - black_key_overlap),
+                        Pos2::new(map_x(key.left) + 2.0 * key_density, top - black_key_overlap),
+                        Color32::from_rgb(105, 105, 105),
+                    );
+                    mesh.colored_vertex(
+                        Pos2::new(map_x(key.left), black_bottom),
                         Color32::from_rgb(20, 20, 20),
                     );
                     mesh.colored_vertex(
-                        Pos2::new(map_x(key.left) + key_density, black_bottom - md_height),
+                        Pos2::new(
+                            map_x(key.left) + 2.0 * key_density,
+                            black_bottom - md_height,
+                        ),
+                        Color32::from_rgb(105, 105, 105),
+                    );
+
+                    add_rect_triangles(&mut mesh);
+                    mesh.colored_vertex(
+                        Pos2::new(
+                            map_x(key.right) - 2.0 * key_density,
+                            top - black_key_overlap,
+                        ),
+                        Color32::from_rgb(105, 105, 105),
+                    );
+                    mesh.colored_vertex(
+                        Pos2::new(map_x(key.right), top),
+                        Color32::from_rgb(20, 20, 20),
+                    );
+                    mesh.colored_vertex(
+                        Pos2::new(
+                            map_x(key.right) - 2.0 * key_density,
+                            black_bottom - md_height,
+                        ),
+                        Color32::from_rgb(105, 105, 105),
+                    );
+                    mesh.colored_vertex(
+                        Pos2::new(map_x(key.right), black_bottom),
+                        Color32::from_rgb(20, 20, 20),
+                    );
+
+                    add_rect_triangles(&mut mesh);
+                    mesh.colored_vertex(
+                        Pos2::new(map_x(key.left) + 2.0 * key_density, top - black_key_overlap),
+                        Color32::from_rgb(20, 20, 20),
+                    );
+                    mesh.colored_vertex(
+                        Pos2::new(
+                            map_x(key.right) - 2.0 * key_density,
+                            top - black_key_overlap,
+                        ),
+                        Color32::from_rgb(20, 20, 20),
+                    );
+                    mesh.colored_vertex(
+                        Pos2::new(
+                            map_x(key.left) + 2.0 * key_density,
+                            black_bottom - md_height,
+                        ),
                         Color32::from_rgb(40, 40, 40),
                     );
                     mesh.colored_vertex(
-                        Pos2::new(map_x(key.right) - key_density, black_bottom - md_height),
+                        Pos2::new(
+                            map_x(key.right) - 2.0 * key_density,
+                            black_bottom - md_height,
+                        ),
                         Color32::from_rgb(40, 40, 40),
                     );
                 }

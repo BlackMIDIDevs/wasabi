@@ -114,7 +114,7 @@ impl ManagedSwapchain {
         }) {
             Ok(r) => r,
             Err(SwapchainCreationError::ImageExtentNotSupported { .. }) => return,
-            Err(e) => panic!("Failed to recreate swapchain: {:?}", e),
+            Err(e) => panic!("Failed to recreate swapchain: {e:?}"),
         };
         self.swap_chain = new_swapchain;
         let new_images = new_images
@@ -156,7 +156,7 @@ impl ManagedSwapchain {
                     self.recreate();
                     continue;
                 }
-                Err(e) => panic!("Failed to acquire next image: {:?}", e),
+                Err(e) => panic!("Failed to acquire next image: {e:?}"),
             };
 
             if suboptimal {
@@ -204,7 +204,7 @@ impl<'a> SwapchainFrame<'a> {
                 // https://github.com/vulkano-rs/vulkano/issues/627
                 match future.wait(None) {
                     Ok(x) => x,
-                    Err(err) => println!("err: {:?}", err),
+                    Err(err) => println!("err: {err:?}"),
                 }
                 sc.previous_frame_end = Some(future.boxed());
             }
@@ -213,7 +213,7 @@ impl<'a> SwapchainFrame<'a> {
                 sc.previous_frame_end = Some(sync::now(sc.device.clone()).boxed());
             }
             Err(e) => {
-                println!("Failed to flush future: {:?}", e);
+                println!("Failed to flush future: {e:?}");
                 sc.previous_frame_end = Some(sync::now(sc.device.clone()).boxed());
             }
         }

@@ -20,7 +20,12 @@ struct WasabiConfigFile {
     last_key: u8,
     midi_loading: usize,
     buffer_ms: f64,
+    limit_layers: bool,
     layer_count: usize,
+    fade_out_kill: bool,
+    linear_envelope: bool,
+    vel_ignore_lo: u8,
+    vel_ignore_hi: u8,
     synth: usize,
 }
 
@@ -33,14 +38,20 @@ pub struct WasabiPermanentSettings {
     pub key_range: RangeInclusive<u8>,
     pub midi_loading: usize,
     pub buffer_ms: f64,
+    pub limit_layers: bool,
     pub layer_count: usize,
+    pub fade_out_kill: bool,
+    pub linear_envelope: bool,
+    pub vel_ignore: RangeInclusive<u8>,
     pub synth: usize,
 }
 
 pub struct WasabiTemporarySettings {
+    pub fullscreen: bool,
     pub panel_visible: bool,
     pub stats_visible: bool,
     pub settings_visible: bool,
+    pub xsynth_settings_visible: bool,
 }
 
 impl Default for WasabiPermanentSettings {
@@ -54,7 +65,11 @@ impl Default for WasabiPermanentSettings {
             key_range: 0..=127,
             midi_loading: 0,
             buffer_ms: 10.0,
+            limit_layers: true,
             layer_count: 4,
+            fade_out_kill: true,
+            linear_envelope: false,
+            vel_ignore: 0..=0,
             synth: 0,
         }
     }
@@ -92,7 +107,11 @@ impl WasabiPermanentSettings {
                                 key_range: cfg.first_key..=cfg.last_key,
                                 midi_loading: cfg.midi_loading,
                                 buffer_ms: cfg.buffer_ms,
+                                limit_layers: cfg.limit_layers,
                                 layer_count: cfg.layer_count,
+                                fade_out_kill: cfg.fade_out_kill,
+                                linear_envelope: cfg.linear_envelope,
+                                vel_ignore: cfg.vel_ignore_lo..=cfg.vel_ignore_hi,
                                 synth: cfg.synth,
                             }
                         } else {
@@ -128,7 +147,12 @@ impl WasabiPermanentSettings {
             last_key: *self.key_range.end(),
             midi_loading: self.midi_loading,
             buffer_ms: self.buffer_ms,
+            limit_layers: self.limit_layers,
             layer_count: self.layer_count,
+            fade_out_kill: self.fade_out_kill,
+            linear_envelope: self.linear_envelope,
+            vel_ignore_lo: *self.vel_ignore.start(),
+            vel_ignore_hi: *self.vel_ignore.end(),
             synth: self.synth,
         };
         let toml: String = toml::to_string(&cfg).unwrap();
@@ -172,12 +196,14 @@ impl WasabiPermanentSettings {
     }
 }
 
-impl WasabiTemporarySettings {
-    pub fn new() -> Self {
+impl Default for WasabiTemporarySettings {
+    fn default() -> Self {
         Self {
+            fullscreen: false,
             panel_visible: true,
             stats_visible: true,
             settings_visible: false,
+            xsynth_settings_visible: false,
         }
     }
 }
