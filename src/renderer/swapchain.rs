@@ -28,7 +28,6 @@ pub struct ManagedSwapchain {
     swap_chain: Arc<Swapchain>,
     image_views: Vec<Arc<ImageView<SwapchainImage>>>,
     previous_frame_end: Option<Box<dyn GpuFuture>>,
-    surface: Arc<Surface>,
     window: Arc<Window>,
     device: Arc<Device>,
     recreate_on_next_frame: bool,
@@ -55,7 +54,7 @@ impl ManagedSwapchain {
 
         let (swapchain, images) = Swapchain::new(
             device.clone(),
-            surface.clone(),
+            surface,
             SwapchainCreateInfo {
                 min_image_count: surface_capabilities.min_image_count,
                 image_format,
@@ -91,7 +90,6 @@ impl ManagedSwapchain {
             swap_chain: swapchain,
             image_views: images,
             previous_frame_end: Some(sync::now(device.clone()).boxed()),
-            surface,
             device,
             window,
             recreate_on_next_frame: false,
