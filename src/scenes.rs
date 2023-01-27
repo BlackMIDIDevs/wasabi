@@ -3,7 +3,7 @@ use std::sync::Arc;
 use vulkano::{
     device::Device,
     image::{view::ImageView, AttachmentImage},
-    memory::allocator::{GenericMemoryAllocator, StandardMemoryAllocator},
+    memory::allocator::StandardMemoryAllocator,
 };
 
 use crate::{gui::GuiState, renderer::swapchain::ImagesState};

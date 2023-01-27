@@ -13,8 +13,8 @@ use vulkano::{
     sync::GpuFuture,
     Version, VulkanLibrary,
 };
-use vulkano_util::window::VulkanoWindows;
-use vulkano_win::{create_surface_from_winit, VkSurfaceBuild};
+
+use vulkano_win::create_surface_from_winit;
 use winit::{
     event_loop::EventLoop,
     window::{Window, WindowBuilder},
@@ -65,8 +65,8 @@ impl Renderer {
             .expect("Failed to create vulkan surface & window");
         let window = Arc::new(window);
 
-        let surface =
-            create_surface_from_winit(window.clone(), instance.clone()).expect("Failed to create surface");
+        let surface = create_surface_from_winit(window.clone(), instance.clone())
+            .expect("Failed to create surface");
 
         // Get most performant physical device (device with most memory)
         let device_extensions = DeviceExtensions {

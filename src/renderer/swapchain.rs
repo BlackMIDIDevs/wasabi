@@ -5,8 +5,8 @@ use vulkano::{
     format::Format,
     image::{view::ImageView, ImageUsage, SwapchainImage},
     swapchain::{
-        AcquireError, PresentInfo, PresentMode, Surface, Swapchain, SwapchainAcquireFuture,
-        SwapchainCreateInfo, SwapchainCreationError, SwapchainPresentInfo,
+        AcquireError, PresentMode, Surface, Swapchain, SwapchainAcquireFuture, SwapchainCreateInfo,
+        SwapchainCreationError, SwapchainPresentInfo,
     },
     sync::{self, FlushError, GpuFuture},
 };
