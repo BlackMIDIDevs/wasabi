@@ -15,6 +15,7 @@ jobs:
           toolchain: nightly
           override: true
           components: rustfmt, clippy
+          cache-on-failure: true
 
       - uses: Swatinem/rust-cache@v2
         name: Cargo Cache
