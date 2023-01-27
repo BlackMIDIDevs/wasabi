@@ -8,9 +8,8 @@ mod settings_window;
 mod top_panel;
 mod xsynth_settings;
 
-use crate::audio_playback::xsynth::{convert_to_channel_init, convert_to_sf_init};
-
 use std::{
+    path::PathBuf,
     sync::{Arc, RwLock},
     time::Duration,
 };
@@ -18,9 +17,12 @@ use std::{
 use egui::{style::Margin, Frame, Visuals};
 
 use crate::{
-    audio_playback::{AudioPlayerType, SimpleTemporaryPlayer},
+    audio_playback::{
+        xsynth::{convert_to_channel_init, convert_to_sf_init},
+        AudioPlayerType, SimpleTemporaryPlayer,
+    },
     gui::window::{keyboard::GuiKeyboard, scene::GuiRenderScene},
-    midi::{MIDIFileBase, MIDIFileUnion},
+    midi::{InRamMIDIFile, LiveLoadMIDIFile, MIDIFileBase, MIDIFileUnion},
     settings::{WasabiPermanentSettings, WasabiTemporarySettings},
     GuiRenderer, GuiState,
 };
@@ -207,6 +209,38 @@ impl GuiWasabiWindow {
 
             let pos = egui::Pos2::new(10.0, panel_height + 10.0);
             stats::draw_stats(self, &ctx, pos, stats);
+        }
+    }
+
+    pub fn load_midi(&mut self, perm_settings: &mut WasabiPermanentSettings, midi_path: PathBuf) {
+        if let Some(midi_file) = self.midi_file.as_mut() {
+            midi_file.timer_mut().pause();
+        }
+        self.synth.write().unwrap().reset();
+        self.midi_file = None;
+
+        if let Some(midi_path) = midi_path.to_str() {
+            match perm_settings.midi_loading {
+                0 => {
+                    let mut midi_file = MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
+                        midi_path,
+                        self.synth.clone(),
+                        perm_settings.random_colors,
+                    ));
+                    midi_file.timer_mut().play();
+                    self.midi_file = Some(midi_file);
+                }
+                1 => {
+                    let mut midi_file = MIDIFileUnion::Live(LiveLoadMIDIFile::load_from_file(
+                        midi_path,
+                        self.synth.clone(),
+                        perm_settings.random_colors,
+                    ));
+                    midi_file.timer_mut().play();
+                    self.midi_file = Some(midi_file);
+                }
+                _ => {}
+            }
         }
     }
 }

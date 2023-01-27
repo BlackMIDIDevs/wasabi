@@ -74,6 +74,9 @@ pub fn main() {
                     WindowEvent::CloseRequested => {
                         *control_flow = ControlFlow::Exit;
                     }
+                    WindowEvent::DroppedFile(path) => {
+                        gui_state.load_midi(&mut perm_settings, path);
+                    }
                     _ => (),
                 }
             }
