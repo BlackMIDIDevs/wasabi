@@ -221,13 +221,8 @@ impl GuiWasabiWindow {
                                 _ => {}
                             }
                         }
-                        if *pressed && modifiers.alt {
-                            match key {
-                                egui::Key::Enter => {
-                                    wasabi_state.fullscreen = !wasabi_state.fullscreen
-                                }
-                                _ => {}
-                            }
+                        if *pressed && modifiers.alt && key == &egui::Key::Enter {
+                            wasabi_state.fullscreen = !wasabi_state.fullscreen
                         }
                     }
                 }
