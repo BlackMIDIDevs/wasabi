@@ -29,7 +29,7 @@ struct WasabiConfigFile {
     synth: usize,
 }
 
-pub struct WasabiPermanentSettings {
+pub struct WasabiSettings {
     pub note_speed: f64,
     pub bg_color: Color32,
     pub bar_color: Color32,
@@ -46,17 +46,9 @@ pub struct WasabiPermanentSettings {
     pub synth: usize,
 }
 
-pub struct WasabiTemporarySettings {
-    pub fullscreen: bool,
-    pub panel_visible: bool,
-    pub stats_visible: bool,
-    pub settings_visible: bool,
-    pub xsynth_settings_visible: bool,
-}
-
-impl Default for WasabiPermanentSettings {
+impl Default for WasabiSettings {
     fn default() -> Self {
-        WasabiPermanentSettings {
+        WasabiSettings {
             note_speed: 0.25,
             bg_color: Color32::from_rgb(30, 30, 30),
             bar_color: Color32::from_rgb(145, 0, 0),
@@ -77,7 +69,7 @@ impl Default for WasabiPermanentSettings {
 
 static CONFIG_PATH: &str = "wasabi_config.toml";
 
-impl WasabiPermanentSettings {
+impl WasabiSettings {
     pub fn new_or_load() -> Self {
         let config_path = Self::get_config_path();
         if !Path::new(&config_path).exists() {
@@ -192,18 +184,6 @@ impl WasabiPermanentSettings {
             }
         } else {
             "wasabi-config.toml".to_string()
-        }
-    }
-}
-
-impl Default for WasabiTemporarySettings {
-    fn default() -> Self {
-        Self {
-            fullscreen: false,
-            panel_visible: true,
-            stats_visible: true,
-            settings_visible: false,
-            xsynth_settings_visible: false,
         }
     }
 }

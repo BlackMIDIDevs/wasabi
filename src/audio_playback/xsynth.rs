@@ -1,6 +1,6 @@
 use std::{ops::RangeInclusive, path::Path, sync::Arc};
 
-use crate::WasabiPermanentSettings;
+use crate::WasabiSettings;
 
 use xsynth_core::{
     channel::{ChannelConfigEvent, ChannelInitOptions},
@@ -72,13 +72,13 @@ impl XSynthPlayer {
     }
 }
 
-pub fn convert_to_sf_init(settings: &WasabiPermanentSettings) -> SoundfontInitOptions {
+pub fn convert_to_sf_init(settings: &WasabiSettings) -> SoundfontInitOptions {
     SoundfontInitOptions {
         linear_release: settings.linear_envelope,
     }
 }
 
-pub fn convert_to_channel_init(settings: &WasabiPermanentSettings) -> ChannelInitOptions {
+pub fn convert_to_channel_init(settings: &WasabiSettings) -> ChannelInitOptions {
     ChannelInitOptions {
         fade_out_killing: settings.fade_out_kill,
     }
