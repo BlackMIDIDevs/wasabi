@@ -5,15 +5,14 @@ use std::time::Duration;
 use crate::{
     gui::window::GuiWasabiWindow,
     midi::MIDIFileBase,
-    settings::{WasabiPermanentSettings, WasabiTemporarySettings},
+    settings::WasabiSettings,
+    state::WasabiState,
 };
-
-use rfd::FileDialog;
 
 pub fn draw_panel(
     win: &mut GuiWasabiWindow,
-    perm_settings: &mut WasabiPermanentSettings,
-    temp_settings: &mut WasabiTemporarySettings,
+    settings: &mut WasabiSettings,
+    state: &mut WasabiState,
     ctx: &Context,
 ) {
     let panel_frame = Frame::default()
@@ -22,18 +21,13 @@ pub fn draw_panel(
 
     egui::TopBottomPanel::top("Top panel")
         .frame(panel_frame)
+        .show_separator_line(false)
         .show(ctx, |ui| {
             ui.horizontal(|ui| {
                 if ui.button("Open").clicked() {
-                    let midi_path = FileDialog::new()
-                        .add_filter("midi", &["mid"])
-                        .set_directory("/")
-                        .pick_file();
-
-                    if let Some(midi_path) = midi_path {
-                        win.load_midi(perm_settings, midi_path);
-                    }
+                    win.open_midi_dialog(state);
                 }
+
                 if let Some(midi_file) = win.midi_file.as_mut() {
                     if ui.button("Unload").clicked() {
                         midi_file.timer_mut().pause();
@@ -45,9 +39,9 @@ pub fn draw_panel(
                 ui.add_space(10.0);
 
                 if ui.button("Settings").clicked() {
-                    match temp_settings.settings_visible {
-                        true => temp_settings.settings_visible = false,
-                        false => temp_settings.settings_visible = true,
+                    match state.settings_visible {
+                        true => state.settings_visible = false,
+                        false => state.settings_visible = true,
                     }
                 }
 
@@ -69,7 +63,7 @@ pub fn draw_panel(
                 ui.horizontal(|ui| {
                     ui.label("Note speed: ");
                     ui.add(
-                        egui::Slider::new(&mut perm_settings.note_speed, 2.0..=0.001)
+                        egui::Slider::new(&mut settings.note_speed, 2.0..=0.001)
                             .show_value(false),
                     );
                 })

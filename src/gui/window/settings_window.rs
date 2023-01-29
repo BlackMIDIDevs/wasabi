@@ -8,13 +8,14 @@ use crate::{
         AudioPlayerType,
     },
     gui::window::GuiWasabiWindow,
-    settings::{WasabiPermanentSettings, WasabiTemporarySettings},
+    settings::WasabiSettings,
+    state::WasabiState,
 };
 
 pub fn draw_settings(
     win: &mut GuiWasabiWindow,
-    perm_settings: &mut WasabiPermanentSettings,
-    temp_settings: &mut WasabiTemporarySettings,
+    settings: &mut WasabiSettings,
+    state: &mut WasabiState,
     ctx: &Context,
 ) {
     egui::Window::new("Settings")
@@ -23,7 +24,7 @@ pub fn draw_settings(
         .title_bar(true)
         .scroll2([false, true])
         .enabled(true)
-        .open(&mut temp_settings.settings_visible)
+        .open(&mut state.settings_visible)
         .show(ctx, |ui| {
             let col_width = 160.0;
 
@@ -37,16 +38,16 @@ pub fn draw_settings(
                 .min_col_width(col_width)
                 .show(ui, |ui| {
                     ui.label("Synth: ");
-                    let synth_prev = perm_settings.synth;
+                    let synth_prev = settings.synth;
                     let synth = ["XSynth", "KDMAPI"];
                     egui::ComboBox::from_id_source("synth_select").show_index(
                         ui,
-                        &mut perm_settings.synth,
+                        &mut settings.synth,
                         synth.len(),
                         |i| synth[i].to_owned(),
                     );
-                    if perm_settings.synth != synth_prev {
-                        match perm_settings.synth {
+                    if settings.synth != synth_prev {
+                        match settings.synth {
                             1 => {
                                 win.synth
                                     .write()
@@ -58,18 +59,18 @@ pub fn draw_settings(
                                     .write()
                                     .unwrap()
                                     .switch_player(AudioPlayerType::XSynth {
-                                        buffer: perm_settings.buffer_ms,
-                                        ignore_range: perm_settings.vel_ignore.clone(),
-                                        options: convert_to_channel_init(perm_settings),
+                                        buffer: settings.buffer_ms,
+                                        ignore_range: settings.vel_ignore.clone(),
+                                        options: convert_to_channel_init(settings),
                                     });
                                 win.synth.write().unwrap().set_soundfont(
-                                    &perm_settings.sfz_path,
-                                    convert_to_sf_init(perm_settings),
+                                    &settings.sfz_path,
+                                    convert_to_sf_init(settings),
                                 );
                                 win.synth.write().unwrap().set_layer_count(
-                                    match perm_settings.layer_count {
+                                    match settings.layer_count {
                                         0 => None,
-                                        _ => Some(perm_settings.layer_count),
+                                        _ => Some(settings.layer_count),
                                     },
                                 );
                             }
@@ -79,7 +80,7 @@ pub fn draw_settings(
 
                     ui.label("Configure:");
                     if ui.button("Open Synth Settings").clicked() {
-                        temp_settings.xsynth_settings_visible = true;
+                        state.xsynth_settings_visible = true;
                     }
                     ui.end_row();
                 });
@@ -97,18 +98,18 @@ pub fn draw_settings(
                     ui.label("Note speed: ");
                     ui.spacing_mut().slider_width = 150.0;
                     ui.add(egui::Slider::new(
-                        &mut perm_settings.note_speed,
+                        &mut settings.note_speed,
                         2.0..=0.001,
                     ));
                     ui.end_row();
 
                     ui.label("Random Track Colors*: ");
-                    ui.checkbox(&mut perm_settings.random_colors, "");
+                    ui.checkbox(&mut settings.random_colors, "");
                     ui.end_row();
 
                     ui.label("Keyboard Range: ");
-                    let mut firstkey = *perm_settings.key_range.start();
-                    let mut lastkey = *perm_settings.key_range.end();
+                    let mut firstkey = *settings.key_range.start();
+                    let mut lastkey = *settings.key_range.end();
                     ui.horizontal(|ui| {
                         ui.add(
                             egui::DragValue::new(&mut firstkey)
@@ -122,17 +123,17 @@ pub fn draw_settings(
                         );
                     });
                     ui.end_row();
-                    if firstkey != *perm_settings.key_range.start()
-                        || lastkey != *perm_settings.key_range.end()
+                    if firstkey != *settings.key_range.start()
+                        || lastkey != *settings.key_range.end()
                     {
-                        perm_settings.key_range = firstkey..=lastkey;
+                        settings.key_range = firstkey..=lastkey;
                     }
 
                     ui.label("MIDI Loading*: ");
                     let midi_loading = ["In RAM", "Live"];
                     egui::ComboBox::from_id_source("midiload_select").show_index(
                         ui,
-                        &mut perm_settings.midi_loading,
+                        &mut settings.midi_loading,
                         midi_loading.len(),
                         |i| midi_loading[i].to_owned(),
                     );
@@ -149,15 +150,15 @@ pub fn draw_settings(
                 .min_col_width(col_width)
                 .show(ui, |ui| {
                     ui.label("Fullscreen: ");
-                    ui.checkbox(&mut temp_settings.fullscreen, "");
+                    ui.checkbox(&mut state.fullscreen, "");
                     ui.end_row();
 
                     ui.label("Background Color: ");
-                    ui.color_edit_button_srgba(&mut perm_settings.bg_color);
+                    ui.color_edit_button_srgba(&mut settings.bg_color);
                     ui.end_row();
 
                     ui.label("Bar Color: ");
-                    ui.color_edit_button_srgba(&mut perm_settings.bar_color);
+                    ui.color_edit_button_srgba(&mut settings.bar_color);
                     ui.end_row();
                 });
 
@@ -165,7 +166,7 @@ pub fn draw_settings(
             ui.vertical_centered(|ui| {
                 ui.label("Options marked with (*) will apply when a new MIDI is loaded.");
                 if ui.button("Save").clicked() {
-                    perm_settings.save_to_file();
+                    settings.save_to_file();
                 }
             });
         });

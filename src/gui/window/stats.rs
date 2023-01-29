@@ -34,8 +34,8 @@ pub fn draw_stats(win: &mut GuiWasabiWindow, ctx: &Context, pos: Pos2, mut stats
     let onepx = ctx.pixels_per_point();
 
     let stats_frame = Frame::default()
-        .inner_margin(egui::style::Margin::same(8.0))
-        .fill(egui::Color32::from_rgba_unmultiplied(0, 0, 0, 175))
+        .inner_margin(egui::style::Margin::same(7.0))
+        .fill(egui::Color32::from_rgba_unmultiplied(7, 7, 7, 200))
         .stroke(egui::Stroke::new(
             onepx,
             egui::Color32::from_rgb(50, 50, 50),
@@ -58,6 +58,8 @@ pub fn draw_stats(win: &mut GuiWasabiWindow, ctx: &Context, pos: Pos2, mut stats
             let mut length_millis: u64 = 0;
             let mut length_sec: u64 = 0;
             let mut length_min: u64 = 0;
+
+            let mut load_type = -1; // 0=RAM, 1=Live
 
             if let Some(midi_file) = win.midi_file.as_mut() {
                 stats.time_total = if let Some(length) = midi_file.midi_length() {
@@ -82,6 +84,11 @@ pub fn draw_stats(win: &mut GuiWasabiWindow, ctx: &Context, pos: Pos2, mut stats
                 time_min = stats.time_passed as u64 / 60;
 
                 stats.notes_total = midi_file.stats().total_notes;
+
+                match midi_file {
+                    crate::midi::MIDIFileUnion::InRam(..) => load_type = 0,
+                    crate::midi::MIDIFileUnion::Live(..) => load_type = 1,
+                }
             }
 
             ui.horizontal(|ui| {
@@ -121,8 +128,21 @@ pub fn draw_stats(win: &mut GuiWasabiWindow, ctx: &Context, pos: Pos2, mut stats
                 });
             });
 
-            ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
-                ui.monospace(format!("0 / {}", stats.notes_total));
-            });
+            match load_type {
+                1 => {
+                    ui.horizontal(|ui| {
+                        ui.monospace("Notes:");
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            ui.monospace(format!("{}", 0));
+                        });
+                    });
+                }
+                0 => {
+                    ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
+                        ui.monospace(format!("0 / {}", stats.notes_total));
+                    });
+                }
+                _ => {}
+            }
         });
 }

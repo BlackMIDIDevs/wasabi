@@ -7,13 +7,15 @@ mod midi;
 mod renderer;
 mod scenes;
 mod settings;
+mod state;
 
 use egui_winit_vulkano::Gui;
 use gui::{window::GuiWasabiWindow, GuiRenderer, GuiState};
 use renderer::Renderer;
 use vulkano::swapchain::PresentMode;
 
-use settings::{WasabiPermanentSettings, WasabiTemporarySettings};
+use settings::WasabiSettings;
+use state::WasabiState;
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -25,8 +27,8 @@ pub fn main() {
     let event_loop = EventLoop::new();
 
     // Load the settings values
-    let mut perm_settings = WasabiPermanentSettings::new_or_load();
-    let mut temp_settings = WasabiTemporarySettings::default();
+    let mut settings = WasabiSettings::new_or_load();
+    let mut wasabi_state = WasabiState::default();
 
     // Create renderer for our scene & ui
     let window_size = [1280, 720];
@@ -48,7 +50,7 @@ pub fn main() {
         format: renderer.format(),
     };
 
-    let mut gui_state = GuiWasabiWindow::new(&mut gui_render_data, &mut perm_settings);
+    let mut gui_state = GuiWasabiWindow::new(&mut gui_render_data, &mut settings);
 
     let monitor = event_loop
         .available_monitors()
@@ -73,7 +75,7 @@ pub fn main() {
                         *control_flow = ControlFlow::Exit;
                     }
                     WindowEvent::DroppedFile(path) => {
-                        gui_state.load_midi(&mut perm_settings, path);
+                        gui_state.load_midi(&mut settings, path);
                     }
                     _ => (),
                 }
@@ -83,7 +85,7 @@ pub fn main() {
                     // Generate egui layouts
                     gui.immediate_ui(|gui| {
                         let mut state = GuiState { gui, frame };
-                        gui_state.layout(&mut state, &mut perm_settings, &mut temp_settings);
+                        gui_state.layout(&mut state, &mut settings, &mut wasabi_state);
                     });
 
                     // Render the layouts
@@ -96,7 +98,7 @@ pub fn main() {
             _ => (),
         }
 
-        if temp_settings.fullscreen {
+        if wasabi_state.fullscreen {
             let fullscreen = Some(Fullscreen::Exclusive(mode.clone()));
             renderer.window().set_fullscreen(fullscreen);
         } else {
