@@ -97,10 +97,7 @@ pub fn draw_settings(
                 .show(ui, |ui| {
                     ui.label("Note speed: ");
                     ui.spacing_mut().slider_width = 150.0;
-                    ui.add(egui::Slider::new(
-                        &mut settings.note_speed,
-                        2.0..=0.001,
-                    ));
+                    ui.add(egui::Slider::new(&mut settings.note_speed, 2.0..=0.001));
                     ui.end_row();
 
                     ui.label("Random Track Colors*: ");

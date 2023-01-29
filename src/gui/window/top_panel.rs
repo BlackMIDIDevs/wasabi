@@ -3,10 +3,7 @@ use egui::{Context, Frame};
 use std::time::Duration;
 
 use crate::{
-    gui::window::GuiWasabiWindow,
-    midi::MIDIFileBase,
-    settings::WasabiSettings,
-    state::WasabiState,
+    gui::window::GuiWasabiWindow, midi::MIDIFileBase, settings::WasabiSettings, state::WasabiState,
 };
 
 pub fn draw_panel(
@@ -63,8 +60,7 @@ pub fn draw_panel(
                 ui.horizontal(|ui| {
                     ui.label("Note speed: ");
                     ui.add(
-                        egui::Slider::new(&mut settings.note_speed, 2.0..=0.001)
-                            .show_value(false),
+                        egui::Slider::new(&mut settings.note_speed, 2.0..=0.001).show_value(false),
                     );
                 })
             });

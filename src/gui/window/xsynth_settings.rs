@@ -52,11 +52,7 @@ pub fn draw_xsynth_settings(
 
                         let filter = |path: &std::path::Path| {
                             if let Some(path) = path.to_str() {
-                                if path.ends_with(".sfz") {
-                                    true
-                                } else {
-                                    false
-                                }
+                                path.ends_with(".sfz")
                             } else {
                                 false
                             }
@@ -83,10 +79,10 @@ pub fn draw_xsynth_settings(
                         }
 
                         if ui.button("Load").clicked() {
-                            win.synth.write().unwrap().set_soundfont(
-                                &settings.sfz_path,
-                                convert_to_sf_init(settings),
-                            );
+                            win.synth
+                                .write()
+                                .unwrap()
+                                .set_soundfont(&settings.sfz_path, convert_to_sf_init(settings));
                         }
                     });
                     ui.end_row();
@@ -136,8 +132,7 @@ pub fn draw_xsynth_settings(
                         );
                     });
                     ui.end_row();
-                    if lovel != *settings.vel_ignore.start()
-                        || hivel != *settings.vel_ignore.end()
+                    if lovel != *settings.vel_ignore.start() || hivel != *settings.vel_ignore.end()
                     {
                         settings.vel_ignore = lovel..=hivel;
                     }

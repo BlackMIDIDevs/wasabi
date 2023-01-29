@@ -205,8 +205,8 @@ impl GuiWasabiWindow {
                 for event in &events {
                     if let egui::Event::Key {
                         key,
-                  pressed,
-                  modifiers,
+                        pressed,
+                        modifiers,
                     } = event
                     {
                         if *pressed && modifiers.ctrl {
@@ -247,11 +247,7 @@ impl GuiWasabiWindow {
     pub fn open_midi_dialog(&mut self, state: &mut WasabiState) {
         let filter = |path: &std::path::Path| {
             if let Some(path) = path.to_str() {
-                if path.ends_with(".mid") {
-                    true
-                } else {
-                    false
-                }
+                path.ends_with(".mid")
             } else {
                 false
             }
