@@ -64,6 +64,7 @@ pub fn draw_xsynth_settings(
                                 .show_rename(false)
                                 .show_new_folder(false)
                                 .resizable(true)
+                                .anchor(egui::Align2::CENTER_TOP, egui::Vec2::new(0.0, 10.0))
                                 .filter(filter);
                             dialog.open();
                             win.file_dialogs.sf_file_dialog = Some(dialog);

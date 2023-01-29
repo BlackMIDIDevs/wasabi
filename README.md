@@ -20,9 +20,11 @@ To use Wasabi, your system must support Vulkan.
 - **Space** - Play/Pause MIDI
 - **Right Arrow** - Skip 1 second
 - **Left Arrow** - Go back 1 second
-- **Enter** - Toggle fullscreen
-- **F** - Show/Hide top panel
-- **G** - Show/Hide statistics
+- **Up Arrow** - Slower note speed
+- **Down Arrow** - Faster note speed
+- **Alt+Enter** - Toggle fullscreen
+- **Ctrl+F** - Show/Hide top panel
+- **Ctrl+G** - Show/Hide statistics
 
 ## License
 Wasabi is licensed under the ["Dont Be a Dick" Public License](https://github.com/arduano/wasabi/blob/master/LICENSE).

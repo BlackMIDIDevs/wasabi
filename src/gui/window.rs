@@ -221,6 +221,14 @@ impl GuiWasabiWindow {
                                 _ => {}
                             }
                         }
+                        if *pressed && modifiers.alt {
+                            match key {
+                                egui::Key::Enter => {
+                                    wasabi_state.fullscreen = !wasabi_state.fullscreen
+                                }
+                                _ => {}
+                            }
+                        }
                     }
                 }
 
@@ -258,6 +266,7 @@ impl GuiWasabiWindow {
             .show_rename(false)
             .show_new_folder(false)
             .resizable(true)
+            .anchor(egui::Align2::CENTER_TOP, egui::Vec2::new(0.0, 10.0))
             .filter(filter);
 
         dialog.open();
