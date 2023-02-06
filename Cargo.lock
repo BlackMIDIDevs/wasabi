@@ -762,9 +762,8 @@ dependencies = [
 
 [[package]]
 name = "egui_file"
-version = "0.5.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4dd8fb5d6629a755626143724ce4760eca8b2e97ae75d8e377e4341fe3882723"
+version = "0.6.0"
+source = "git+https://github.com/Kaydax/egui_file.git?rev=7ac26fb#7ac26fbfd4add5317dc8b9352a61eadde5cc5dbc"
 dependencies = [
  "egui",
 ]
@@ -2023,6 +2022,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "regex-bnf"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ccd8d4222c7fe394fb5ae81c08515107316596c8d4594f1a0d636919350c7eff"
+dependencies = [
+ "regex",
+ "regex-bnf-macro",
+ "thiserror",
+]
+
+[[package]]
+name = "regex-bnf-macro"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6615139e01fc5b243a0012221c4a11562090de91c200140913bff9e2ba2650dc"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "regex-syntax"
 version = "0.6.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2246,6 +2267,15 @@ source = "git+https://github.com/arduano/simdeez.git?rev=2f94d88#2f94d88abce225a
 dependencies = [
  "cfg-if",
  "libm 0.2.6",
+ "paste",
+]
+
+[[package]]
+name = "simdeez"
+version = "1.0.8"
+source = "git+https://github.com/arduano/simdeez.git?rev=86f8bf9#86f8bf998c3b403d3b8795e4b3fd891ce3a311dc"
+dependencies = [
+ "cfg-if",
  "paste",
 ]
 
@@ -3338,7 +3368,7 @@ checksum = "4d25c75bf9ea12c4040a97f829154768bbbce366287e2dc044af160cd79a13fd"
 [[package]]
 name = "xsynth-core"
 version = "0.1.0"
-source = "git+https://github.com/arduano/xsynth.git?rev=6060ca6#6060ca6f062f48348f24f038f82b542819ee98d8"
+source = "git+https://github.com/arduano/xsynth.git?rev=87c24d1#87c24d1ccea2cb95a6b3ea71651d5e0ba0d8bb9d"
 dependencies = [
  "atomic_refcell",
  "biquad",
@@ -3346,7 +3376,7 @@ dependencies = [
  "crossbeam-channel",
  "lazy_static",
  "rayon",
- "simdeez",
+ "simdeez 1.0.8 (git+https://github.com/arduano/simdeez.git?rev=2f94d88)",
  "spin_sleep",
  "symphonia",
  "thiserror",
@@ -3357,7 +3387,7 @@ dependencies = [
 [[package]]
 name = "xsynth-realtime"
 version = "0.1.0"
-source = "git+https://github.com/arduano/xsynth.git?rev=6060ca6#6060ca6f062f48348f24f038f82b542819ee98d8"
+source = "git+https://github.com/arduano/xsynth.git?rev=87c24d1#87c24d1ccea2cb95a6b3ea71651d5e0ba0d8bb9d"
 dependencies = [
  "atomic_refcell",
  "bytemuck",
@@ -3375,7 +3405,10 @@ dependencies = [
 [[package]]
 name = "xsynth-soundfonts"
 version = "0.1.0"
-source = "git+https://github.com/arduano/xsynth.git?rev=6060ca6#6060ca6f062f48348f24f038f82b542819ee98d8"
+source = "git+https://github.com/arduano/xsynth.git?rev=87c24d1#87c24d1ccea2cb95a6b3ea71651d5e0ba0d8bb9d"
 dependencies = [
  "lazy-regex",
+ "regex-bnf",
+ "simdeez 1.0.8 (git+https://github.com/arduano/simdeez.git?rev=86f8bf9)",
+ "thiserror",
 ]

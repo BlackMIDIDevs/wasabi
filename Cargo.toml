@@ -18,8 +18,8 @@ egui = "0.20.1"
 winit = "0.27.3"
 rayon = "1.5.3"
 midi-toolkit-rs = { git = "https://github.com/arduano/midi-toolkit-rs", rev = "4482d61" }
-xsynth-core = { git = "https://github.com/arduano/xsynth.git", rev = "6060ca6" }
-xsynth-realtime = { git = "https://github.com/arduano/xsynth.git", rev = "6060ca6" }
+xsynth-core = { git = "https://github.com/arduano/xsynth.git", rev = "87c24d1" }
+xsynth-realtime = { git = "https://github.com/arduano/xsynth.git", rev = "87c24d1" }
 gen-iter = "0.3.0"
 enum_dispatch = "0.3.8"
 palette = "0.6.0"
@@ -33,7 +33,7 @@ colors-transform = "0.2.11"
 directories = "4.0.1"
 rustc-hash = "1.1.0"
 atomic_float = "0.1.0"
-egui_file = "0.5.4"
+egui_file = { git = "https://github.com/Kaydax/egui_file.git", rev = "7ac26fb" }
 
 [profile.dev]
 opt-level = 2

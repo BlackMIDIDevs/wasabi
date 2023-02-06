@@ -75,6 +75,7 @@ impl XSynthPlayer {
 pub fn convert_to_sf_init(settings: &WasabiSettings) -> SoundfontInitOptions {
     SoundfontInitOptions {
         linear_release: settings.linear_envelope,
+        use_effects: settings.use_effects,
     }
 }
 

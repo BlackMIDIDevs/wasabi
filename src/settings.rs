@@ -24,6 +24,7 @@ struct WasabiConfigFile {
     layer_count: usize,
     fade_out_kill: bool,
     linear_envelope: bool,
+    use_effects: bool,
     vel_ignore_lo: u8,
     vel_ignore_hi: u8,
     synth: usize,
@@ -42,6 +43,7 @@ pub struct WasabiSettings {
     pub layer_count: usize,
     pub fade_out_kill: bool,
     pub linear_envelope: bool,
+    pub use_effects: bool,
     pub vel_ignore: RangeInclusive<u8>,
     pub synth: usize,
 }
@@ -61,6 +63,7 @@ impl Default for WasabiSettings {
             layer_count: 4,
             fade_out_kill: true,
             linear_envelope: false,
+            use_effects: true,
             vel_ignore: 0..=0,
             synth: 0,
         }
@@ -103,6 +106,7 @@ impl WasabiSettings {
                                 layer_count: cfg.layer_count,
                                 fade_out_kill: cfg.fade_out_kill,
                                 linear_envelope: cfg.linear_envelope,
+                                use_effects: cfg.use_effects,
                                 vel_ignore: cfg.vel_ignore_lo..=cfg.vel_ignore_hi,
                                 synth: cfg.synth,
                             }
@@ -143,6 +147,7 @@ impl WasabiSettings {
             layer_count: self.layer_count,
             fade_out_kill: self.fade_out_kill,
             linear_envelope: self.linear_envelope,
+            use_effects: self.use_effects,
             vel_ignore_lo: *self.vel_ignore.start(),
             vel_ignore_hi: *self.vel_ignore.end(),
             synth: self.synth,

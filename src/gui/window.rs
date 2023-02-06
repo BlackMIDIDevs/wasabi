@@ -258,10 +258,9 @@ impl GuiWasabiWindow {
         let filter = Box::new(filter);
 
         let mut dialog = FileDialog::open_file(state.last_midi_file.clone())
-            .show_rename(false)
-            .show_new_folder(false)
+            .show_rename(true)
+            .show_new_folder(true)
             .resizable(true)
-            .anchor(egui::Align2::CENTER_TOP, egui::Vec2::new(0.0, 10.0))
             .filter(filter);
 
         dialog.open();
