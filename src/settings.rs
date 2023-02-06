@@ -8,6 +8,8 @@ use std::{
     ops::RangeInclusive,
     path::{Path, PathBuf},
 };
+use xsynth_core::{channel::ChannelInitOptions, soundfont::SoundfontInitOptions};
+use xsynth_realtime::config::XSynthRealtimeConfig;
 
 #[derive(Deserialize, Serialize)]
 struct WasabiConfigFile {
@@ -58,12 +60,12 @@ impl Default for WasabiSettings {
             sfz_path: "".to_string(),
             key_range: 0..=127,
             midi_loading: 0,
-            buffer_ms: 10.0,
+            buffer_ms: XSynthRealtimeConfig::default().render_window_ms,
             limit_layers: true,
             layer_count: 4,
-            fade_out_kill: true,
-            linear_envelope: false,
-            use_effects: true,
+            fade_out_kill: ChannelInitOptions::default().fade_out_killing,
+            linear_envelope: SoundfontInitOptions::default().linear_release,
+            use_effects: SoundfontInitOptions::default().use_effects,
             vel_ignore: 0..=0,
             synth: 0,
         }
