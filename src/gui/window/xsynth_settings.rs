@@ -155,6 +155,10 @@ pub fn draw_xsynth_settings(
                     ui.label("Linear release envelope*: ");
                     ui.checkbox(&mut settings.linear_envelope, "");
                     ui.end_row();
+
+                    ui.label("Use Effects*: ");
+                    ui.checkbox(&mut settings.use_effects, "");
+                    ui.end_row();
                 });
 
             ui.separator();
