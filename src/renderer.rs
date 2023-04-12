@@ -16,6 +16,7 @@ use vulkano::{
 
 use vulkano_win::create_surface_from_winit;
 use winit::{
+    dpi::PhysicalSize,
     event_loop::EventLoop,
     window::{Window, WindowBuilder},
 };
@@ -32,12 +33,7 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new(
-        event_loop: &EventLoop<()>,
-        window_size: [u32; 2],
-        present_mode: PresentMode,
-        name: &str,
-    ) -> Self {
+    pub fn new(event_loop: &EventLoop<()>, present_mode: PresentMode, name: &str) -> Self {
         // Why
         let library = VulkanLibrary::new().unwrap();
 
@@ -59,7 +55,7 @@ impl Renderer {
 
         // Create rendering surface along with window
         let window = WindowBuilder::new()
-            .with_inner_size(winit::dpi::LogicalSize::new(window_size[0], window_size[1]))
+            .with_inner_size(crate::WINDOW_SIZE)
             .with_title(name)
             .build(event_loop)
             .expect("Failed to create vulkan surface & window");
@@ -164,8 +160,8 @@ impl Renderer {
         self.swap_chain.state().images_state.format
     }
 
-    pub fn resize(&mut self) {
-        self.swap_chain.resize();
+    pub fn resize(&mut self, size: Option<PhysicalSize<u32>>) {
+        self.swap_chain.resize(size);
     }
 
     pub fn render(

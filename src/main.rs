@@ -17,10 +17,16 @@ use vulkano::swapchain::PresentMode;
 use settings::WasabiSettings;
 use state::WasabiState;
 use winit::{
+    dpi::{LogicalSize, Size},
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::Fullscreen,
 };
+
+pub const WINDOW_SIZE: Size = Size::Logical(LogicalSize {
+    width: 1280.0,
+    height: 720.0,
+});
 
 pub fn main() {
     // Winit event loop
@@ -29,10 +35,26 @@ pub fn main() {
     // Load the settings values
     let mut settings = WasabiSettings::new_or_load();
     let mut wasabi_state = WasabiState::default();
+    #[cfg(unix)]
+    let is_wayland = winit::platform::unix::EventLoopWindowTargetExtUnix::is_wayland(
+        std::ops::Deref::deref(&event_loop),
+    );
 
     // Create renderer for our scene & ui
-    let window_size = [1280, 720];
-    let mut renderer = Renderer::new(&event_loop, window_size, PresentMode::Immediate, "Wasabi");
+    let mut renderer = Renderer::new(
+        &event_loop,
+        #[cfg(unix)]
+        if is_wayland {
+            println!("Present Mode: Mailbox");
+            PresentMode::Mailbox
+        } else {
+            println!("Present Mode: Immediate");
+            PresentMode::Immediate
+        },
+        #[cfg(not(unix))]
+        PresentMode::Immediate,
+        "Wasabi",
+    );
 
     // Vulkano & Winit & egui integration
     let mut gui = Gui::new(
@@ -65,11 +87,11 @@ pub fn main() {
             Event::WindowEvent { event, window_id } if window_id == renderer.window().id() => {
                 let _pass_events_to_game = !gui.update(&event);
                 match event {
-                    WindowEvent::Resized(_) => {
-                        renderer.resize();
+                    WindowEvent::Resized(size) => {
+                        renderer.resize(Some(size));
                     }
                     WindowEvent::ScaleFactorChanged { .. } => {
-                        renderer.resize();
+                        renderer.resize(None);
                     }
                     WindowEvent::CloseRequested => {
                         *control_flow = ControlFlow::Exit;
@@ -99,10 +121,21 @@ pub fn main() {
         }
 
         if wasabi_state.fullscreen {
-            let fullscreen = Some(Fullscreen::Exclusive(mode.clone()));
-            renderer.window().set_fullscreen(fullscreen);
-        } else {
-            renderer.window().set_fullscreen(None);
+            if renderer.window().fullscreen().is_none() {
+                #[cfg(unix)]
+                let fullscreen = if is_wayland {
+                    Some(Fullscreen::Borderless(None))
+                } else {
+                    Some(Fullscreen::Exclusive(mode.clone()))
+                };
+                #[cfg(not(unix))]
+                let fullscreen = Some(Fullscreen::Exclusive(mode.clone()));
+
+                renderer.window().set_fullscreen(fullscreen);
+            } else {
+                renderer.window().set_fullscreen(None);
+            }
+            wasabi_state.fullscreen = false;
         }
     });
 }
