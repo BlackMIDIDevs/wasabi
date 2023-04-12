@@ -9,15 +9,21 @@ use vulkano::{
     },
     format::Format,
     instance::{Instance, InstanceCreateInfo, InstanceExtensions},
-    swapchain::{PresentMode, Surface},
+    swapchain::Surface,
     sync::GpuFuture,
     Version, VulkanLibrary,
 };
 
 use vulkano_win::create_surface_from_winit;
+#[cfg(unix)]
+use winit::platform::unix::EventLoopWindowTargetExtUnix;
+#[cfg(unix)]
+use winit::platform::unix::WindowExtUnix;
 use winit::{
+    dpi::PhysicalSize,
     event_loop::EventLoop,
-    window::{Window, WindowBuilder},
+    monitor::VideoMode,
+    window::{Fullscreen, Window, WindowBuilder},
 };
 
 use self::swapchain::{ManagedSwapchain, SwapchainFrame};
@@ -32,12 +38,7 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new(
-        event_loop: &EventLoop<()>,
-        window_size: [u32; 2],
-        present_mode: PresentMode,
-        name: &str,
-    ) -> Self {
+    pub fn new(event_loop: &EventLoop<()>, name: &str) -> Self {
         // Why
         let library = VulkanLibrary::new().unwrap();
 
@@ -59,7 +60,7 @@ impl Renderer {
 
         // Create rendering surface along with window
         let window = WindowBuilder::new()
-            .with_inner_size(winit::dpi::LogicalSize::new(window_size[0], window_size[1]))
+            .with_inner_size(crate::WINDOW_SIZE)
             .with_title(name)
             .build(event_loop)
             .expect("Failed to create vulkan surface & window");
@@ -129,7 +130,16 @@ impl Renderer {
             window.clone(),
             physical_device,
             device.clone(),
-            present_mode,
+            #[cfg(unix)]
+            if event_loop.is_wayland() {
+                println!("Present Mode: {:?}", crate::WAYLAND_PRESENT_MODE);
+                crate::WAYLAND_PRESENT_MODE
+            } else {
+                println!("Present Mode: {:?}", crate::PRESENT_MODE);
+                crate::PRESENT_MODE
+            },
+            #[cfg(not(unix))]
+            crate::PRESENT_MODE,
         );
 
         let queue = queues.next().unwrap();
@@ -164,8 +174,25 @@ impl Renderer {
         self.swap_chain.state().images_state.format
     }
 
-    pub fn resize(&mut self) {
-        self.swap_chain.resize();
+    pub fn resize(&mut self, size: Option<PhysicalSize<u32>>) {
+        self.swap_chain.resize(size);
+    }
+
+    pub fn set_fullscreen(&self, mode: VideoMode) {
+        if self.window.fullscreen().is_none() {
+            #[cfg(unix)]
+            let fullscreen = if self.window.wayland_display().is_some() {
+                Some(Fullscreen::Borderless(None))
+            } else {
+                Some(Fullscreen::Exclusive(mode))
+            };
+            #[cfg(not(unix))]
+            let fullscreen = Some(Fullscreen::Exclusive(mode));
+
+            self.window.set_fullscreen(fullscreen);
+        } else {
+            self.window.set_fullscreen(None);
+        }
     }
 
     pub fn render(

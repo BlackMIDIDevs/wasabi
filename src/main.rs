@@ -17,10 +17,18 @@ use vulkano::swapchain::PresentMode;
 use settings::WasabiSettings;
 use state::WasabiState;
 use winit::{
+    dpi::{LogicalSize, Size},
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
-    window::Fullscreen,
 };
+
+pub const WINDOW_SIZE: Size = Size::Logical(LogicalSize {
+    width: 1280.0,
+    height: 720.0,
+});
+
+pub const PRESENT_MODE: PresentMode = PresentMode::Immediate;
+pub const WAYLAND_PRESENT_MODE: PresentMode = PresentMode::Mailbox;
 
 pub fn main() {
     // Winit event loop
@@ -31,8 +39,7 @@ pub fn main() {
     let mut wasabi_state = WasabiState::default();
 
     // Create renderer for our scene & ui
-    let window_size = [1280, 720];
-    let mut renderer = Renderer::new(&event_loop, window_size, PresentMode::Immediate, "Wasabi");
+    let mut renderer = Renderer::new(&event_loop, "Wasabi");
 
     // Vulkano & Winit & egui integration
     let mut gui = Gui::new(
@@ -65,11 +72,11 @@ pub fn main() {
             Event::WindowEvent { event, window_id } if window_id == renderer.window().id() => {
                 let _pass_events_to_game = !gui.update(&event);
                 match event {
-                    WindowEvent::Resized(_) => {
-                        renderer.resize();
+                    WindowEvent::Resized(size) => {
+                        renderer.resize(Some(size));
                     }
                     WindowEvent::ScaleFactorChanged { .. } => {
-                        renderer.resize();
+                        renderer.resize(None);
                     }
                     WindowEvent::CloseRequested => {
                         *control_flow = ControlFlow::Exit;
@@ -99,10 +106,8 @@ pub fn main() {
         }
 
         if wasabi_state.fullscreen {
-            let fullscreen = Some(Fullscreen::Exclusive(mode.clone()));
-            renderer.window().set_fullscreen(fullscreen);
-        } else {
-            renderer.window().set_fullscreen(None);
+            renderer.set_fullscreen(mode.clone());
+            wasabi_state.fullscreen = false;
         }
     });
 }

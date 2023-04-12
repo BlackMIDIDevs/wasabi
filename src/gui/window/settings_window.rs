@@ -146,8 +146,9 @@ pub fn draw_settings(
                 .spacing([40.0, 4.0])
                 .min_col_width(col_width)
                 .show(ui, |ui| {
-                    ui.label("Fullscreen: ");
-                    ui.checkbox(&mut state.fullscreen, "");
+                    if ui.button("Toggle Fullscreen").clicked() {
+                        state.fullscreen = true;
+                    }
                     ui.end_row();
 
                     ui.label("Background Color: ");

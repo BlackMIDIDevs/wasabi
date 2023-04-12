@@ -10,7 +10,7 @@ use vulkano::{
     },
     sync::{self, FlushError, GpuFuture},
 };
-use winit::window::Window;
+use winit::{dpi::PhysicalSize, window::Window};
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct ImagesState {
@@ -28,7 +28,6 @@ pub struct ManagedSwapchain {
     swap_chain: Arc<Swapchain>,
     image_views: Vec<Arc<ImageView<SwapchainImage>>>,
     previous_frame_end: Option<Box<dyn GpuFuture>>,
-    window: Arc<Window>,
     device: Arc<Device>,
     recreate_on_next_frame: bool,
 }
@@ -91,7 +90,6 @@ impl ManagedSwapchain {
             image_views: images,
             previous_frame_end: Some(sync::now(device.clone()).boxed()),
             device,
-            window,
             recreate_on_next_frame: false,
         }
     }
@@ -100,14 +98,16 @@ impl ManagedSwapchain {
         &self.state
     }
 
-    pub fn resize(&mut self) {
+    pub fn resize(&mut self, size: Option<PhysicalSize<u32>>) {
         self.recreate_on_next_frame = true;
+        if let Some(s) = size {
+            self.state.size = s.into();
+        }
     }
 
     pub fn recreate(&mut self) {
-        let dimensions: [u32; 2] = self.window.inner_size().into();
         let (new_swapchain, new_images) = match self.swap_chain.recreate(SwapchainCreateInfo {
-            image_extent: dimensions,
+            image_extent: self.state.size,
             ..self.swap_chain.create_info()
         }) {
             Ok(r) => r,
@@ -121,11 +121,6 @@ impl ManagedSwapchain {
             .collect::<Vec<_>>();
 
         self.image_views = new_images;
-
-        self.state = SwapchainState {
-            size: dimensions,
-            images_state: self.state.images_state,
-        };
     }
 
     pub fn take_previous_frame_end(&mut self) -> Option<Box<dyn GpuFuture>> {
