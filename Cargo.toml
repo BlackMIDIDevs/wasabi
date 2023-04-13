@@ -33,8 +33,7 @@ colors-transform = "0.2.11"
 directories = "4.0.1"
 rustc-hash = "1.1.0"
 atomic_float = "0.1.0"
-# egui_file = { git = "https://github.com/Kaydax/egui_file.git" }
-egui_file = { path = "../egui_file" }
+egui_file = { git = "https://github.com/Kaydax/egui_file.git" }
 clap = "4.2.1"
 panicui = "0.1.0"
 thiserror = "1.0.40"
