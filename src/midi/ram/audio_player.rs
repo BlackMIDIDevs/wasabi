@@ -35,13 +35,20 @@ impl InRamAudioPlayer {
 
     pub fn spawn_playback(mut self) -> JoinHandle<()> {
         thread::spawn(move || loop {
-            if self.timer.is_paused() {
+            let reset = || {
                 if let Ok(mut player) = self.player.clone().write() {
                     player.reset();
                 };
+            };
+
+            if self.timer.is_paused() {
+                reset();
 
                 match self.timer.wait_until_unpause() {
-                    UnpauseWaitResult::Unpaused => {}
+                    UnpauseWaitResult::Unpaused => {
+                        self.seek_to_time(self.timer.get_time().as_secs_f64());
+                        continue;
+                    }
                     UnpauseWaitResult::UnpausedAndSeeked(time) => {
                         self.seek_to_time(time.as_secs_f64());
                         continue;
@@ -65,12 +72,19 @@ impl InRamAudioPlayer {
             let time = Duration::from_secs_f64(event.time);
             match self.timer.wait_until(time) {
                 WaitResult::Ok => {}
-                WaitResult::Paused => continue,
+                WaitResult::Paused => {
+                    reset();
+                    continue;
+                }
                 WaitResult::Seeked(time) => {
+                    reset();
                     self.seek_to_time(time.as_secs_f64());
                     continue;
                 }
-                WaitResult::Killed => break,
+                WaitResult::Killed => {
+                    reset();
+                    break;
+                }
             }
 
             if let Ok(mut player) = self.player.clone().write() {

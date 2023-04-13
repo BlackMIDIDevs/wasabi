@@ -39,14 +39,24 @@ impl LiveAudioPlayer {
 
             let max_fall_time = 0.1;
 
+            let reset = || {
+                if let Ok(mut player) = self.player.clone().write() {
+                    player.reset();
+                };
+            };
+
+            let push_cc = |e: &CompressedAudio| {
+                if let Ok(mut player) = self.player.clone().write() {
+                    player.push_events(e.iter_control_events());
+                }
+            };
+
             for event in self.events.into_iter() {
                 if self.timer.is_paused() {
-                    if let Ok(mut player) = self.player.clone().write() {
-                        player.reset();
-                    };
+                    reset();
 
                     match self.timer.wait_until_unpause() {
-                        UnpauseWaitResult::Unpaused => {}
+                        UnpauseWaitResult::Unpaused => push_cc(&event),
                         UnpauseWaitResult::UnpausedAndSeeked(time) => {
                             if time.as_secs_f64() - event.time > max_fall_time {
                                 seek_catching_up = true;
@@ -60,9 +70,7 @@ impl LiveAudioPlayer {
                 if seek_catching_up {
                     let time = self.timer.get_time().as_secs_f64();
                     if time - event.time > max_fall_time {
-                        if let Ok(mut player) = self.player.clone().write() {
-                            player.push_events(event.iter_control_events());
-                        }
+                        push_cc(&event);
                         continue;
                     } else {
                         seek_catching_up = false;
@@ -72,17 +80,21 @@ impl LiveAudioPlayer {
                 let time = Duration::from_secs_f64(event.time);
                 match self.timer.wait_until(time) {
                     WaitResult::Ok => {}
-                    WaitResult::Paused => continue,
+                    WaitResult::Paused => {
+                        reset();
+                        continue;
+                    }
                     WaitResult::Seeked(time) => {
+                        reset();
                         if time.as_secs_f64() - event.time > max_fall_time {
                             seek_catching_up = true;
-                            if let Ok(mut player) = self.player.clone().write() {
-                                player.reset();
-                            };
                         }
                         continue;
                     }
-                    WaitResult::Killed => break,
+                    WaitResult::Killed => {
+                        reset();
+                        break;
+                    }
                 }
 
                 if let Ok(mut player) = self.player.clone().write() {

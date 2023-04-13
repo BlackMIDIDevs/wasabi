@@ -1,5 +1,6 @@
 #![feature(type_alias_impl_trait)]
 #![feature(generators)]
+#![feature(impl_trait_in_assoc_type)]
 
 mod audio_playback;
 mod gui;
