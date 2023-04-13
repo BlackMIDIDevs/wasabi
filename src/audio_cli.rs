@@ -160,12 +160,12 @@ Q/Ctrl+c: Quit
                                     AudioPlayerType::XSynth {
                                         buffer: settings.synth.buffer_ms,
                                         ignore_range: settings.synth.vel_ignore.clone(),
-                                        options: convert_to_channel_init(&settings),
+                                        options: convert_to_channel_init(settings),
                                     },
                                 );
                                 synth.player.write().unwrap().set_soundfont(
                                     &settings.synth.sfz_path,
-                                    convert_to_sf_init(&settings),
+                                    convert_to_sf_init(settings),
                                 );
                                 synth.player.write().unwrap().set_layer_count(
                                     if settings.synth.limit_layers {

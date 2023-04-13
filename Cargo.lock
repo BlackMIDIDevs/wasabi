@@ -888,9 +888,9 @@ dependencies = [
 [[package]]
 name = "egui_file"
 version = "0.6.0"
-source = "git+https://github.com/Kaydax/egui_file.git#34008d89efc060ec096e5af3ceb2d3cf1b59bff1"
 dependencies = [
  "egui",
+ "fst",
 ]
 
 [[package]]
@@ -1173,6 +1173,12 @@ dependencies = [
  "libc",
  "pkg-config",
 ]
+
+[[package]]
+name = "fst"
+version = "0.4.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7ab85b9b05e3978cc9a9cf8fea7f01b494e1a09ed3037e16ba39edc7a29eb61a"
 
 [[package]]
 name = "futures-core"
