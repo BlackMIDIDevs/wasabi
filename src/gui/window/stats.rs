@@ -61,7 +61,7 @@ pub fn draw_stats(win: &mut GuiWasabiWindow, ctx: &Context, pos: Pos2, mut stats
 
             let mut load_type = -1; // 0=RAM, 1=Live
 
-            if let Some(midi_file) = win.midi_file.as_mut() {
+            if let Some(midi_file) = win.synth.midi_file.as_mut() {
                 stats.time_total = if let Some(length) = midi_file.midi_length() {
                     length
                 } else {

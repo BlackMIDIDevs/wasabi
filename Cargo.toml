@@ -13,13 +13,13 @@ vulkano-util = "0.32.0"
 egui-winit = "0.20.1"
 bytemuck = "1.8.0"
 vulkano = "0.32.3"
-kdmapi = { git = "https://github.com/arduano/kdmapi.git", rev = "9329cfc" }
+kdmapi = { git = "https://github.com/arduano/kdmapi.git" }
 egui = "0.20.1"
 winit = "0.27.3"
 rayon = "1.5.3"
-midi-toolkit-rs = { git = "https://github.com/arduano/midi-toolkit-rs", rev = "4482d61" }
-xsynth-core = { git = "https://github.com/arduano/xsynth.git", rev = "87c24d1" }
-xsynth-realtime = { git = "https://github.com/arduano/xsynth.git", rev = "87c24d1" }
+midi-toolkit-rs = { git = "https://github.com/arduano/midi-toolkit-rs" }
+xsynth-core = { git = "https://github.com/arduano/xsynth.git" }
+xsynth-realtime = { git = "https://github.com/arduano/xsynth.git" }
 gen-iter = "0.3.0"
 enum_dispatch = "0.3.8"
 palette = "0.6.0"
@@ -33,7 +33,12 @@ colors-transform = "0.2.11"
 directories = "4.0.1"
 rustc-hash = "1.1.0"
 atomic_float = "0.1.0"
-egui_file = { git = "https://github.com/Kaydax/egui_file.git", rev = "7ac26fb" }
+egui_file = { git = "https://github.com/Kaydax/egui_file.git" }
+clap = "4.2.1"
+panicui = "0.1.0"
+thiserror = "1.0.40"
+miette = { version = "5.7.0", features = ["fancy-no-backtrace"] }
+crossterm = "0.26.1"
 
 [profile.dev]
 opt-level = 2
@@ -41,4 +46,5 @@ opt-level = 2
 [profile.release]
 opt-level = 3
 codegen-units = 1
+panic = "abort"
 lto = true

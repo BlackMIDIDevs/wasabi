@@ -40,7 +40,7 @@ pub fn draw_xsynth_settings(
                 .show(ui, |ui| {
                     ui.label("Synth Render Buffer (ms)*: ");
                     ui.add(
-                        egui::DragValue::new(&mut settings.buffer_ms)
+                        egui::DragValue::new(&mut settings.synth.buffer_ms)
                             .speed(0.1)
                             .clamp_range(RangeInclusive::new(0.001, 1000.0)),
                     );
@@ -48,7 +48,7 @@ pub fn draw_xsynth_settings(
 
                     ui.label("SFZ Path: ");
                     ui.horizontal(|ui| {
-                        ui.add(egui::TextEdit::singleline(&mut settings.sfz_path));
+                        ui.add(egui::TextEdit::singleline(&mut settings.synth.sfz_path));
 
                         let filter = |path: &std::path::Path| {
                             if let Some(path) = path.to_str() {
@@ -74,51 +74,51 @@ pub fn draw_xsynth_settings(
                             if dialog.show(ctx).selected() {
                                 if let Some(sfz_path) = dialog.path() {
                                     state.last_sfz_file = Some(sfz_path.clone());
-                                    settings.sfz_path = sfz_path.to_str().unwrap_or("").to_owned();
+                                    settings.synth.sfz_path =
+                                        sfz_path.to_str().unwrap_or("").to_owned();
                                 }
                             }
                         }
 
                         if ui.button("Load").clicked() {
-                            win.synth
-                                .write()
-                                .unwrap()
-                                .set_soundfont(&settings.sfz_path, convert_to_sf_init(settings));
+                            win.synth.player.write().unwrap().set_soundfont(
+                                &settings.synth.sfz_path,
+                                convert_to_sf_init(settings),
+                            );
                         }
                     });
                     ui.end_row();
 
                     ui.label("Limit Layers: ");
-                    let layer_limit_prev = settings.limit_layers;
-                    ui.checkbox(&mut settings.limit_layers, "");
+                    let layer_limit_prev = settings.synth.limit_layers;
+                    ui.checkbox(&mut settings.synth.limit_layers, "");
                     ui.end_row();
 
                     ui.label("Synth Layer Count: ");
-                    let layer_count_prev = settings.layer_count;
-                    ui.add_enabled_ui(settings.limit_layers, |ui| {
+                    let layer_count_prev = settings.synth.layer_count;
+                    ui.add_enabled_ui(settings.synth.limit_layers, |ui| {
                         ui.add(
-                            egui::DragValue::new(&mut settings.layer_count)
+                            egui::DragValue::new(&mut settings.synth.layer_count)
                                 .speed(1)
                                 .clamp_range(RangeInclusive::new(1, 200)),
                         );
                     });
-                    if settings.layer_count != layer_count_prev
-                        || layer_limit_prev != settings.limit_layers
+                    if settings.synth.layer_count != layer_count_prev
+                        || layer_limit_prev != settings.synth.limit_layers
                     {
-                        win.synth
-                            .write()
-                            .unwrap()
-                            .set_layer_count(if settings.limit_layers {
-                                Some(settings.layer_count)
+                        win.synth.player.write().unwrap().set_layer_count(
+                            if settings.synth.limit_layers {
+                                Some(settings.synth.layer_count)
                             } else {
                                 None
-                            });
+                            },
+                        );
                     }
                     ui.end_row();
 
                     ui.label("Ignore notes with velocities between*: ");
-                    let mut lovel = *settings.vel_ignore.start();
-                    let mut hivel = *settings.vel_ignore.end();
+                    let mut lovel = *settings.synth.vel_ignore.start();
+                    let mut hivel = *settings.synth.vel_ignore.end();
                     ui.horizontal(|ui| {
                         ui.add(
                             egui::DragValue::new(&mut lovel)
@@ -133,9 +133,10 @@ pub fn draw_xsynth_settings(
                         );
                     });
                     ui.end_row();
-                    if lovel != *settings.vel_ignore.start() || hivel != *settings.vel_ignore.end()
+                    if lovel != *settings.synth.vel_ignore.start()
+                        || hivel != *settings.synth.vel_ignore.end()
                     {
-                        settings.vel_ignore = lovel..=hivel;
+                        settings.synth.vel_ignore = lovel..=hivel;
                     }
                 });
 
@@ -149,15 +150,15 @@ pub fn draw_xsynth_settings(
                 .min_col_width(col_width)
                 .show(ui, |ui| {
                     ui.label("Fade out voice when killing it*: ");
-                    ui.checkbox(&mut settings.fade_out_kill, "");
+                    ui.checkbox(&mut settings.synth.fade_out_kill, "");
                     ui.end_row();
 
                     ui.label("Linear release envelope*: ");
-                    ui.checkbox(&mut settings.linear_envelope, "");
+                    ui.checkbox(&mut settings.synth.linear_envelope, "");
                     ui.end_row();
 
                     ui.label("Use Effects*: ");
-                    ui.checkbox(&mut settings.use_effects, "");
+                    ui.checkbox(&mut settings.synth.use_effects, "");
                     ui.end_row();
                 });
 
@@ -166,25 +167,26 @@ pub fn draw_xsynth_settings(
                 ui.label("Options marked with (*) will apply when the synth is reloaded.");
                 if ui.button("Reload XSynth").clicked() {
                     win.synth
+                        .player
                         .write()
                         .unwrap()
                         .switch_player(AudioPlayerType::XSynth {
-                            buffer: settings.buffer_ms,
-                            ignore_range: settings.vel_ignore.clone(),
+                            buffer: settings.synth.buffer_ms,
+                            ignore_range: settings.synth.vel_ignore.clone(),
                             options: convert_to_channel_init(settings),
                         });
                     win.synth
+                        .player
                         .write()
                         .unwrap()
-                        .set_soundfont(&settings.sfz_path, convert_to_sf_init(settings));
-                    win.synth
-                        .write()
-                        .unwrap()
-                        .set_layer_count(if settings.limit_layers {
-                            Some(settings.layer_count)
+                        .set_soundfont(&settings.synth.sfz_path, convert_to_sf_init(settings));
+                    win.synth.player.write().unwrap().set_layer_count(
+                        if settings.synth.limit_layers {
+                            Some(settings.synth.layer_count)
                         } else {
                             None
-                        });
+                        },
+                    );
                 }
             });
         });

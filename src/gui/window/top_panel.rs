@@ -25,11 +25,11 @@ pub fn draw_panel(
                     win.open_midi_dialog(state);
                 }
 
-                if let Some(midi_file) = win.midi_file.as_mut() {
+                if let Some(midi_file) = win.synth.midi_file.as_mut() {
                     if ui.button("Unload").clicked() {
                         midi_file.timer_mut().pause();
-                        win.synth.write().unwrap().reset();
-                        win.midi_file = None;
+                        win.synth.player.write().unwrap().reset();
+                        win.synth.midi_file = None;
                     }
                 }
 
@@ -45,12 +45,12 @@ pub fn draw_panel(
                 ui.add_space(10.0);
 
                 if ui.button("Play").clicked() {
-                    if let Some(midi_file) = win.midi_file.as_mut() {
+                    if let Some(midi_file) = win.synth.midi_file.as_mut() {
                         midi_file.timer_mut().play();
                     }
                 }
                 if ui.button("Pause").clicked() {
-                    if let Some(midi_file) = win.midi_file.as_mut() {
+                    if let Some(midi_file) = win.synth.midi_file.as_mut() {
                         midi_file.timer_mut().pause();
                     }
                 }
@@ -60,7 +60,8 @@ pub fn draw_panel(
                 ui.horizontal(|ui| {
                     ui.label("Note speed: ");
                     ui.add(
-                        egui::Slider::new(&mut settings.note_speed, 2.0..=0.001).show_value(false),
+                        egui::Slider::new(&mut settings.midi.note_speed, 2.0..=0.001)
+                            .show_value(false),
                     );
                 })
             });
@@ -68,7 +69,7 @@ pub fn draw_panel(
             ui.spacing_mut().slider_width = ctx.available_rect().width() - 20.0;
             let mut empty_slider =
                 || ui.add(egui::Slider::new(&mut 0.0, 0.0..=1.0).show_value(false));
-            if let Some(midi_file) = win.midi_file.as_mut() {
+            if let Some(midi_file) = win.synth.midi_file.as_mut() {
                 if let Some(length) = midi_file.midi_length() {
                     let mut time = midi_file.timer().get_time().as_secs_f64();
                     let time_prev = time;

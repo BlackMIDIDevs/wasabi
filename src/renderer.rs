@@ -38,7 +38,7 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new(event_loop: &EventLoop<()>, name: &str) -> Self {
+    pub fn new(event_loop: &EventLoop<()>, name: &str, fullscreen: bool, mode: VideoMode) -> Self {
         // Why
         let library = VulkanLibrary::new().unwrap();
 
@@ -60,6 +60,21 @@ impl Renderer {
 
         // Create rendering surface along with window
         let window = WindowBuilder::new()
+            .with_fullscreen({
+                if fullscreen {
+                    #[cfg(unix)]
+                    let fullscreen = if event_loop.is_wayland() {
+                        Some(Fullscreen::Borderless(None))
+                    } else {
+                        Some(Fullscreen::Exclusive(mode))
+                    };
+                    #[cfg(not(unix))]
+                    let fullscreen = Some(Fullscreen::Exclusive(mode));
+                    fullscreen
+                } else {
+                    None
+                }
+            })
             .with_inner_size(crate::WINDOW_SIZE)
             .with_title(name)
             .build(event_loop)
@@ -178,7 +193,7 @@ impl Renderer {
         self.swap_chain.resize(size);
     }
 
-    pub fn set_fullscreen(&self, mode: VideoMode) {
+    pub fn set_fullscreen(&self, mode: VideoMode, settings_fullscreen: &mut bool) {
         if self.window.fullscreen().is_none() {
             #[cfg(unix)]
             let fullscreen = if self.window.wayland_display().is_some() {
@@ -189,8 +204,10 @@ impl Renderer {
             #[cfg(not(unix))]
             let fullscreen = Some(Fullscreen::Exclusive(mode));
 
+            *settings_fullscreen = true;
             self.window.set_fullscreen(fullscreen);
         } else {
+            *settings_fullscreen = false;
             self.window.set_fullscreen(None);
         }
     }

@@ -1,6 +1,9 @@
 #![feature(type_alias_impl_trait)]
 #![feature(generators)]
+#![feature(impl_trait_in_assoc_type)]
+#![windows_subsystem = "windows"]
 
+mod audio_cli;
 mod audio_playback;
 mod gui;
 mod midi;
@@ -9,8 +12,12 @@ mod scenes;
 mod settings;
 mod state;
 
+use std::{backtrace::Backtrace, panic::PanicInfo};
+
+use audio_cli::run_audio_cli;
 use egui_winit_vulkano::Gui;
 use gui::{window::GuiWasabiWindow, GuiRenderer, GuiState};
+use panicui::{app::PanicApplication, window::PanicWindow};
 use renderer::Renderer;
 use vulkano::swapchain::PresentMode;
 
@@ -30,16 +37,59 @@ pub const WINDOW_SIZE: Size = Size::Logical(LogicalSize {
 pub const PRESENT_MODE: PresentMode = PresentMode::Immediate;
 pub const WAYLAND_PRESENT_MODE: PresentMode = PresentMode::Mailbox;
 
+fn panic_hook(info: &PanicInfo) {
+    let backtrace = Backtrace::force_capture();
+    let error_text = format!(
+        "The process quit unexpectedly.\n\n### Panic Information\n\n{}\n\n### Backtrace\n\n{}",
+        info, backtrace
+    );
+
+    let window = PanicWindow::new(panicui::style::Style::default(), error_text);
+
+    let mut app = PanicApplication::new(window);
+    app.run().expect("The panic window paniced! Panic-ception!");
+}
+
 pub fn main() {
+    // Load the settings values
+    let mut settings = match WasabiSettings::new_or_load() {
+        Ok(s) => s,
+        Err(debug_error_string) => {
+            let window = PanicWindow::new(panicui::style::Style::default(), debug_error_string);
+
+            let mut app = PanicApplication::new(window);
+            app.run().expect("The panic window paniced! Panic-ception!");
+            return;
+        }
+    };
+
+    if settings.visual.audio_only {
+        run_audio_cli(&mut settings);
+        return;
+    }
+
+    std::panic::set_hook(Box::new(panic_hook));
+
     // Winit event loop
     let event_loop = EventLoop::new();
 
-    // Load the settings values
-    let mut settings = WasabiSettings::new_or_load();
     let mut wasabi_state = WasabiState::default();
 
+    let mode = event_loop
+        .available_monitors()
+        .next()
+        .expect("no monitor found!")
+        .video_modes()
+        .next()
+        .expect("no mode found");
+
     // Create renderer for our scene & ui
-    let mut renderer = Renderer::new(&event_loop, "Wasabi");
+    let mut renderer = Renderer::new(
+        &event_loop,
+        "Wasabi",
+        settings.visual.fullscreen,
+        mode.clone(),
+    );
 
     // Vulkano & Winit & egui integration
     let mut gui = Gui::new(
@@ -50,21 +100,19 @@ pub fn main() {
         false,
     );
 
-    let mut gui_render_data = GuiRenderer {
-        gui: &mut gui,
-        device: renderer.device(),
-        queue: renderer.queue(),
-        format: renderer.format(),
+    let mut gui_state = {
+        let mut gui_render_data = GuiRenderer {
+            gui: &mut gui,
+            device: renderer.device(),
+            queue: renderer.queue(),
+            format: renderer.format(),
+        };
+        GuiWasabiWindow::new(&mut gui_render_data, &mut settings)
     };
 
-    let mut gui_state = GuiWasabiWindow::new(&mut gui_render_data, &mut settings);
-
-    let monitor = event_loop
-        .available_monitors()
-        .next()
-        .expect("no monitor found!");
-
-    let mode = monitor.video_modes().next().expect("no mode found");
+    if let Some(file) = settings.load_midi_file.take() {
+        gui_state.synth.load_midi(&mut settings, file.into());
+    }
 
     event_loop.run(move |event, _, control_flow| {
         // Update Egui integration so the UI works!
@@ -82,7 +130,7 @@ pub fn main() {
                         *control_flow = ControlFlow::Exit;
                     }
                     WindowEvent::DroppedFile(path) => {
-                        gui_state.load_midi(&mut settings, path);
+                        gui_state.synth.load_midi(&mut settings, path);
                     }
                     _ => (),
                 }
@@ -106,7 +154,7 @@ pub fn main() {
         }
 
         if wasabi_state.fullscreen {
-            renderer.set_fullscreen(mode.clone());
+            renderer.set_fullscreen(mode.clone(), &mut settings.visual.fullscreen);
             wasabi_state.fullscreen = false;
         }
     });

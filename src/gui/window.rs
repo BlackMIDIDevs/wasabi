@@ -8,21 +8,14 @@ mod settings_window;
 mod top_panel;
 mod xsynth_settings;
 
-use std::{
-    path::PathBuf,
-    sync::{Arc, RwLock},
-    time::Duration,
-};
+use std::time::Duration;
 
 use egui::{style::Margin, Frame, Visuals};
 
 use crate::{
-    audio_playback::{
-        xsynth::{convert_to_channel_init, convert_to_sf_init},
-        AudioPlayerType, SimpleTemporaryPlayer,
-    },
+    audio_playback::ManagedSynth,
     gui::window::{keyboard::GuiKeyboard, scene::GuiRenderScene},
-    midi::{InRamMIDIFile, LiveLoadMIDIFile, MIDIFileBase, MIDIFileUnion},
+    midi::MIDIFileBase,
     settings::WasabiSettings,
     state::WasabiState,
     GuiRenderer, GuiState,
@@ -39,46 +32,18 @@ pub struct GuiWasabiWindow {
     render_scene: GuiRenderScene,
     keyboard_layout: keyboard_layout::KeyboardLayout,
     keyboard: GuiKeyboard,
-    midi_file: Option<MIDIFileUnion>,
-    synth: Arc<RwLock<SimpleTemporaryPlayer>>,
+    pub synth: ManagedSynth,
     fps: fps::Fps,
     file_dialogs: WasabiFileDialogs,
 }
 
 impl GuiWasabiWindow {
     pub fn new(renderer: &mut GuiRenderer, settings: &mut WasabiSettings) -> GuiWasabiWindow {
-        let synth = match settings.synth {
-            1 => Arc::new(RwLock::new(SimpleTemporaryPlayer::new(
-                AudioPlayerType::Kdmapi,
-            ))),
-            _ => {
-                let synth = Arc::new(RwLock::new(SimpleTemporaryPlayer::new(
-                    AudioPlayerType::XSynth {
-                        buffer: settings.buffer_ms,
-                        ignore_range: settings.vel_ignore.clone(),
-                        options: convert_to_channel_init(settings),
-                    },
-                )));
-                synth
-                    .write()
-                    .unwrap()
-                    .set_soundfont(&settings.sfz_path, convert_to_sf_init(settings));
-                synth
-                    .write()
-                    .unwrap()
-                    .set_layer_count(match settings.layer_count {
-                        0 => None,
-                        _ => Some(settings.layer_count),
-                    });
-                synth
-            }
-        };
         GuiWasabiWindow {
             render_scene: GuiRenderScene::new(renderer),
             keyboard_layout: keyboard_layout::KeyboardLayout::new(&Default::default()),
             keyboard: GuiKeyboard::new(),
-            midi_file: None,
-            synth,
+            synth: ManagedSynth::new(settings),
             fps: fps::Fps::new(),
             file_dialogs: WasabiFileDialogs {
                 midi_file_dialog: None,
@@ -109,14 +74,14 @@ impl GuiWasabiWindow {
             if dialog.show(&ctx).selected() {
                 if let Some(midi_path) = dialog.path() {
                     wasabi_state.last_midi_file = Some(midi_path.clone());
-                    self.load_midi(settings, midi_path);
+                    self.synth.load_midi(settings, midi_path);
                 }
                 self.file_dialogs.midi_file_dialog = None;
             }
         }
 
         let height_prev = ctx.available_rect().height();
-        if wasabi_state.panel_visible {
+        if settings.visual.show_top_pannel {
             top_panel::draw_panel(self, settings, wasabi_state, &ctx);
         }
 
@@ -127,17 +92,17 @@ impl GuiWasabiWindow {
         let height = available.height();
         let panel_height = height_prev - height;
         let keyboard_height =
-            (11.6 / settings.key_range.len() as f32 * available.width()).min(height / 2.0);
+            (11.6 / settings.midi.key_range.len() as f32 * available.width()).min(height / 2.0);
         let notes_height = height - keyboard_height;
 
         let key_view = self.keyboard_layout.get_view_for_keys(
-            *settings.key_range.start() as usize,
-            *settings.key_range.end() as usize,
+            *settings.midi.key_range.start() as usize,
+            *settings.midi.key_range.end() as usize,
         );
 
         let no_frame = Frame::default()
             .inner_margin(Margin::same(0.0))
-            .fill(settings.bg_color);
+            .fill(settings.visual.bg_color);
 
         let mut stats = stats::GuiMidiStats::empty();
 
@@ -149,7 +114,7 @@ impl GuiWasabiWindow {
             .frame(no_frame)
             .show_separator_line(false)
             .show(&ctx, |ui| {
-                if let Some(midi_file) = self.midi_file.as_mut() {
+                if let Some(midi_file) = self.synth.midi_file.as_mut() {
                     let one_sec = Duration::from_secs(1);
                     let time = midi_file.timer().get_time();
 
@@ -171,10 +136,10 @@ impl GuiWasabiWindow {
                                         }
                                     }
                                     egui::Key::ArrowUp => {
-                                        settings.note_speed += 0.05;
+                                        settings.midi.note_speed += 0.05;
                                     }
                                     egui::Key::ArrowDown => {
-                                        settings.note_speed -= 0.05;
+                                        settings.midi.note_speed -= 0.05;
                                     }
                                     egui::Key::Space => midi_file.timer_mut().toggle_pause(),
                                     _ => {}
@@ -188,7 +153,7 @@ impl GuiWasabiWindow {
                         ui,
                         &key_view,
                         midi_file,
-                        settings.note_speed,
+                        settings.midi.note_speed,
                     );
                     stats.set_rendered_note_count(result.notes_rendered);
                     render_result_data = Some(result);
@@ -212,17 +177,19 @@ impl GuiWasabiWindow {
                         if *pressed && modifiers.ctrl {
                             match key {
                                 egui::Key::F => {
-                                    wasabi_state.panel_visible = !wasabi_state.panel_visible
+                                    settings.visual.show_top_pannel =
+                                        !settings.visual.show_top_pannel
                                 }
                                 egui::Key::G => {
-                                    wasabi_state.stats_visible = !wasabi_state.stats_visible
+                                    settings.visual.show_statistics =
+                                        !settings.visual.show_statistics
                                 }
                                 //egui::Key::O => self.open_midi_dialog(wasabi_state),
                                 _ => {}
                             }
                         }
                         if *pressed && modifiers.alt && key == &egui::Key::Enter {
-                            wasabi_state.fullscreen = !wasabi_state.fullscreen
+                            wasabi_state.fullscreen = true;
                         }
                     }
                 }
@@ -234,12 +201,12 @@ impl GuiWasabiWindow {
                 };
 
                 self.keyboard
-                    .draw(ui, &key_view, &colors, &settings.bar_color);
+                    .draw(ui, &key_view, &colors, &settings.visual.bar_color);
             });
 
         // Render the stats
-        if wasabi_state.stats_visible {
-            let voice_count = self.synth.read().unwrap().get_voice_count();
+        if settings.visual.show_statistics {
+            let voice_count = self.synth.player.read().unwrap().get_voice_count();
             stats.set_voice_count(voice_count);
 
             let pos = egui::Pos2::new(10.0, panel_height + 10.0);
@@ -265,37 +232,5 @@ impl GuiWasabiWindow {
 
         dialog.open();
         self.file_dialogs.midi_file_dialog = Some(dialog);
-    }
-
-    pub fn load_midi(&mut self, settings: &mut WasabiSettings, midi_path: PathBuf) {
-        if let Some(midi_file) = self.midi_file.as_mut() {
-            midi_file.timer_mut().pause();
-        }
-        self.synth.write().unwrap().reset();
-        self.midi_file = None;
-
-        if let Some(midi_path) = midi_path.to_str() {
-            match settings.midi_loading {
-                0 => {
-                    let mut midi_file = MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
-                        midi_path,
-                        self.synth.clone(),
-                        settings.random_colors,
-                    ));
-                    midi_file.timer_mut().play();
-                    self.midi_file = Some(midi_file);
-                }
-                1 => {
-                    let mut midi_file = MIDIFileUnion::Live(LiveLoadMIDIFile::load_from_file(
-                        midi_path,
-                        self.synth.clone(),
-                        settings.random_colors,
-                    ));
-                    midi_file.timer_mut().play();
-                    self.midi_file = Some(midi_file);
-                }
-                _ => {}
-            }
-        }
     }
 }
