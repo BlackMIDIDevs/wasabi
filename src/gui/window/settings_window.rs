@@ -28,14 +28,6 @@ pub fn draw_settings(
         .show(ctx, |ui| {
             let col_width = 160.0;
 
-            // Big `Save Settings` button
-            if ui
-                .add_sized([450.0, 50.0], egui::Button::new("Save Settings"))
-                .clicked()
-            {
-                settings.save_to_file();
-            }
-
             // Synth settings section
             ui.heading("Synth");
             ui.separator();
@@ -180,6 +172,9 @@ pub fn draw_settings(
             ui.separator();
             ui.vertical_centered(|ui| {
                 ui.label("Options marked with (*) will apply when a new MIDI is loaded.");
+                if ui.button("Save").clicked() {
+                    settings.save_to_file();
+                }
             });
         });
 }
