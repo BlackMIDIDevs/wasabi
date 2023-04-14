@@ -14,12 +14,26 @@ use crate::{
 
 use egui_file::FileDialog;
 
+include!("../../help/help_xsynth_settings.rs");
+
+macro_rules! with_tooltip {
+    { $ui:expr;$short_help:expr,$long_help:expr,$shift:expr } => {{
+        let element = $ui;
+        if $shift {
+            element.on_hover_text_at_pointer(concat!($long_help, "\n\nHold H for more info"));
+        } else {
+            element.on_hover_text_at_pointer(concat!($short_help, "\n\nHold H for more info"));
+        }
+    }};
+}
+
 pub fn draw_xsynth_settings(
     win: &mut GuiWasabiWindow,
     settings: &mut WasabiSettings,
     state: &mut WasabiState,
     ctx: &Context,
 ) {
+    let is_shift = ctx.input().key_down(egui::Key::H);
     egui::Window::new("XSynth Settings")
         .resizable(true)
         .collapsible(true)
@@ -39,69 +53,81 @@ pub fn draw_xsynth_settings(
                 .min_col_width(col_width)
                 .show(ui, |ui| {
                     ui.label("Synth Render Buffer (ms)*: ");
-                    ui.add(
-                        egui::DragValue::new(&mut settings.synth.buffer_ms)
-                            .speed(0.1)
-                            .clamp_range(RangeInclusive::new(0.001, 1000.0)),
-                    );
+                    with_tooltip! {
+                        ui.add(
+                            egui::DragValue::new(&mut settings.synth.buffer_ms)
+                                .speed(0.1)
+                                .clamp_range(RangeInclusive::new(0.001, 1000.0)),
+                        );
+                        buffer_ms_short_help!(), buffer_ms_long_help!(), is_shift
+                    }
                     ui.end_row();
 
                     ui.label("SFZ Path: ");
-                    ui.horizontal(|ui| {
-                        ui.add(egui::TextEdit::singleline(&mut settings.synth.sfz_path));
+                    with_tooltip! {
+                        ui.horizontal(|ui| {
+                            ui.add(egui::TextEdit::singleline(&mut settings.synth.sfz_path));
 
-                        let filter = |path: &std::path::Path| {
-                            if let Some(path) = path.to_str() {
-                                path.ends_with(".sfz")
-                            } else {
-                                false
+                            let filter = |path: &std::path::Path| {
+                                if let Some(path) = path.to_str() {
+                                    path.ends_with(".sfz")
+                                } else {
+                                    false
+                                }
+                            };
+                            let filter = Box::new(filter);
+
+                            if ui.button("Browse...").clicked() {
+                                let mut dialog = FileDialog::open_file(state.last_sfz_file.clone())
+                                    .show_rename(false)
+                                    .show_new_folder(false)
+                                    .resizable(true)
+                                    .anchor(egui::Align2::CENTER_TOP, egui::Vec2::new(0.0, 10.0))
+                                    .filter(filter);
+                                dialog.open();
+                                win.file_dialogs.sf_file_dialog = Some(dialog);
                             }
-                        };
-                        let filter = Box::new(filter);
 
-                        if ui.button("Browse...").clicked() {
-                            let mut dialog = FileDialog::open_file(state.last_sfz_file.clone())
-                                .show_rename(false)
-                                .show_new_folder(false)
-                                .resizable(true)
-                                .anchor(egui::Align2::CENTER_TOP, egui::Vec2::new(0.0, 10.0))
-                                .filter(filter);
-                            dialog.open();
-                            win.file_dialogs.sf_file_dialog = Some(dialog);
-                        }
-
-                        if let Some(dialog) = &mut win.file_dialogs.sf_file_dialog {
-                            if dialog.show(ctx).selected() {
-                                if let Some(sfz_path) = dialog.path() {
-                                    state.last_sfz_file = Some(sfz_path.clone());
-                                    settings.synth.sfz_path =
-                                        sfz_path.to_str().unwrap_or("").to_owned();
+                            if let Some(dialog) = &mut win.file_dialogs.sf_file_dialog {
+                                if dialog.show(ctx).selected() {
+                                    if let Some(sfz_path) = dialog.path() {
+                                        state.last_sfz_file = Some(sfz_path.clone());
+                                        settings.synth.sfz_path =
+                                            sfz_path.to_str().unwrap_or("").to_owned();
+                                    }
                                 }
                             }
-                        }
 
-                        if ui.button("Load").clicked() {
-                            win.synth.player.write().unwrap().set_soundfont(
-                                &settings.synth.sfz_path,
-                                convert_to_sf_init(settings),
-                            );
-                        }
-                    });
+                            if ui.button("Load").clicked() {
+                                win.synth.player.write().unwrap().set_soundfont(
+                                    &settings.synth.sfz_path,
+                                    convert_to_sf_init(settings),
+                                );
+                            }
+                        }).response;
+                        sfz_path_short_help!(), sfz_path_long_help!(), is_shift
+                    }
                     ui.end_row();
 
                     ui.label("Limit Layers: ");
                     let layer_limit_prev = settings.synth.limit_layers;
-                    ui.checkbox(&mut settings.synth.limit_layers, "");
+                    with_tooltip! {
+                        ui.checkbox(&mut settings.synth.limit_layers, "");
+                        layer_limit_short_help!(), layer_limit_long_help!(), is_shift
+                    }
                     ui.end_row();
 
                     ui.label("Synth Layer Count: ");
                     let layer_count_prev = settings.synth.layer_count;
                     ui.add_enabled_ui(settings.synth.limit_layers, |ui| {
-                        ui.add(
-                            egui::DragValue::new(&mut settings.synth.layer_count)
-                                .speed(1)
-                                .clamp_range(RangeInclusive::new(1, 200)),
-                        );
+                        with_tooltip! {
+                            ui.add(
+                                egui::DragValue::new(&mut settings.synth.layer_count)
+                                    .speed(1)
+                                    .clamp_range(RangeInclusive::new(1, 200)),
+                            );
+                            layer_count_short_help!(), layer_count_long_help!(), is_shift
+                        }
                     });
                     if settings.synth.layer_count != layer_count_prev
                         || layer_limit_prev != settings.synth.limit_layers
@@ -154,11 +180,17 @@ pub fn draw_xsynth_settings(
                     ui.end_row();
 
                     ui.label("Linear release envelope*: ");
-                    ui.checkbox(&mut settings.synth.linear_envelope, "");
+                    with_tooltip! {
+                        ui.checkbox(&mut settings.synth.linear_envelope, "");
+                        linear_envelope_short_help!(), linear_envelope_long_help!(), is_shift
+                    }
                     ui.end_row();
 
                     ui.label("Use Effects*: ");
-                    ui.checkbox(&mut settings.synth.use_effects, "");
+                    with_tooltip! {
+                        ui.checkbox(&mut settings.synth.use_effects, "");
+                        use_effects_short_help!(), use_effects_long_help!(), is_shift
+                    }
                     ui.end_row();
                 });
 

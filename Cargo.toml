@@ -39,6 +39,7 @@ thiserror = "1.0.40"
 miette = { version = "5.7.0", features = ["fancy-no-backtrace"] }
 crossterm = "0.26.1"
 dirs = "5.0.0"
+macro_pub = "0.1.0"
 
 [profile.dev]
 opt-level = 2

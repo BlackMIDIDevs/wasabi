@@ -952,6 +952,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "encoding_rs_io"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1cc3c5651fb62ab8aa3103998dade57efdd028544bd300516baa31840c252a83"
+dependencies = [
+ "encoding_rs",
+]
+
+[[package]]
 name = "enum_dispatch"
 version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1572,6 +1581,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "macro_pub"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cede240e13256fcfbade77d11b9bbe68c2d002856279f92d1d64c3c583c58f21"
+dependencies = [
+ "xxhash-rust",
+]
+
+[[package]]
 name = "malloc_buf"
 version = "0.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1616,7 +1634,7 @@ dependencies = [
 [[package]]
 name = "midi-toolkit-rs"
 version = "0.1.0"
-source = "git+https://github.com/arduano/midi-toolkit-rs?rev=4482d61#4482d61eebe98442e3539ba0dc8bf39e0565669c"
+source = "git+https://github.com/arduano/midi-toolkit-rs?rev=cff22ac#cff22acf3a3113ac9f1f05b0fb8f9cd30f3f95ac"
 dependencies = [
  "crossbeam-channel",
  "gen-iter 0.2.1",
@@ -1629,7 +1647,7 @@ dependencies = [
 [[package]]
 name = "midi-toolkit-rs-derive"
 version = "0.1.0"
-source = "git+https://github.com/arduano/midi-toolkit-rs?rev=4482d61#4482d61eebe98442e3539ba0dc8bf39e0565669c"
+source = "git+https://github.com/arduano/midi-toolkit-rs?rev=cff22ac#cff22acf3a3113ac9f1f05b0fb8f9cd30f3f95ac"
 dependencies = [
  "convert_case",
  "num-traits",
@@ -3349,6 +3367,7 @@ dependencies = [
  "enum_dispatch",
  "gen-iter 0.3.0",
  "kdmapi",
+ "macro_pub",
  "midi-toolkit-rs",
  "miette",
  "palette",
@@ -3910,7 +3929,7 @@ checksum = "4d25c75bf9ea12c4040a97f829154768bbbce366287e2dc044af160cd79a13fd"
 [[package]]
 name = "xsynth-core"
 version = "0.1.0"
-source = "git+https://github.com/arduano/xsynth.git?rev=87c24d1#87c24d1ccea2cb95a6b3ea71651d5e0ba0d8bb9d"
+source = "git+https://github.com/arduano/xsynth.git?rev=4be1c7b#4be1c7b342abb1c815f3224cfe99bd05a4e7043d"
 dependencies = [
  "atomic_refcell",
  "biquad",
@@ -3929,7 +3948,7 @@ dependencies = [
 [[package]]
 name = "xsynth-realtime"
 version = "0.1.0"
-source = "git+https://github.com/arduano/xsynth.git?rev=87c24d1#87c24d1ccea2cb95a6b3ea71651d5e0ba0d8bb9d"
+source = "git+https://github.com/arduano/xsynth.git?rev=4be1c7b#4be1c7b342abb1c815f3224cfe99bd05a4e7043d"
 dependencies = [
  "atomic_refcell",
  "bytemuck",
@@ -3947,13 +3966,21 @@ dependencies = [
 [[package]]
 name = "xsynth-soundfonts"
 version = "0.1.0"
-source = "git+https://github.com/arduano/xsynth.git?rev=87c24d1#87c24d1ccea2cb95a6b3ea71651d5e0ba0d8bb9d"
+source = "git+https://github.com/arduano/xsynth.git?rev=4be1c7b#4be1c7b342abb1c815f3224cfe99bd05a4e7043d"
 dependencies = [
+ "encoding_rs",
+ "encoding_rs_io",
  "lazy-regex",
  "regex-bnf",
  "simdeez 1.0.8 (git+https://github.com/arduano/simdeez.git?rev=86f8bf9)",
  "thiserror",
 ]
+
+[[package]]
+name = "xxhash-rust"
+version = "0.8.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "735a71d46c4d68d71d4b24d03fdc2b98e38cea81730595801db779c04fe80d70"
 
 [[package]]
 name = "zune-inflate"

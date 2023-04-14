@@ -332,6 +332,8 @@ impl<'a> Diagnostic for TomlError<'a> {
     }
 }
 
+include!("help/help_cmdline.rs");
+
 impl WasabiSettings {
     pub fn new_or_load() -> Result<Self, String> {
         let config_path = Self::get_config_path();
@@ -373,38 +375,24 @@ impl WasabiSettings {
             .about(env!("CARGO_PKG_DESCRIPTION"))
             .arg(
                 Arg::new("synth")
-                    .help("The synthesizer to use")
-                    .long_help(
-                        "The synthesizer that is used to play the MIDI. \
-                        This can either be XSynth (recommended) or KDMAPI. KDMAPI \
-                        only works if you have OmniMidi installed, and are using Windows",
-                    )
+                    .help(synth_short_help!())
+                    .long_help(synth_long_help!())
                     .short('S')
                     .long("synth")
                     .value_parser(Synth::from_str),
             )
             .arg(
                 Arg::new("buffer-ms")
-                    .help("The size of the event buffer")
-                    .long_help(
-                        "The amount of time in milliseconds that events \
-                        are held in the buffer before they are played. Making this \
-                        option larger can help MIDI files play in real-time that wouldn't \
-                        otherwise.",
-                    )
+                    .help(buffer_ms_short_help!())
+                    .long_help(buffer_ms_long_help!())
                     .short('b')
                     .long("buffer-ms")
                     .value_parser(f64_parser),
             )
             .arg(
                 Arg::new("sfz-path")
-                    .help("The path to an SFZ SoundFont")
-                    .long_help(
-                        "The path to any SFZ soundfont. In audio only mode \
-                        a soundfont must be passed either via the config file, or
-                        this command line option. In the GUI you can set this under \
-                        `Open Synth Settings > SFZ Path`",
-                    )
+                    .help(sfz_path_short_help!())
+                    .long_help(sfz_path_long_help!())
                     .short('s')
                     .long("sfz-path")
                     .value_hint(ValueHint::FilePath),
@@ -412,120 +400,88 @@ impl WasabiSettings {
             .arg(
                 Arg::new("no-layer-limit")
                     .short('L')
-                    .help("Disable the voice limiter")
-                    .long_help(
-                        "Allow for the synth to create as many voices as \
-                        needed to play the MIDI file faithfully",
-                    )
+                    .help(layer_limit_short_help!())
+                    .long_help(layer_limit_long_help!())
                     .long("no-layer-limit")
                     .conflicts_with("layer-count")
                     .action(ArgAction::SetFalse),
             )
             .arg(
                 Arg::new("layer-count")
-                    .help("The maximum amount of voice allowed")
-                    .long_help("The maximum amount of voices allowed to play per key per channel")
+                    .help(layer_count_short_help!())
+                    .long_help(layer_count_long_help!())
                     .short('l')
                     .long("layer-count")
                     .value_parser(value_parser!(usize)),
             )
             .arg(
                 Arg::new("vel-ignore")
-                    .help("The range of note velocities that the synth will discard")
-                    .long_help(
-                        "Two numbers, comma seperated, that represent a range of velocities \
-                        that the synth will discard, making notes in the range inaudible.",
-                    )
+                    .help(vel_ignore_short_help!())
+                    .long_help(vel_ignore_long_help!())
                     .short('v')
                     .long("vel-ignore")
                     .value_parser(range_parser),
             )
             .arg(
                 Arg::new("fade-out-kill")
-                    .help("Once a voice is killed, fade it out")
-                    .long_help(
-                        "Once the synthesizer kills one of it's voices, it will fade it \
-                        out as opposed to simply cutting it off",
-                    )
+                    .help(fade_out_kill_short_help!())
+                    .long_help(fade_out_kill_long_help!())
                     .short('F')
                     .long("fade-out-kill")
                     .action(ArgAction::SetTrue),
             )
             .arg(
                 Arg::new("linear-envelope")
-                    .help("??????????????")
-                    .long_help("??????????")
+                    .help(linear_envelope_short_help!())
+                    .long_help(linear_envelope_long_help!())
                     .short('e')
                     .long("linear-envelope")
                     .action(ArgAction::SetTrue),
             )
             .arg(
                 Arg::new("no-effects")
-                    .help("Disable the synth's effects")
-                    .long_help(
-                        "Disable the effects that the synthesizer applies to the final audio \
-                        render. These effects include a limiter to keep the audio from clipping, \
-                        and a cutoff",
-                    )
+                    .help(no_effects_short_help!())
+                    .long_help(no_effects_long_help!())
                     .short('N')
                     .long("no-effects")
                     .action(ArgAction::SetFalse),
             )
             .arg(
                 Arg::new("note-speed")
-                    .help("The speed that the notes travel on-screen")
-                    .long_help(
-                        "The speed at which the notes will move across the screen. This makes \
-                        the notes physically longer, causing them to move faster on-screen",
-                    )
+                    .help(note_speed_short_help!())
+                    .long_help(note_speed_long_help!())
                     .short('n')
                     .long("note-speed")
                     .value_parser(note_speed),
             )
             .arg(
                 Arg::new("random-colors")
-                    .help("Make each channel a random color")
-                    .long_help("This causes each of the note channels to become a random color")
+                    .help(random_colors_short_help!())
+                    .long_help(random_colors_long_help!())
                     .short('r')
                     .long("random-colors")
                     .action(ArgAction::SetTrue),
             )
             .arg(
                 Arg::new("key-range")
-                    .help("The key range of the on-screen piano keyboard")
-                    .long_help(
-                        "Two numbers, comma seperated, that describe the range \
-                        of keys to be shown on the on-screen piano keyboard, the range must \
-                        be less than 255 and more than 0",
-                    )
+                    .help(key_range_short_help!())
+                    .long_help(key_range_long_help!())
                     .short('k')
                     .long("key-range")
                     .value_parser(range_parser),
             )
             .arg(
                 Arg::new("midi-loading")
-                    .help("How the MIDI is loaded into `wasabi`")
-                    .long_help(
-                        "The method in which the MIDI file is loaded into `wasabi`, the \
-                        two possible options are `ram`, which loads the MIDI file entirely into \
-                        RAM before beginning playback; and `live` which will read the MIDI file \
-                        as it's being played back. The latter method is for using with systems \
-                        with low memory",
-                    )
+                    .help(midi_loading_short_help!())
+                    .long_help(midi_loading_long_help!())
                     .short('m')
                     .long("midi-loading")
                     .value_parser(MidiLoading::from_str),
             )
             .arg(
                 Arg::new("audio-only")
-                    .help("Don't open a window, just play the MIDI")
-                    .long_help(
-                        "Only initialize the real time MIDI synthesizer, and don't open \
-                        the `wasabi` window. This will cause a CLI to open which will allow you \
-                        to control the playback of your MIDI file. You must pass a MIDI file to \
-                        use this option, and you must have either set `sfz_path` in the config, or \
-                        passed it via the command line argument",
-                    )
+                    .help(audio_only_short_help!())
+                    .long_help(audio_only_long_help!())
                     .short('a')
                     .long("audio-only")
                     .requires("midi-file")
@@ -533,65 +489,49 @@ impl WasabiSettings {
             )
             .arg(
                 Arg::new("bg-color")
+                    .help(bg_color_short_help!())
+                    .long_help(bg_color_long_help!())
                     .short('c')
-                    .help("The window background")
-                    .long_help("A hex color string describing the background color of the window")
                     .long("bg-color")
                     .value_parser(color_parser),
             )
             .arg(
                 Arg::new("bar-color")
+                    .help(bar_color_short_help!())
+                    .long_help(bar_color_long_help!())
                     .short('C')
-                    .help("The color of the bar just above the piano")
-                    .long_help(
-                        "A hex color string describing the color of the bar just above \
-                         the on-screen piano keyboard",
-                    )
                     .long("bar-color")
                     .value_parser(color_parser),
             )
             .arg(
                 Arg::new("hide-top-pannel")
+                    .help(hide_top_panel_short_help!())
+                    .long_help(hide_top_panel_long_help!())
                     .short('t')
-                    .long_help(
-                        "Hides the top panel from view when the app opens. It can be un-hidden \
-                        with Ctrl+F",
-                    )
-                    .help("Hide the top panel")
                     .long("hide-top-pannel")
                     .action(ArgAction::SetFalse),
             )
             .arg(
                 Arg::new("hide-statistics")
+                    .help(hide_statistics_short_help!())
+                    .long_help(hide_statistics_long_help!())
                     .short('T')
-                    .help("Hide the statistics window")
-                    .long_help(
-                        "Hides the statistics window from view when the app opens. It can be \
-                        un-hidden with Ctrl+G",
-                    )
                     .long("hide-statistics")
                     .action(ArgAction::SetFalse),
             )
             .arg(
                 Arg::new("fullscreen")
-                    .help("Start `wasabi` in fullscreen")
-                    .long_help(
-                        "Starts `wasabi` in fullscreen mode. `wasabi` will use \
-                        borderless fullscreen mode on Linux systems running Wayland, \
-                        and exclusive fullscreen mode for everyone else",
-                    )
+                    .help(fullscreen_short_help!())
+                    .long_help(fullscreen_long_help!())
                     .short('f')
                     .long("fullscreen")
                     .action(ArgAction::SetTrue),
             )
             .arg(
                 Arg::new("midi-file")
-                    .value_hint(ValueHint::FilePath)
-                    .help("The MIDI file to immediately begin playing")
-                    .long_help(
-                        "This MIDI file is played immediately after the app's launch. \
-                        This argument is required to use the `--audio-only` option",
-                    ),
+                    .help(midi_file_short_help!())
+                    .long_help(midi_file_long_help!())
+                    .value_hint(ValueHint::FilePath),
             )
             .get_matches();
 
