@@ -405,10 +405,11 @@ impl WasabiSettings {
                     .value_hint(ValueHint::FilePath),
             )
             .arg(
-                Arg::new("dont-limit-layers")
+                Arg::new("no-layer-limit")
+                    .short('L')
                     .help("??????????????")
                     .long_help("??????????")
-                    .long("dont-limit-layers")
+                    .long("no-layer-limit")
                     .action(ArgAction::SetFalse),
             )
             .arg(
@@ -445,7 +446,7 @@ impl WasabiSettings {
                 Arg::new("linear-envelope")
                     .help("??????????????")
                     .long_help("??????????")
-                    .short('L')
+                    .short('e')
                     .long("linear-envelope")
                     .action(ArgAction::SetTrue),
             )
@@ -523,6 +524,7 @@ impl WasabiSettings {
             )
             .arg(
                 Arg::new("bg-color")
+                    .short('c')
                     .help("The window background")
                     .long_help("A hex color string describing the background color of the window")
                     .long("bg-color")
@@ -530,6 +532,7 @@ impl WasabiSettings {
             )
             .arg(
                 Arg::new("bar-color")
+                    .short('C')
                     .help("The color of the bar just above the piano")
                     .long_help(
                         "A hex color string describing the color of the bar just above \
@@ -540,6 +543,7 @@ impl WasabiSettings {
             )
             .arg(
                 Arg::new("hide-top-pannel")
+                    .short('t')
                     .long_help(
                         "Hides the top panel from view when the app opens. It can be un-hidden \
                         with Ctrl+F",
@@ -550,6 +554,7 @@ impl WasabiSettings {
             )
             .arg(
                 Arg::new("hide-statistics")
+                    .short('T')
                     .help("Hide the statistics window")
                     .long_help(
                         "Hides the statistics window from view when the app opens. It can be \
@@ -613,7 +618,7 @@ impl WasabiSettings {
         set!(synth.synth, "synth");
         set!(synth.buffer_ms, "buffer-ms");
         set_owned!(synth.sfz_path, "sfz-path", String);
-        set_flag!(synth.limit_layers, "dont-limit-layers");
+        set_flag!(synth.limit_layers, "no-layer-limit");
         set!(synth.layer_count, "layer-count");
         set_owned!(synth.vel_ignore, "vel-ignore", RangeInclusive<u8>);
         set_flag!(synth.fade_out_kill, "fade-out-kill");
