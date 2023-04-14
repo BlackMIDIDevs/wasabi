@@ -788,7 +788,7 @@ version = "4.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f51c5d4ddabd36886dd3e1438cb358cdcb0d7c499cb99cb4ac2e38e18b5cb210"
 dependencies = [
- "dirs-sys",
+ "dirs-sys 0.3.7",
 ]
 
 [[package]]
@@ -797,7 +797,16 @@ version = "4.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ca3aa72a6f96ea37bbc5aa912f6788242832f75369bdfdadcb0e38423f100059"
 dependencies = [
- "dirs-sys",
+ "dirs-sys 0.3.7",
+]
+
+[[package]]
+name = "dirs"
+version = "5.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dece029acd3353e3a58ac2e3eb3c8d6c35827a892edc6cc4138ef9c33df46ecd"
+dependencies = [
+ "dirs-sys 0.4.0",
 ]
 
 [[package]]
@@ -809,6 +818,17 @@ dependencies = [
  "libc",
  "redox_users",
  "winapi",
+]
+
+[[package]]
+name = "dirs-sys"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "04414300db88f70d74c5ff54e50f9e1d1737d9a5b90f53fcf2e95ca2a9ab554b"
+dependencies = [
+ "libc",
+ "redox_users",
+ "windows-sys 0.45.0",
 ]
 
 [[package]]
@@ -888,9 +908,10 @@ dependencies = [
 [[package]]
 name = "egui_file"
 version = "0.6.0"
-source = "git+https://github.com/Kaydax/egui_file.git#34008d89efc060ec096e5af3ceb2d3cf1b59bff1"
+source = "git+https://github.com/StratusFearMe21/egui_file.git#9ddcdcfe48bd593cb4ed5be85ac50d57432e49c9"
 dependencies = [
  "egui",
+ "fst",
 ]
 
 [[package]]
@@ -1173,6 +1194,12 @@ dependencies = [
  "libc",
  "pkg-config",
 ]
+
+[[package]]
+name = "fst"
+version = "0.4.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7ab85b9b05e3978cc9a9cf8fea7f01b494e1a09ed3037e16ba39edc7a29eb61a"
 
 [[package]]
 name = "futures-core"
@@ -3322,7 +3349,7 @@ dependencies = [
  "confy",
  "crossbeam-channel",
  "crossterm",
- "directories",
+ "dirs 5.0.0",
  "egui",
  "egui-winit",
  "egui_file",
@@ -3509,7 +3536,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "579cc485bd5ce5bfa0d738e4921dd0b956eca9800be1fd2e5257ebe95bc4617e"
 dependencies = [
  "core-foundation",
- "dirs",
+ "dirs 4.0.0",
  "jni 0.21.1",
  "log",
  "ndk-context",

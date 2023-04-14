@@ -1,6 +1,5 @@
 use clap::{parser::ValueSource, value_parser, Arg, ArgAction, Command, ValueHint};
 use colors_transform::{Color, Rgb};
-use directories::BaseDirs;
 use egui::Color32;
 use miette::{Diagnostic, LabeledSpan, MietteHandlerOpts, NamedSource, ReportHandler};
 use serde_derive::{Deserialize, Serialize};
@@ -9,7 +8,7 @@ use std::{
     fs,
     io::Write,
     ops::{Range, RangeInclusive},
-    path::{Path, PathBuf},
+    path::Path,
     str::FromStr,
 };
 use xsynth_core::{channel::ChannelInitOptions, soundfont::SoundfontInitOptions};
@@ -644,8 +643,7 @@ impl WasabiSettings {
     }
 
     fn get_config_path() -> String {
-        if let Some(base_dirs) = BaseDirs::new() {
-            let mut path: PathBuf = base_dirs.config_dir().to_path_buf();
+        if let Some(mut path) = dirs::config_dir() {
             path.push("wasabi");
             path.push(CONFIG_PATH);
 
