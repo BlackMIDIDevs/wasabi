@@ -385,8 +385,13 @@ impl WasabiSettings {
             )
             .arg(
                 Arg::new("buffer-ms")
-                    .help("??????????????")
-                    .long_help("??????????")
+                    .help("The size of the event buffer")
+                    .long_help(
+                        "The amount of time in milliseconds that events \
+                        are held in the buffer before they are played. Making this \
+                        option larger can help MIDI files play in real-time that wouldn't \
+                        otherwise.",
+                    )
                     .short('b')
                     .long("buffer-ms")
                     .value_parser(f64_parser),
@@ -407,15 +412,19 @@ impl WasabiSettings {
             .arg(
                 Arg::new("no-layer-limit")
                     .short('L')
-                    .help("??????????????")
-                    .long_help("??????????")
+                    .help("Disable the voice limiter")
+                    .long_help(
+                        "Allow for the synth to create as many voices as \
+                        needed to play the MIDI file faithfully",
+                    )
                     .long("no-layer-limit")
+                    .conflicts_with("layer-count")
                     .action(ArgAction::SetFalse),
             )
             .arg(
                 Arg::new("layer-count")
-                    .help("??????????????")
-                    .long_help("??????????")
+                    .help("The maximum amount of voice allowed")
+                    .long_help("The maximum amount of voices allowed to play per key per channel")
                     .short('l')
                     .long("layer-count")
                     .value_parser(value_parser!(usize)),
