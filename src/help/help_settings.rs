@@ -34,7 +34,7 @@ help_mod! {
     midi_loading_short_help = "How the MIDI is loaded into `wasabi`",
     midi_loading_long_help =
         "The method in which the MIDI file is loaded into `wasabi`, the \
-        two possible options are `Into RAM`, which loads the MIDI file entirely into \
+        two possible options are `In RAM`, which loads the MIDI file entirely into \
         RAM before beginning playback; and `Live` which will read the MIDI file \
         as it's being played back. The latter method is for using with systems \
         with low memory",
