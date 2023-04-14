@@ -180,9 +180,6 @@ pub fn draw_settings(
             ui.separator();
             ui.vertical_centered(|ui| {
                 ui.label("Options marked with (*) will apply when a new MIDI is loaded.");
-                if ui.button("Save").clicked() {
-                    settings.save_to_file();
-                }
             });
         });
 }
