@@ -806,6 +806,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "encoding_rs_io"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1cc3c5651fb62ab8aa3103998dade57efdd028544bd300516baa31840c252a83"
+dependencies = [
+ "encoding_rs",
+]
+
+[[package]]
 name = "enum_dispatch"
 version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1420,7 +1429,7 @@ dependencies = [
 [[package]]
 name = "midi-toolkit-rs"
 version = "0.1.0"
-source = "git+https://github.com/arduano/midi-toolkit-rs?rev=4482d61#4482d61eebe98442e3539ba0dc8bf39e0565669c"
+source = "git+https://github.com/arduano/midi-toolkit-rs.git?rev=cff22ac#cff22acf3a3113ac9f1f05b0fb8f9cd30f3f95ac"
 dependencies = [
  "crossbeam-channel",
  "gen-iter 0.2.1",
@@ -1433,7 +1442,7 @@ dependencies = [
 [[package]]
 name = "midi-toolkit-rs-derive"
 version = "0.1.0"
-source = "git+https://github.com/arduano/midi-toolkit-rs?rev=4482d61#4482d61eebe98442e3539ba0dc8bf39e0565669c"
+source = "git+https://github.com/arduano/midi-toolkit-rs.git?rev=cff22ac#cff22acf3a3113ac9f1f05b0fb8f9cd30f3f95ac"
 dependencies = [
  "convert_case",
  "num-traits",
@@ -3557,7 +3566,7 @@ checksum = "4d25c75bf9ea12c4040a97f829154768bbbce366287e2dc044af160cd79a13fd"
 [[package]]
 name = "xsynth-core"
 version = "0.1.0"
-source = "git+https://github.com/arduano/xsynth.git?rev=87c24d1#87c24d1ccea2cb95a6b3ea71651d5e0ba0d8bb9d"
+source = "git+https://github.com/arduano/xsynth.git?rev=59c0175#59c01759e439db6981c608a049df0c7fea049f93"
 dependencies = [
  "atomic_refcell",
  "biquad",
@@ -3576,7 +3585,7 @@ dependencies = [
 [[package]]
 name = "xsynth-realtime"
 version = "0.1.0"
-source = "git+https://github.com/arduano/xsynth.git?rev=87c24d1#87c24d1ccea2cb95a6b3ea71651d5e0ba0d8bb9d"
+source = "git+https://github.com/arduano/xsynth.git?rev=59c0175#59c01759e439db6981c608a049df0c7fea049f93"
 dependencies = [
  "atomic_refcell",
  "bytemuck",
@@ -3594,8 +3603,10 @@ dependencies = [
 [[package]]
 name = "xsynth-soundfonts"
 version = "0.1.0"
-source = "git+https://github.com/arduano/xsynth.git?rev=87c24d1#87c24d1ccea2cb95a6b3ea71651d5e0ba0d8bb9d"
+source = "git+https://github.com/arduano/xsynth.git?rev=59c0175#59c01759e439db6981c608a049df0c7fea049f93"
 dependencies = [
+ "encoding_rs",
+ "encoding_rs_io",
  "lazy-regex",
  "regex-bnf",
  "simdeez 1.0.8 (git+https://github.com/arduano/simdeez.git?rev=86f8bf9)",

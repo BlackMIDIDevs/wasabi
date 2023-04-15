@@ -43,7 +43,6 @@ impl InRamAudioPlayer {
 
             if self.timer.is_paused() {
                 reset();
-
                 match self.timer.wait_until_unpause() {
                     UnpauseWaitResult::Unpaused => {
                         self.seek_to_time(self.timer.get_time().as_secs_f64());
@@ -73,7 +72,6 @@ impl InRamAudioPlayer {
             match self.timer.wait_until(time) {
                 WaitResult::Ok => {}
                 WaitResult::Paused => {
-                    reset();
                     continue;
                 }
                 WaitResult::Seeked(time) => {

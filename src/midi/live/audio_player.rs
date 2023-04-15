@@ -54,7 +54,6 @@ impl LiveAudioPlayer {
             for event in self.events.into_iter() {
                 if self.timer.is_paused() {
                     reset();
-
                     match self.timer.wait_until_unpause() {
                         UnpauseWaitResult::Unpaused => push_cc(&event),
                         UnpauseWaitResult::UnpausedAndSeeked(time) => {
@@ -81,7 +80,6 @@ impl LiveAudioPlayer {
                 match self.timer.wait_until(time) {
                     WaitResult::Ok => {}
                     WaitResult::Paused => {
-                        reset();
                         continue;
                     }
                     WaitResult::Seeked(time) => {
