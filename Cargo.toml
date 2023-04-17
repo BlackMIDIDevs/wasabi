@@ -42,3 +42,6 @@ opt-level = 2
 opt-level = 3
 codegen-units = 1
 lto = true
+
+[build-dependencies]
+resvg = "0.31.0"
