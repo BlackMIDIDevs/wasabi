@@ -1156,8 +1156,7 @@ checksum = "fed44880c466736ef9a5c5b5facefb5ed0785676d0c02d612db14e54f0d84286"
 [[package]]
 name = "ico"
 version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3804960be0bb5e4edb1e1ad67afd321a9ecfd875c3e65c099468fd2717d7cae"
+source = "git+https://github.com/StratusFearMe21/rust-ico?branch=patch-1#7cd12cf271557dd7c52c0b79142a0f21892520f9"
 dependencies = [
  "byteorder",
  "png",

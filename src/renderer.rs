@@ -28,7 +28,7 @@ use winit::{
 
 use self::swapchain::{ManagedSwapchain, SwapchainFrame};
 
-const ICON: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/logo.bitmap"));
+const ICON: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/icon.bitmap"));
 
 pub struct Renderer {
     _instance: Arc<Instance>,
