@@ -5,6 +5,7 @@ use resvg::{
     tiny_skia::{Pixmap, Transform},
     usvg::{Options, Tree, TreeParsing},
 };
+#[cfg(windows)]
 use winres::WindowsResource;
 
 fn main() {
