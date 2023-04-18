@@ -12,7 +12,7 @@ fn write_icon(s: u32, tree: &Tree, icon_dir: &mut IconDir) {
     let mut pixmap = Pixmap::new(s, s).unwrap();
 
     resvg::render(
-        &tree,
+        tree,
         resvg::FitTo::Size(s, s),
         Transform::default(),
         pixmap.as_mut(),
