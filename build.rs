@@ -28,9 +28,6 @@ fn main() {
         pixmap.data(),
     )
     .unwrap();
-    pixmap
-        .save_png(Path::new(std::env::var_os("OUT_DIR").as_ref().unwrap()).join("logo_16x16.png"))
-        .unwrap();
 
     let mut icon_dir = ico::IconDir::new(ico::ResourceType::Icon);
 

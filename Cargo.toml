@@ -44,7 +44,7 @@ codegen-units = 1
 lto = true
 
 [build-dependencies]
-resvg = { version = "0.31.0", default-features = false, features = ["png"] }
+resvg = { version = "0.31.0", default-features = false }
 ico = "0.3.0"
 
 [target.'cfg(windows)'.build-dependencies]

@@ -2203,7 +2203,6 @@ checksum = "84558b03726d979bf0444a5a88791cd451108fe45db699f3324388d700c048dc"
 dependencies = [
  "log",
  "pico-args",
- "png",
  "rgb",
  "svgtypes",
  "tiny-skia 0.8.3",
