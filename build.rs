@@ -52,12 +52,13 @@ fn main() {
         icon_dir.add_entry(IconDirEntry::encode(&image).unwrap());
     }
     let icon_path = Path::new(std::env::var_os("OUT_DIR").as_ref().unwrap()).join("icon.ico");
-    icon_dir.write(File::create(&icon_path).unwrap()).unwrap();
 
     #[cfg(windows)]
     {
         WindowsResource::new().set_icon(icon_path.to_str().unwrap());
     }
+
+    icon_dir.write(File::create(icon_path).unwrap()).unwrap();
 
     #[cfg(not(windows))]
     println!("cargo:cargo:rerun-if-changed=logo.svg")
