@@ -58,4 +58,7 @@ fn main() {
     {
         WindowsResource::new().set_icon(icon_path.to_str().unwrap());
     }
+
+    #[cfg(not(windows))]
+    println!("cargo:cargo:rerun-if-changed=logo.svg")
 }
