@@ -44,4 +44,8 @@ codegen-units = 1
 lto = true
 
 [build-dependencies]
-resvg = "0.31.0"
+ico = "0.3.0"
+resvg = { version = "0.31.0", default-features = false, features = ["png"] }
+
+# [target.'cfg(windows)'.build-dependencies]
+winres = "0.1.12"
