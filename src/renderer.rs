@@ -88,7 +88,7 @@ impl Renderer {
                     .iter()
                     .enumerate()
                     .position(|(i, q)| {
-                        q.queue_flags == QueueFlags::GRAPHICS
+                        q.queue_flags.contains(QueueFlags::GRAPHICS)
                             && p.surface_support(i as u32, &surface).unwrap_or(false)
                     })
                     .map(|i| (p, i as u32))
