@@ -3,7 +3,7 @@ mod notes_render_pass;
 use std::{cell::UnsafeCell, sync::Arc};
 
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
-use vulkano::{buffer::TypedBufferAccess, image::ImageViewAbstract};
+use vulkano::image::ImageViewAbstract;
 
 use crate::{
     gui::{window::keyboard_layout::KeyboardView, GuiRenderer},
