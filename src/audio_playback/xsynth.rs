@@ -105,6 +105,5 @@ pub fn convert_to_sf_init(settings: &WasabiSettings) -> SoundfontInitOptions {
 pub fn convert_to_channel_init(settings: &WasabiSettings) -> ChannelInitOptions {
     ChannelInitOptions {
         fade_out_killing: settings.fade_out_kill,
-        ..Default::default()
     }
 }
