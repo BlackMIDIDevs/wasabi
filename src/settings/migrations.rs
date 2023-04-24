@@ -29,7 +29,7 @@ pub struct WasabiConfigFileV0 {
 impl WasabiConfigFileV0 {
     pub fn migrate() -> Result<WasabiSettings, toml::de::Error> {
         let config_path = WasabiSettings::get_config_path();
-        let content = fs::read_to_string(&config_path).unwrap_or_default();
+        let content = fs::read_to_string(config_path).unwrap_or_default();
         let cfg = toml::from_str::<WasabiConfigFileV0>(&content)?;
         if let (Ok(bg), Ok(bar)) = (
             Rgb::from_hex_str(&cfg.bg_color),
