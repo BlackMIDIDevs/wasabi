@@ -251,20 +251,18 @@ impl GuiWasabiWindow {
     }
 
     pub fn open_midi_dialog(&mut self, state: &mut WasabiState) {
-        let filter = |path: &std::path::Path| {
+        fn filter(path: &std::path::Path) -> bool {
             if let Some(path) = path.to_str() {
                 path.ends_with(".mid")
             } else {
                 false
             }
-        };
-        let filter = Box::new(filter);
+        }
 
-        let mut dialog = FileDialog::open_file(state.last_midi_file.clone())
+        let mut dialog = FileDialog::open_file(state.last_midi_file.clone(), Some(filter))
             .show_rename(true)
             .show_new_folder(true)
-            .resizable(true)
-            .filter(filter);
+            .resizable(true);
 
         dialog.open();
         self.file_dialogs.midi_file_dialog = Some(dialog);
