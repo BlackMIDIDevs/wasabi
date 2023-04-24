@@ -189,7 +189,7 @@ impl FromStr for MidiLoading {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
+        match s.to_lowercase().as_str() {
             "ram" | "RAM" | "Ram" => Ok(MidiLoading::Ram),
             "live" | "Live" => Ok(MidiLoading::Live),
             s => Err(format!(
@@ -222,7 +222,7 @@ impl FromStr for Synth {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
+        match s.to_lowercase().as_str() {
             "xsynth" | "XSynth" => Ok(Synth::XSynth),
             "kdmapi" | "KDMPAI" => Ok(Synth::Kdmapi),
             s => Err(format!(
@@ -244,6 +244,18 @@ pub struct VisualSettings {
     pub fullscreen: bool,
 }
 
+impl Default for VisualSettings {
+    fn default() -> Self {
+        VisualSettings {
+            bg_color: Color32::from_rgb(30, 30, 30),
+            bar_color: Color32::from_rgb(145, 0, 0),
+            show_top_pannel: true,
+            show_statistics: true,
+            fullscreen: false,
+        }
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct MidiSettings {
     pub note_speed: f64,
@@ -251,6 +263,17 @@ pub struct MidiSettings {
     #[serde(with = "range_serde")]
     pub key_range: RangeInclusive<u8>,
     pub midi_loading: MidiLoading,
+}
+
+impl Default for MidiSettings {
+    fn default() -> Self {
+        MidiSettings {
+            note_speed: 0.25,
+            random_colors: false,
+            key_range: 0..=127,
+            midi_loading: MidiLoading::Ram,
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -267,45 +290,29 @@ pub struct SynthSettings {
     pub use_effects: bool,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+impl Default for SynthSettings {
+    fn default() -> Self {
+        SynthSettings {
+            synth: Synth::XSynth,
+            buffer_ms: XSynthRealtimeConfig::default().render_window_ms,
+            sfz_path: String::new(),
+            limit_layers: true,
+            layer_count: 4,
+            vel_ignore: 0..=0,
+            fade_out_kill: ChannelInitOptions::default().fade_out_killing,
+            linear_envelope: SoundfontInitOptions::default().linear_release,
+            use_effects: SoundfontInitOptions::default().use_effects,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Default)]
 pub struct WasabiSettings {
     pub synth: SynthSettings,
     pub midi: MidiSettings,
     pub visual: VisualSettings,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub load_midi_file: Option<String>,
-}
-
-impl Default for WasabiSettings {
-    fn default() -> Self {
-        WasabiSettings {
-            synth: SynthSettings {
-                synth: Synth::XSynth,
-                buffer_ms: XSynthRealtimeConfig::default().render_window_ms,
-                sfz_path: String::new(),
-                limit_layers: true,
-                layer_count: 4,
-                vel_ignore: 0..=0,
-                fade_out_kill: ChannelInitOptions::default().fade_out_killing,
-                linear_envelope: SoundfontInitOptions::default().linear_release,
-                use_effects: SoundfontInitOptions::default().use_effects,
-            },
-            midi: MidiSettings {
-                note_speed: 0.25,
-                random_colors: false,
-                key_range: 0..=127,
-                midi_loading: MidiLoading::Ram,
-            },
-            visual: VisualSettings {
-                bg_color: Color32::from_rgb(30, 30, 30),
-                bar_color: Color32::from_rgb(145, 0, 0),
-                show_top_pannel: true,
-                show_statistics: true,
-                fullscreen: false,
-            },
-            load_midi_file: None,
-        }
-    }
 }
 
 static CONFIG_PATH: &str = "wasabi-config.toml";
@@ -350,7 +357,7 @@ impl WasabiSettings {
                     .long_help(
                         "The synthesizer that is used to play the MIDI. \
                         This can either be XSynth (recommended) or KDMAPI. KDMAPI \
-                        only works if you have OmniMidi installed, and are using Windows",
+                        only works if you have OmniMIDI installed, and are using Windows",
                     )
                     .short('S')
                     .long("synth")
@@ -396,9 +403,8 @@ impl WasabiSettings {
                 Arg::new("layer-count")
                     .help("The amount of layers that the synthesizer can create")
                     .long_help(
-                        "The amount of virtual pianos that the synth can create to \
-                        play your piece. A reasonable number for this value is the number of \
-                        CPU cores your computer has.",
+                        "The maximum amount of voices the synth is \
+                        allowed to create per key per channel",
                     )
                     .short('l')
                     .long("layer-count")
@@ -443,8 +449,7 @@ impl WasabiSettings {
                     .help("Disable the synth's effects")
                     .long_help(
                         "Disable the effects that the synthesizer applies to the final audio \
-                        render. These effects include a limiter to keep the audio from clipping, \
-                        and a cutoff",
+                        render. Currently this disables a high/low pass filter",
                     )
                     .short('N')
                     .long("no-effects")
