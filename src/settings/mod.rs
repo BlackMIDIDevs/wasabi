@@ -2,6 +2,7 @@ use clap::{parser::ValueSource, value_parser, Arg, ArgAction, Command, ValueHint
 use colors_transform::{Color, Rgb};
 use directories::BaseDirs;
 use egui::Color32;
+use num_enum::FromPrimitive;
 use serde_derive::{Deserialize, Serialize};
 use std::{
     fmt::Debug,
@@ -13,6 +14,8 @@ use std::{
 };
 use xsynth_core::{channel::ChannelInitOptions, soundfont::SoundfontInitOptions};
 use xsynth_realtime::config::XSynthRealtimeConfig;
+
+mod migrations;
 
 #[inline(always)]
 fn f64_parser(s: &str) -> Result<f64, String> {
@@ -168,9 +171,10 @@ mod range_serde {
 }
 
 #[repr(usize)]
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq, Clone, Copy, FromPrimitive)]
 #[serde(rename_all = "lowercase")]
 pub enum MidiLoading {
+    #[default]
     Ram = 0,
     Live = 1,
 }
@@ -201,9 +205,10 @@ impl FromStr for MidiLoading {
 }
 
 #[repr(usize)]
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, FromPrimitive)]
 #[serde(rename_all = "lowercase")]
 pub enum Synth {
+    #[default]
     XSynth = 0,
     Kdmapi = 1,
 }
@@ -324,10 +329,16 @@ impl WasabiSettings {
             Self::load_and_save_defaults()
         } else {
             let config = fs::read_to_string(&config_path).unwrap();
-            if let Ok(config) = toml::from_str(&config) {
-                config
+            if config.starts_with('#') {
+                if let Ok(config) = toml::from_str(&config) {
+                    config
+                } else {
+                    Self::load_and_save_defaults()
+                }
             } else {
-                Self::load_and_save_defaults()
+                let config = migrations::WasabiConfigFileV0::migrate().unwrap_or_default();
+                config.save_to_file();
+                config
             }
         };
 
@@ -342,6 +353,8 @@ impl WasabiSettings {
             fs::remove_file(&config_path).expect("Error deleting old config");
         }
         let mut file = fs::File::create(&config_path).unwrap();
+        file.write_all(b"# DON'T EDIT THIS LINE; Version: 1\n\n")
+            .unwrap();
         file.write_all(toml.as_bytes())
             .expect("Error creating config");
     }
