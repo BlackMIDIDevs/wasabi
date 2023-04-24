@@ -239,6 +239,7 @@ impl FromStr for Synth {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+#[serde(default)]
 pub struct VisualSettings {
     #[serde(with = "color32_serde")]
     pub bg_color: Color32,
@@ -262,6 +263,7 @@ impl Default for VisualSettings {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+#[serde(default)]
 pub struct MidiSettings {
     pub note_speed: f64,
     pub random_colors: bool,
@@ -282,6 +284,7 @@ impl Default for MidiSettings {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+#[serde(default)]
 pub struct SynthSettings {
     pub synth: Synth,
     pub buffer_ms: f64,
@@ -312,12 +315,10 @@ impl Default for SynthSettings {
 }
 
 #[derive(Debug, Deserialize, Serialize, Default)]
+#[serde(default)]
 pub struct WasabiSettings {
-    #[serde(default)]
     pub synth: SynthSettings,
-    #[serde(default)]
     pub midi: MidiSettings,
-    #[serde(default)]
     pub visual: VisualSettings,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub load_midi_file: Option<String>,
