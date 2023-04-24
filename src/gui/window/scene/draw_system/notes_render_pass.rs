@@ -18,7 +18,7 @@ use vulkano::{
         graphics::{
             depth_stencil::DepthStencilState,
             input_assembly::{InputAssemblyState, PrimitiveTopology},
-            vertex_input::{BuffersDefinition, Vertex},
+            vertex_input::Vertex,
             viewport::{Viewport, ViewportState},
         },
         GraphicsPipeline, Pipeline, PipelineBindPoint,
@@ -36,7 +36,7 @@ const NOTE_BUFFER_SIZE: u64 = 25000000;
 pub struct NoteVertex {
     #[format(R32G32_SFLOAT)]
     pub start_length: [f32; 2],
-    #[format(R8G8B8A8_UNORM)]
+    #[format(R32_UINT)]
     pub key_color: u32,
 }
 
@@ -68,21 +68,19 @@ const BUFFER_USAGE: BufferUsage = BufferUsage::TRANSFER_SRC
 fn get_buffer(device: &Arc<Device>) -> Subbuffer<[NoteVertex]> {
     let allocator = StandardMemoryAllocator::new_default(device.clone());
 
-    unsafe {
-        Buffer::new_slice(
-            &allocator,
-            BufferCreateInfo {
-                usage: BUFFER_USAGE,
-                ..Default::default()
-            },
-            AllocationCreateInfo {
-                usage: MemoryUsage::Upload,
-                ..Default::default()
-            },
-            NOTE_BUFFER_SIZE,
-        )
-        .expect("failed to create buffer")
-    }
+    Buffer::new_slice(
+        &allocator,
+        BufferCreateInfo {
+            usage: BUFFER_USAGE,
+            ..Default::default()
+        },
+        AllocationCreateInfo {
+            usage: MemoryUsage::Upload,
+            ..Default::default()
+        },
+        NOTE_BUFFER_SIZE,
+    )
+    .expect("failed to create buffer")
 }
 
 impl BufferSet {
@@ -209,7 +207,7 @@ impl NoteRenderPass {
 
         let pipeline_clear = GraphicsPipeline::start()
             .input_assembly_state(InputAssemblyState::new().topology(PrimitiveTopology::PointList))
-            .vertex_input_state(BuffersDefinition::new().vertex::<NoteVertex>())
+            .vertex_input_state(NoteVertex::per_vertex())
             .vertex_shader(vs.entry_point("main").unwrap(), ())
             .geometry_shader(gs.entry_point("main").unwrap(), ())
             .fragment_shader(fs.entry_point("main").unwrap(), ())
@@ -221,7 +219,7 @@ impl NoteRenderPass {
 
         let pipeline_draw_over = GraphicsPipeline::start()
             .input_assembly_state(InputAssemblyState::new().topology(PrimitiveTopology::PointList))
-            .vertex_input_state(BuffersDefinition::new().vertex::<NoteVertex>())
+            .vertex_input_state(NoteVertex::per_vertex())
             .vertex_shader(vs.entry_point("main").unwrap(), ())
             .geometry_shader(gs.entry_point("main").unwrap(), ())
             .fragment_shader(fs.entry_point("main").unwrap(), ())
