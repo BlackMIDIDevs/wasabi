@@ -194,8 +194,8 @@ impl FromStr for MidiLoading {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
-            "ram" | "RAM" | "Ram" => Ok(MidiLoading::Ram),
-            "live" | "Live" => Ok(MidiLoading::Live),
+            "ram" => Ok(MidiLoading::Ram),
+            "live" => Ok(MidiLoading::Live),
             s => Err(format!(
                 "{} was not expected. Expected one of `ram`, or `live`",
                 s
@@ -228,8 +228,8 @@ impl FromStr for Synth {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
-            "xsynth" | "XSynth" => Ok(Synth::XSynth),
-            "kdmapi" | "KDMPAI" => Ok(Synth::Kdmapi),
+            "xsynth" => Ok(Synth::XSynth),
+            "kdmapi" => Ok(Synth::Kdmapi),
             s => Err(format!(
                 "{} was not expected. Expected one of `xsynth`, or `kdmapi`",
                 s
@@ -313,8 +313,11 @@ impl Default for SynthSettings {
 
 #[derive(Debug, Deserialize, Serialize, Default)]
 pub struct WasabiSettings {
+    #[serde(default)]
     pub synth: SynthSettings,
+    #[serde(default)]
     pub midi: MidiSettings,
+    #[serde(default)]
     pub visual: VisualSettings,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub load_midi_file: Option<String>,
@@ -459,10 +462,10 @@ impl WasabiSettings {
             )
             .arg(
                 Arg::new("no-effects")
-                    .help("Disable the synth's effects")
+                    .help("Disables the soundfont's effects")
                     .long_help(
-                        "Disable the effects that the synthesizer applies to the final audio \
-                        render. Currently this disables a high/low pass filter",
+                        "Disables soundfont audio effects. \
+                        This may improve the performance.",
                     )
                     .short('N')
                     .long("no-effects")
