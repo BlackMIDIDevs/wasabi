@@ -42,7 +42,7 @@ fn color_parser(s: &str) -> Result<Color32, String> {
 #[inline(always)]
 fn range_parser(s: &str) -> Result<RangeInclusive<u8>, String> {
     let range = s
-        .split_once(",")
+        .split_once(',')
         .ok_or_else(|| String::from("This argument requires 2 numbers, comma seperated"))?;
 
     Ok(range.0.parse().map_err(|e| format!("{}", e))?
