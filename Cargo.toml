@@ -33,7 +33,7 @@ colors-transform = "0.2.11"
 directories = "4.0.1"
 rustc-hash = "1.1.0"
 atomic_float = "0.1.0"
-egui_file = { git = "https://github.com/Kaydax/egui_file.git", rev = "7ac26fb" }
+egui_file = { git = "https://github.com/StratusFearMe21/egui_file.git" }
 
 [profile.dev]
 opt-level = 2

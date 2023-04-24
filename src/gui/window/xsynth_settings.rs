@@ -50,22 +50,21 @@ pub fn draw_xsynth_settings(
                     ui.horizontal(|ui| {
                         ui.add(egui::TextEdit::singleline(&mut settings.sfz_path));
 
-                        let filter = |path: &std::path::Path| {
+                        fn filter(path: &std::path::Path) -> bool {
                             if let Some(path) = path.to_str() {
                                 path.ends_with(".sfz")
                             } else {
                                 false
                             }
-                        };
-                        let filter = Box::new(filter);
+                        }
 
                         if ui.button("Browse...").clicked() {
-                            let mut dialog = FileDialog::open_file(state.last_sfz_file.clone())
-                                .show_rename(false)
-                                .show_new_folder(false)
-                                .resizable(true)
-                                .anchor(egui::Align2::CENTER_TOP, egui::Vec2::new(0.0, 10.0))
-                                .filter(filter);
+                            let mut dialog =
+                                FileDialog::open_file(state.last_sfz_file.clone(), Some(filter))
+                                    .show_rename(false)
+                                    .show_new_folder(false)
+                                    .resizable(true)
+                                    .anchor(egui::Align2::CENTER_TOP, egui::Vec2::new(0.0, 10.0));
                             dialog.open();
                             win.file_dialogs.sf_file_dialog = Some(dialog);
                         }
