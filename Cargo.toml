@@ -34,6 +34,7 @@ directories = "4.0.1"
 rustc-hash = "1.1.0"
 atomic_float = "0.1.0"
 egui_file = { git = "https://github.com/Kaydax/egui_file.git", rev = "7ac26fb" }
+clap = "4.2.4"
 
 [profile.dev]
 opt-level = 2
