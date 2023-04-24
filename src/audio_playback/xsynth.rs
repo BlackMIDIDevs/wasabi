@@ -1,4 +1,8 @@
-use std::{ops::RangeInclusive, path::Path, sync::Arc};
+use std::{
+    ops::{Deref, DerefMut, RangeInclusive},
+    path::Path,
+    sync::Arc,
+};
 
 use crate::WasabiSettings;
 
@@ -11,10 +15,31 @@ use xsynth_realtime::{
     config::XSynthRealtimeConfig, RealtimeEventSender, RealtimeSynth, RealtimeSynthStatsReader,
 };
 
+#[repr(transparent)]
+struct FuckYouImSend<T>(T);
+
+unsafe impl<T> Sync for FuckYouImSend<T> {}
+unsafe impl<T> Send for FuckYouImSend<T> {}
+
+impl<T> Deref for FuckYouImSend<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T> DerefMut for FuckYouImSend<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 pub struct XSynthPlayer {
     sender: RealtimeEventSender,
     pub stats: RealtimeSynthStatsReader,
     stream_params: AudioStreamParams,
+    _synth: FuckYouImSend<RealtimeSynth>,
 }
 
 impl XSynthPlayer {
@@ -27,19 +52,16 @@ impl XSynthPlayer {
             ..Default::default()
         };
 
-        let synth = RealtimeSynth::open_with_default_output(config);
+        let synth = FuckYouImSend(RealtimeSynth::open_with_default_output(config));
         let sender = synth.get_senders();
         let stream_params = synth.stream_params();
         let stats = synth.get_stats();
-
-        // FIXME: Basically I'm leaking a pointer because the synth can't be sent between
-        // threads and I really cbb making a synth state manager rn
-        Box::leak(Box::new(synth));
 
         XSynthPlayer {
             sender,
             stats,
             stream_params,
+            _synth: synth,
         }
     }
 
@@ -83,6 +105,5 @@ pub fn convert_to_sf_init(settings: &WasabiSettings) -> SoundfontInitOptions {
 pub fn convert_to_channel_init(settings: &WasabiSettings) -> ChannelInitOptions {
     ChannelInitOptions {
         fade_out_killing: settings.fade_out_kill,
-        ..Default::default()
     }
 }
