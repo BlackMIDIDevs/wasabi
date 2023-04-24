@@ -763,7 +763,7 @@ dependencies = [
 [[package]]
 name = "egui_file"
 version = "0.6.0"
-source = "git+https://github.com/StratusFearMe21/egui_file.git#e8c2a42a68647acc0a72f903197dd2c2cbde22a9"
+source = "git+https://github.com/StratusFearMe21/egui_file.git?rev=e8c2a42#e8c2a42a68647acc0a72f903197dd2c2cbde22a9"
 dependencies = [
  "egui",
  "fst",
@@ -3007,6 +3007,7 @@ dependencies = [
  "egui_winit_vulkano",
  "enum_dispatch",
  "gen-iter 0.3.0",
+ "glidesort",
  "kdmapi",
  "midi-toolkit-rs",
  "palette",
