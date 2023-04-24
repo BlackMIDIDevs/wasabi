@@ -116,7 +116,7 @@ impl GuiWasabiWindow {
         }
 
         let height_prev = ctx.available_rect().height();
-        if wasabi_state.panel_visible {
+        if settings.visual.show_top_pannel {
             top_panel::draw_panel(self, settings, wasabi_state, &ctx);
         }
 
@@ -212,10 +212,12 @@ impl GuiWasabiWindow {
                         if *pressed && modifiers.ctrl {
                             match key {
                                 egui::Key::F => {
-                                    wasabi_state.panel_visible = !wasabi_state.panel_visible
+                                    settings.visual.show_top_pannel =
+                                        !settings.visual.show_top_pannel
                                 }
                                 egui::Key::G => {
-                                    wasabi_state.stats_visible = !wasabi_state.stats_visible
+                                    settings.visual.show_statistics =
+                                        !settings.visual.show_statistics;
                                 }
                                 //egui::Key::O => self.open_midi_dialog(wasabi_state),
                                 _ => {}
@@ -238,7 +240,7 @@ impl GuiWasabiWindow {
             });
 
         // Render the stats
-        if wasabi_state.stats_visible {
+        if settings.visual.show_statistics {
             let voice_count = self.synth.read().unwrap().get_voice_count();
             stats.set_voice_count(voice_count);
 
