@@ -5,7 +5,7 @@ use std::sync::Arc;
 use vulkano::{
     device::{
         physical::PhysicalDeviceType, Device, DeviceCreateInfo, DeviceExtensions, Features, Queue,
-        QueueCreateInfo,
+        QueueCreateInfo, QueueFlags,
     },
     format::Format,
     instance::{Instance, InstanceCreateInfo, InstanceExtensions},
@@ -16,9 +16,9 @@ use vulkano::{
 
 use vulkano_win::create_surface_from_winit;
 #[cfg(unix)]
-use winit::platform::unix::EventLoopWindowTargetExtUnix;
+use winit::platform::wayland::EventLoopWindowTargetExtWayland;
 #[cfg(unix)]
-use winit::platform::unix::WindowExtUnix;
+use winit::platform::wayland::WindowExtWayland;
 use winit::{
     dpi::PhysicalSize,
     event_loop::EventLoop,
@@ -38,7 +38,7 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new(event_loop: &EventLoop<()>, name: &str) -> Self {
+    pub fn new(event_loop: &EventLoop<()>, name: &str, fullscreen: bool, mode: VideoMode) -> Self {
         // Why
         let library = VulkanLibrary::new().unwrap();
 
@@ -60,6 +60,21 @@ impl Renderer {
 
         // Create rendering surface along with window
         let window = WindowBuilder::new()
+            .with_fullscreen({
+                if fullscreen {
+                    #[cfg(unix)]
+                    let fullscreen = if event_loop.is_wayland() {
+                        Some(Fullscreen::Borderless(None))
+                    } else {
+                        Some(Fullscreen::Exclusive(mode))
+                    };
+                    #[cfg(not(unix))]
+                    let fullscreen = Some(Fullscreen::Exclusive(mode));
+                    fullscreen
+                } else {
+                    None
+                }
+            })
             .with_inner_size(crate::WINDOW_SIZE)
             .with_title(name)
             .build(event_loop)
@@ -88,7 +103,7 @@ impl Renderer {
                     .iter()
                     .enumerate()
                     .position(|(i, q)| {
-                        q.queue_flags.graphics
+                        q.queue_flags.contains(QueueFlags::GRAPHICS)
                             && p.surface_support(i as u32, &surface).unwrap_or(false)
                     })
                     .map(|i| (p, i as u32))

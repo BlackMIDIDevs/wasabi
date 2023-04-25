@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use bytemuck::{Pod, Zeroable};
 use vulkano::{
-    buffer::{BufferAccess, BufferUsage, CpuAccessibleBuffer},
+    buffer::{Buffer, BufferCreateInfo, BufferUsage, Subbuffer},
     command_buffer::{
         allocator::StandardCommandBufferAllocator, AutoCommandBufferBuilder, CommandBufferUsage,
         RenderPassBeginInfo, SubpassContents,
@@ -13,12 +13,12 @@ use vulkano::{
     device::{Device, Queue},
     format::Format,
     image::{view::ImageView, AttachmentImage, ImageAccess, ImageViewAbstract},
-    memory::allocator::StandardMemoryAllocator,
+    memory::allocator::{AllocationCreateInfo, MemoryUsage, StandardMemoryAllocator},
     pipeline::{
         graphics::{
             depth_stencil::DepthStencilState,
             input_assembly::{InputAssemblyState, PrimitiveTopology},
-            vertex_input::BuffersDefinition,
+            vertex_input::Vertex,
             viewport::{Viewport, ViewportState},
         },
         GraphicsPipeline, Pipeline, PipelineBindPoint,
@@ -40,7 +40,7 @@ use super::RenderResultData;
 const BUFFER_ARRAY_LEN: u64 = 256;
 
 struct CakeBuffer {
-    data: Arc<CpuAccessibleBuffer<[IntVector4]>>,
+    data: Subbuffer<[IntVector4]>,
     start: i32,
     end: i32,
 }
@@ -49,30 +49,20 @@ struct BufferSet {
     buffers: Vec<CakeBuffer>,
 }
 
-const BUFFER_USAGE: BufferUsage = BufferUsage {
-    transfer_src: true,
-    transfer_dst: true,
-    uniform_texel_buffer: true,
-    storage_texel_buffer: true,
-    uniform_buffer: true,
-    storage_buffer: true,
-    index_buffer: true,
-    vertex_buffer: true,
-    indirect_buffer: true,
-    shader_device_address: true,
-    ..BufferUsage::empty()
-};
-
-#[derive(Default, Debug, Copy, Clone, Zeroable, Pod)]
+#[derive(Default, Debug, Copy, Clone, Zeroable, Pod, Vertex)]
 #[repr(C)]
 struct CakeVertex {
+    #[format(R32_SFLOAT)]
     left: f32,
+    #[format(R32_SFLOAT)]
     right: f32,
+    #[format(R32_UINT)]
     start: i32,
+    #[format(R32_UINT)]
     end: i32,
+    #[format(R32_UINT)]
     buffer_index: i32,
 }
-vulkano::impl_vertex!(CakeVertex, left, right, start, end, buffer_index);
 
 impl BufferSet {
     fn new(_device: &Arc<Device>) -> Self {
@@ -85,10 +75,16 @@ impl BufferSet {
         block: &CakeBlock,
         _key: &KeyPosition,
     ) {
-        let data = CpuAccessibleBuffer::from_iter(
+        let data = Buffer::from_iter(
             allocator,
-            BUFFER_USAGE,
-            false,
+            BufferCreateInfo {
+                usage: BufferUsage::VERTEX_BUFFER,
+                ..Default::default()
+            },
+            AllocationCreateInfo {
+                usage: MemoryUsage::Upload,
+                ..Default::default()
+            },
             block.tree.iter().copied(),
         )
         .unwrap();
@@ -116,7 +112,7 @@ pub struct CakeRenderer {
     depth_buffer: Arc<ImageView<AttachmentImage>>,
     cb_allocator: StandardCommandBufferAllocator,
     sd_allocator: StandardDescriptorSetAllocator,
-    buffers_init: Arc<CpuAccessibleBuffer<[CakeVertex]>>,
+    buffers_init: Subbuffer<[CakeVertex]>,
     current_file_signature: Option<CakeSignature>,
 }
 
@@ -163,7 +159,7 @@ impl CakeRenderer {
 
         let pipeline_base = GraphicsPipeline::start()
             .input_assembly_state(InputAssemblyState::new().topology(PrimitiveTopology::PointList))
-            .vertex_input_state(BuffersDefinition::new().vertex::<CakeVertex>())
+            .vertex_input_state(CakeVertex::per_vertex())
             .vertex_shader(vs.entry_point("main").unwrap(), ())
             .fragment_shader(fs.entry_point("main").unwrap(), ())
             .geometry_shader(gs.entry_point("main").unwrap(), ())
@@ -176,15 +172,19 @@ impl CakeRenderer {
             .build(gfx_queue.device().clone())
             .unwrap();
 
-        let buffers = unsafe {
-            CpuAccessibleBuffer::uninitialized_array(
-                &allocator,
-                BUFFER_ARRAY_LEN,
-                BUFFER_USAGE,
-                false,
-            )
-            .unwrap()
-        };
+        let buffers = Buffer::new_slice(
+            &allocator,
+            BufferCreateInfo {
+                usage: BufferUsage::VERTEX_BUFFER,
+                ..Default::default()
+            },
+            AllocationCreateInfo {
+                usage: MemoryUsage::Upload,
+                ..Default::default()
+            },
+            BUFFER_ARRAY_LEN,
+        )
+        .unwrap();
 
         CakeRenderer {
             gfx_queue,
@@ -237,7 +237,7 @@ impl CakeRenderer {
         let screen_start = (midi_time * midi_file.ticks_per_second() as f64) as i32;
         let screen_end = ((midi_time + view_range) * midi_file.ticks_per_second() as f64) as i32;
 
-        let push_constants = gs::ty::PushConstants {
+        let push_constants = gs::PushConstants {
             start_time: screen_start,
             end_time: screen_end,
             screen_width: img_dims[0] as i32,
@@ -307,10 +307,7 @@ impl CakeRenderer {
             [WriteDescriptorSet::buffer_array(
                 0,
                 0,
-                self.buffers
-                    .buffers
-                    .iter()
-                    .map(|b| b.data.clone() as Arc<dyn BufferAccess>),
+                self.buffers.buffers.iter().map(|b| b.data.clone()),
             )],
         )
         .unwrap();
@@ -400,12 +397,7 @@ mod vs {
 mod gs {
     vulkano_shaders::shader! {
         ty: "geometry",
-        path: "shaders/cake/cake.geom",
-        types_meta: {
-            use bytemuck::{Pod, Zeroable};
-
-            #[derive(Clone, Copy, Zeroable, Pod)]
-        },
+        path: "shaders/cake/cake.geom"
     }
 }
 
