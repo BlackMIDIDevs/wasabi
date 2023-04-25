@@ -94,7 +94,7 @@ impl BufferSet {
         &mut self,
         allocator: &StandardMemoryAllocator,
         block: &CakeBlock,
-        key: &KeyPosition,
+        _key: &KeyPosition,
     ) {
         dbg!(block.tree.len());
 
@@ -232,7 +232,7 @@ impl CakeRenderer {
 
         if self.buffers.buffers.is_empty() {
             for (i, block) in midi_file.key_blocks().iter().enumerate() {
-                if block.tree.len() > 0 {
+                if block.tree.is_empty() {
                     let key = key_view.key(i);
                     self.buffers.add_buffer(&self.allocator, block, &key);
                 }
@@ -341,12 +341,12 @@ impl CakeRenderer {
                     depth_range: 0.0..1.0,
                 }],
             )
-            .push_constants(pipeline_layout.clone().clone(), 0, push_constants)
+            .push_constants(pipeline_layout.clone(), 0, push_constants)
             .bind_descriptor_sets(
                 PipelineBindPoint::Graphics,
                 pipeline_layout.clone(),
                 0,
-                data_descriptor.clone(),
+                data_descriptor,
             )
             .bind_vertex_buffers(0, self.buffers_init.clone())
             .draw(written_instances as u32, 1, 0, 0)

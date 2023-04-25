@@ -22,7 +22,7 @@ use crate::{
         AudioPlayerType, SimpleTemporaryPlayer,
     },
     gui::window::{keyboard::GuiKeyboard, scene::GuiRenderScene},
-    midi::{CakeMIDIFile, InRamMIDIFile, LiveLoadMIDIFile, MIDIFileBase, MIDIFileUnion},
+    midi::{CakeMIDIFile, MIDIFileBase, MIDIFileUnion},
     settings::WasabiSettings,
     state::WasabiState,
     GuiRenderer, GuiState,

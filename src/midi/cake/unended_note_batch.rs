@@ -24,7 +24,7 @@ impl<K: Ord, T> UnendedNotes<K, T> {
         self.notes.len()
     }
 
-    pub fn top_mut<'a>(&'a mut self) -> Option<&'a mut T> {
+    pub fn top_mut(&mut self) -> Option<&mut T> {
         let key = *self.notes.last_entry()?.key();
         self.notes.get_mut(&key)
     }
@@ -53,8 +53,8 @@ impl<K: Ord, T> UnendedNotes<K, T> {
         id
     }
 
-    pub fn drain_all<'a>(&'a mut self) -> impl 'a + Iterator<Item = T> {
-        let notes = std::mem::replace(&mut self.notes, BTreeMap::new());
+    pub fn drain_all(&mut self) -> impl '_ + Iterator<Item = T> {
+        let notes = std::mem::take(&mut self.notes);
         self.ids = BTreeMap::new();
 
         notes.into_values()
