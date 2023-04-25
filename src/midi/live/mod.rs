@@ -13,7 +13,10 @@ use self::{
     view::{LiveCurrentNoteViews, LiveNoteViewData},
 };
 
-use super::{shared::timer::TimeKeeper, MIDIFile, MIDIFileBase, MIDIFileStats, MIDIViewRange};
+use super::{
+    open_file_and_signature, shared::timer::TimeKeeper, MIDIFile, MIDIFileBase, MIDIFileStats,
+    MIDIFileUniqueSignature, MIDIViewRange,
+};
 
 pub mod block;
 pub mod column;
@@ -24,6 +27,7 @@ pub struct LiveLoadMIDIFile {
     view_data: LiveNoteViewData,
     timer: TimeKeeper,
     length: Arc<AtomicF64>,
+    signature: MIDIFileUniqueSignature,
 }
 
 impl LiveLoadMIDIFile {
@@ -32,7 +36,9 @@ impl LiveLoadMIDIFile {
         player: Arc<RwLock<SimpleTemporaryPlayer>>,
         random_colors: bool,
     ) -> Self {
-        let midi = TKMIDIFile::open(path, None).unwrap();
+        let (file, signature) = open_file_and_signature(path);
+
+        let midi = TKMIDIFile::open_from_stream(file, None).unwrap();
 
         let parse_length_outer = Arc::new(AtomicF64::new(f64::NAN));
         let parse_length = parse_length_outer.clone();
@@ -58,6 +64,7 @@ impl LiveLoadMIDIFile {
             view_data: file,
             timer,
             length: parse_length_outer,
+            signature,
         }
     }
 }
@@ -90,6 +97,10 @@ impl MIDIFileBase for LiveLoadMIDIFile {
 
     fn stats(&self) -> MIDIFileStats {
         MIDIFileStats::new(0)
+    }
+
+    fn signature(&self) -> &MIDIFileUniqueSignature {
+        &self.signature
     }
 }
 

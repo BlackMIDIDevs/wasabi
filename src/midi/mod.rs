@@ -8,11 +8,13 @@ mod ram;
 mod audio;
 
 mod shared;
+use std::{fs::File, time::UNIX_EPOCH};
+
 use enum_dispatch::enum_dispatch;
 use palette::convert::FromColorUnclamped;
 use rand::Rng;
 
-pub use cake::{blocks::CakeBlock, intvec4::IntVector4, CakeMIDIFile};
+pub use cake::{blocks::CakeBlock, intvec4::IntVector4, CakeMIDIFile, CakeSignature};
 pub use live::LiveLoadMIDIFile;
 pub use ram::{InRamMIDIFile, MIDIFileStats};
 
@@ -33,6 +35,34 @@ impl MIDIViewRange {
     pub fn length(&self) -> f64 {
         self.end - self.start
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MIDIFileUniqueSignature {
+    pub filepath: String,
+    pub length_in_bytes: u64,
+    pub last_modified: u128,
+}
+
+fn open_file_and_signature(path: &str) -> (File, MIDIFileUniqueSignature) {
+    let file = std::fs::File::open(path).unwrap();
+    let file_length = file.metadata().unwrap().len();
+    let file_last_modified = file
+        .metadata()
+        .unwrap()
+        .modified()
+        .unwrap()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_micros();
+
+    let signature = MIDIFileUniqueSignature {
+        filepath: path.to_string(),
+        length_in_bytes: file_length,
+        last_modified: file_last_modified,
+    };
+
+    (file, signature)
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -116,6 +146,8 @@ pub trait MIDIFileBase {
     fn stats(&self) -> MIDIFileStats;
 
     fn allows_seeking_backward(&self) -> bool;
+
+    fn signature(&self) -> &MIDIFileUniqueSignature;
 }
 
 /// This trait contains a function to retrieve the column view of the midi

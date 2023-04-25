@@ -19,13 +19,14 @@ use crate::{
     midi::{
         audio::ram::InRamAudioPlayer,
         cake::tree_threader::{NoteEvent, ThreadedTreeSerializers},
+        open_file_and_signature,
         shared::{audio::CompressedAudio, timer::TimeKeeper},
     },
 };
 
 use self::blocks::CakeBlock;
 
-use super::{MIDIFileBase, MIDIFileStats};
+use super::{MIDIFileBase, MIDIFileStats, MIDIFileUniqueSignature};
 
 pub mod blocks;
 pub mod intvec4;
@@ -37,8 +38,9 @@ pub struct CakeMIDIFile {
     blocks: Vec<CakeBlock>,
     timer: TimeKeeper,
     length: f64,
-    note_count: usize,
+    note_count: u64,
     ticks_per_second: u32,
+    signature: MIDIFileUniqueSignature,
 }
 
 impl CakeMIDIFile {
@@ -49,7 +51,8 @@ impl CakeMIDIFile {
     ) -> Self {
         let ticks_per_second = 1000;
 
-        let midi = TKMIDIFile::open(path, None).unwrap();
+        let (file, signature) = open_file_and_signature(path);
+        let midi = TKMIDIFile::open_from_stream(file, None).unwrap();
 
         let ppq = midi.ppq();
         let merged = pipe!(
@@ -66,17 +69,10 @@ impl CakeMIDIFile {
 
         let key_join_handle = thread::spawn(move || {
             let mut trees = ThreadedTreeSerializers::new();
-            // let mut keys: Vec<Key> = (0..256).map(|_| Key::new()).collect();
 
             let mut time = 0.0;
 
-            // let mut notes: usize = 0;
-
-            // fn flush_keys(time: f64, keys: &mut [Key]) {
-            //     for key in keys.iter_mut() {
-            //         key.flush(time);
-            //     }
-            // }
+            let mut note_count = 0;
 
             for batch in key_rcv.into_iter() {
                 time += batch.delta;
@@ -98,6 +94,7 @@ impl CakeMIDIFile {
                                     channel_track: channel_track(e.channel, track),
                                 },
                             );
+                            note_count += 1;
                         }
                         Event::NoteOff(e) => {
                             trees.push_event(
@@ -115,14 +112,6 @@ impl CakeMIDIFile {
             let final_time = (time * ticks_per_second as f64) as i32;
             let serialized = trees.seal(final_time);
 
-            // flush_keys(time, &mut keys);
-
-            // for key in keys.iter_mut() {
-            //     key.end_all(time);
-            // }
-
-            // (keys, notes)
-
             let keys: Vec<_> = serialized
                 .into_iter()
                 .map(|s| CakeBlock {
@@ -132,7 +121,7 @@ impl CakeMIDIFile {
                 })
                 .collect();
 
-            (keys, 0)
+            (keys, note_count)
         });
 
         let audio_join_handle = thread::spawn(|| {
@@ -166,6 +155,7 @@ impl CakeMIDIFile {
             length,
             note_count,
             ticks_per_second,
+            signature,
         }
     }
 
@@ -180,6 +170,23 @@ impl CakeMIDIFile {
     pub fn current_time(&self) -> Duration {
         self.timer.get_time()
     }
+
+    pub fn cake_signature(&self) -> CakeSignature {
+        CakeSignature {
+            file_signature: self.signature.clone(),
+            note_count: self.note_count,
+            buffer_sizes: self.blocks.iter().map(|b| b.tree.len()).collect(),
+        }
+    }
+}
+
+/// A struct that uniquely identifies a cake midi file.
+/// This lets the renderer know if the file has changed.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CakeSignature {
+    file_signature: MIDIFileUniqueSignature,
+    note_count: u64,
+    buffer_sizes: Vec<usize>,
 }
 
 impl MIDIFileBase for CakeMIDIFile {
@@ -205,5 +212,9 @@ impl MIDIFileBase for CakeMIDIFile {
 
     fn stats(&self) -> MIDIFileStats {
         MIDIFileStats::new(self.note_count)
+    }
+
+    fn signature(&self) -> &MIDIFileUniqueSignature {
+        &self.signature
     }
 }

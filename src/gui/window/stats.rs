@@ -5,7 +5,7 @@ use crate::{gui::window::GuiWasabiWindow, midi::MIDIFileBase};
 pub struct GuiMidiStats {
     time_passed: f64,
     time_total: f64,
-    notes_total: usize,
+    notes_total: u64,
     notes_on_screen: u64,
     voice_count: u64,
 }

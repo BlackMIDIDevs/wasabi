@@ -32,7 +32,7 @@ use crate::{
         window::keyboard_layout::{KeyPosition, KeyboardView},
         GuiRenderer,
     },
-    midi::{CakeBlock, CakeMIDIFile, IntVector4},
+    midi::{CakeBlock, CakeMIDIFile, CakeSignature, IntVector4},
 };
 
 use super::RenderResultData;
@@ -66,24 +66,13 @@ const BUFFER_USAGE: BufferUsage = BufferUsage {
 #[derive(Default, Debug, Copy, Clone, Zeroable, Pod)]
 #[repr(C)]
 struct CakeVertex {
-    uv: [f32; 2],
-    left_right: [f32; 2],
-    start: i32,
-    end: i32,
-    x: f32,
-}
-vulkano::impl_vertex!(CakeVertex, uv, left_right, start, end, x);
-
-#[derive(Default, Debug, Copy, Clone, Zeroable, Pod)]
-#[repr(C)]
-struct CakeVertex2 {
     left: f32,
     right: f32,
     start: i32,
     end: i32,
     buffer_index: i32,
 }
-vulkano::impl_vertex!(CakeVertex2, left, right, start, end, buffer_index);
+vulkano::impl_vertex!(CakeVertex, left, right, start, end, buffer_index);
 
 impl BufferSet {
     fn new(_device: &Arc<Device>) -> Self {
@@ -114,6 +103,10 @@ impl BufferSet {
 
         self.buffers.push(buffer);
     }
+
+    fn clear(&mut self) {
+        self.buffers.clear();
+    }
 }
 
 pub struct CakeRenderer {
@@ -125,7 +118,8 @@ pub struct CakeRenderer {
     depth_buffer: Arc<ImageView<AttachmentImage>>,
     cb_allocator: StandardCommandBufferAllocator,
     sd_allocator: StandardDescriptorSetAllocator,
-    buffers_init: Arc<CpuAccessibleBuffer<[CakeVertex2]>>,
+    buffers_init: Arc<CpuAccessibleBuffer<[CakeVertex]>>,
+    current_file_signature: Option<CakeSignature>,
 }
 
 impl CakeRenderer {
@@ -171,7 +165,7 @@ impl CakeRenderer {
 
         let pipeline_base = GraphicsPipeline::start()
             .input_assembly_state(InputAssemblyState::new().topology(PrimitiveTopology::PointList))
-            .vertex_input_state(BuffersDefinition::new().vertex::<CakeVertex2>())
+            .vertex_input_state(BuffersDefinition::new().vertex::<CakeVertex>())
             .vertex_shader(vs.entry_point("main").unwrap(), ())
             .fragment_shader(fs.entry_point("main").unwrap(), ())
             .geometry_shader(gs.entry_point("main").unwrap(), ())
@@ -207,6 +201,7 @@ impl CakeRenderer {
             ),
             sd_allocator: StandardDescriptorSetAllocator::new(renderer.device.clone()),
             buffers_init: buffers,
+            current_file_signature: None,
         }
     }
 
@@ -230,7 +225,10 @@ impl CakeRenderer {
             .unwrap();
         }
 
-        if self.buffers.buffers.is_empty() {
+        let curr_signature = midi_file.cake_signature();
+        if self.current_file_signature.as_ref() != Some(&curr_signature) {
+            self.current_file_signature = Some(curr_signature);
+            self.buffers.clear();
             for (i, block) in midi_file.key_blocks().iter().enumerate() {
                 if block.tree.is_empty() {
                     let key = key_view.key(i);
@@ -256,7 +254,7 @@ impl CakeRenderer {
         for (i, buffer) in self.buffers.buffers.iter().enumerate() {
             let key = key_view.note(i);
             if key.black {
-                buffer_instances[written_instances] = CakeVertex2 {
+                buffer_instances[written_instances] = CakeVertex {
                     buffer_index: i as i32,
                     start: buffer.start,
                     end: buffer.end,
@@ -270,7 +268,7 @@ impl CakeRenderer {
         for (i, buffer) in self.buffers.buffers.iter().enumerate() {
             let key = key_view.note(i);
             if !key.black {
-                buffer_instances[written_instances] = CakeVertex2 {
+                buffer_instances[written_instances] = CakeVertex {
                     buffer_index: i as i32,
                     start: buffer.start,
                     end: buffer.end,
