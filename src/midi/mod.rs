@@ -1,13 +1,18 @@
 #[allow(dead_code)]
+mod cake;
+#[allow(dead_code)]
 mod live;
 #[allow(dead_code)]
 mod ram;
+
+mod audio;
 
 mod shared;
 use enum_dispatch::enum_dispatch;
 use palette::convert::FromColorUnclamped;
 use rand::Rng;
 
+pub use cake::{blocks::CakeBlock, intvec4::IntVector4, CakeMIDIFile};
 pub use live::LiveLoadMIDIFile;
 pub use ram::{InRamMIDIFile, MIDIFileStats};
 
@@ -81,6 +86,10 @@ impl MIDIColor {
         self.0
     }
 
+    pub fn from_u32(num: u32) -> Self {
+        MIDIColor(num)
+    }
+
     pub fn red(&self) -> u8 {
         (self.0 >> 16) as u8
     }
@@ -145,4 +154,5 @@ pub struct DisplacedMIDINote {
 pub enum MIDIFileUnion {
     InRam(ram::InRamMIDIFile),
     Live(live::LiveLoadMIDIFile),
+    Cake(cake::CakeMIDIFile),
 }

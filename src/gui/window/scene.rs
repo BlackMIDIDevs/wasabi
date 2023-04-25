@@ -1,16 +1,26 @@
-mod draw_system;
+mod cake_system;
+mod note_list_system;
 
 use egui::Ui;
 
-use crate::{midi::MIDIFileUnion, scenes::SceneSwapchain};
+use crate::{
+    midi::{MIDIColor, MIDIFileUnion},
+    scenes::SceneSwapchain,
+};
 
-use self::draw_system::{NoteRenderer, RenderResultData};
+use self::{cake_system::CakeRenderer, note_list_system::NoteRenderer};
 
 use super::{keyboard_layout::KeyboardView, GuiRenderer, GuiState};
 
 pub struct GuiRenderScene {
     swap_chain: SceneSwapchain,
     draw_system: NoteRenderer,
+    draw_system2: CakeRenderer,
+}
+
+pub struct RenderResultData {
+    pub notes_rendered: u64,
+    pub key_colors: Vec<Option<MIDIColor>>,
 }
 
 impl GuiRenderScene {
@@ -19,6 +29,7 @@ impl GuiRenderScene {
         Self {
             swap_chain: SceneSwapchain::new(renderer.device.clone()),
             draw_system,
+            draw_system2: CakeRenderer::new(renderer),
         }
     }
 
@@ -39,6 +50,7 @@ impl GuiRenderScene {
         let result = match midi_file {
             MIDIFileUnion::InRam(file) => self.draw_system.draw(key_view, frame, file, view_range),
             MIDIFileUnion::Live(file) => self.draw_system.draw(key_view, frame, file, view_range),
+            MIDIFileUnion::Cake(file) => self.draw_system2.draw(key_view, frame, file, view_range),
         };
 
         ui.image(scene_image.id, [size[0] as f32, size[1] as f32]);

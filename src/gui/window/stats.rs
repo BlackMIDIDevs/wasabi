@@ -85,8 +85,10 @@ pub fn draw_stats(win: &mut GuiWasabiWindow, ctx: &Context, pos: Pos2, mut stats
 
                 stats.notes_total = midi_file.stats().total_notes;
 
+                // FIXME: Use an enum instead lmao
                 match midi_file {
                     crate::midi::MIDIFileUnion::InRam(..) => load_type = 0,
+                    crate::midi::MIDIFileUnion::Cake(..) => load_type = 0,
                     crate::midi::MIDIFileUnion::Live(..) => load_type = 1,
                 }
             }

@@ -22,7 +22,7 @@ use crate::{
         AudioPlayerType, SimpleTemporaryPlayer,
     },
     gui::window::{keyboard::GuiKeyboard, scene::GuiRenderScene},
-    midi::{InRamMIDIFile, LiveLoadMIDIFile, MIDIFileBase, MIDIFileUnion},
+    midi::{CakeMIDIFile, InRamMIDIFile, LiveLoadMIDIFile, MIDIFileBase, MIDIFileUnion},
     settings::WasabiSettings,
     state::WasabiState,
     GuiRenderer, GuiState,
@@ -73,11 +73,19 @@ impl GuiWasabiWindow {
                 synth
             }
         };
+
+        let mut midi_file = MIDIFileUnion::Cake(CakeMIDIFile::load_from_file(
+            "/mnt/fat/Midis/Clubstep.mid",
+            synth.clone(),
+            settings.random_colors,
+        ));
+        midi_file.timer_mut().play();
+
         GuiWasabiWindow {
             render_scene: GuiRenderScene::new(renderer),
             keyboard_layout: keyboard_layout::KeyboardLayout::new(&Default::default()),
             keyboard: GuiKeyboard::new(),
-            midi_file: None,
+            midi_file: Some(midi_file),
             synth,
             fps: fps::Fps::new(),
             file_dialogs: WasabiFileDialogs {
@@ -275,27 +283,35 @@ impl GuiWasabiWindow {
         self.midi_file = None;
 
         if let Some(midi_path) = midi_path.to_str() {
-            match settings.midi_loading {
-                0 => {
-                    let mut midi_file = MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
-                        midi_path,
-                        self.synth.clone(),
-                        settings.random_colors,
-                    ));
-                    midi_file.timer_mut().play();
-                    self.midi_file = Some(midi_file);
-                }
-                1 => {
-                    let mut midi_file = MIDIFileUnion::Live(LiveLoadMIDIFile::load_from_file(
-                        midi_path,
-                        self.synth.clone(),
-                        settings.random_colors,
-                    ));
-                    midi_file.timer_mut().play();
-                    self.midi_file = Some(midi_file);
-                }
-                _ => {}
-            }
+            let mut midi_file = MIDIFileUnion::Cake(CakeMIDIFile::load_from_file(
+                midi_path,
+                self.synth.clone(),
+                settings.random_colors,
+            ));
+            midi_file.timer_mut().play();
+            self.midi_file = Some(midi_file);
+
+            // match settings.midi_loading {
+            //     0 => {
+            //         let mut midi_file = MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
+            //             midi_path,
+            //             self.synth.clone(),
+            //             settings.random_colors,
+            //         ));
+            //         midi_file.timer_mut().play();
+            //         self.midi_file = Some(midi_file);
+            //     }
+            //     1 => {
+            //         let mut midi_file = MIDIFileUnion::Live(LiveLoadMIDIFile::load_from_file(
+            //             midi_path,
+            //             self.synth.clone(),
+            //             settings.random_colors,
+            //         ));
+            //         midi_file.timer_mut().play();
+            //         self.midi_file = Some(midi_file);
+            //     }
+            //     _ => {}
+            // }
         }
     }
 }

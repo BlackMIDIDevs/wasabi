@@ -2,7 +2,6 @@ use self::view::{InRamCurrentNoteViews, InRamNoteViewData};
 
 use super::{shared::timer::TimeKeeper, MIDIFile, MIDIFileBase, MIDIViewRange};
 
-mod audio_player;
 pub mod block;
 pub mod column;
 mod parse;

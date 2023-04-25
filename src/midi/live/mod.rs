@@ -15,7 +15,6 @@ use self::{
 
 use super::{shared::timer::TimeKeeper, MIDIFile, MIDIFileBase, MIDIFileStats, MIDIViewRange};
 
-mod audio_player;
 pub mod block;
 pub mod column;
 mod parse;

@@ -18,7 +18,8 @@ use rustc_hash::FxHashMap;
 use crate::{
     audio_playback::SimpleTemporaryPlayer,
     midi::{
-        ram::{audio_player::InRamAudioPlayer, column::InRamNoteColumn, view::InRamNoteViewData},
+        audio::ram::InRamAudioPlayer,
+        ram::{column::InRamNoteColumn, view::InRamNoteViewData},
         shared::{audio::CompressedAudio, timer::TimeKeeper, track_channel::TrackAndChannel},
     },
 };
