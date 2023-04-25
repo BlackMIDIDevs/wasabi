@@ -95,7 +95,7 @@ impl GuiWasabiWindow {
         settings: &mut WasabiSettings,
         wasabi_state: &mut WasabiState,
     ) {
-        let ctx = state.gui.context();
+        let ctx = state.renderer.gui.context();
         self.fps.update();
         ctx.set_visuals(Visuals::dark());
 

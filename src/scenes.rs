@@ -36,7 +36,7 @@ impl SceneSwapchain {
         if Some(image_state) != self.image_state || self.scene_view_size != size {
             // Remove existing images
             for image in self.scene_images.drain(..) {
-                state.gui.unregister_user_image(image.id);
+                state.renderer.gui.unregister_user_image(image.id);
             }
 
             let allocator = StandardMemoryAllocator::new_default(self.device.clone());
@@ -49,7 +49,7 @@ impl SceneSwapchain {
                 )
                 .expect("Failed to create scene image view");
 
-                let id = state.gui.register_user_image_view(image.clone());
+                let id = state.renderer.gui.register_user_image_view(image.clone());
 
                 self.scene_images.push(SceneImage { image, id });
             }
