@@ -50,43 +50,34 @@ impl NoteVertex {
 }
 
 struct BufferSet {
-    vertex_buffers: Vec<Subbuffer<[NoteVertex]>>,
+    vertex_buffers: [Subbuffer<[NoteVertex]>; 2],
     index: usize,
 }
 
-const BUFFER_USAGE: BufferUsage = BufferUsage::TRANSFER_SRC
-    .union(BufferUsage::TRANSFER_DST)
-    .union(BufferUsage::UNIFORM_TEXEL_BUFFER)
-    .union(BufferUsage::STORAGE_TEXEL_BUFFER)
-    .union(BufferUsage::UNIFORM_BUFFER)
-    .union(BufferUsage::STORAGE_BUFFER)
-    .union(BufferUsage::INDEX_BUFFER)
-    .union(BufferUsage::VERTEX_BUFFER)
-    .union(BufferUsage::INDIRECT_BUFFER)
-    .union(BufferUsage::SHADER_DEVICE_ADDRESS);
-
-fn get_buffer(device: &Arc<Device>) -> Subbuffer<[NoteVertex]> {
+fn get_buffer(device: &Arc<Device>) -> (Subbuffer<[NoteVertex]>, Subbuffer<[NoteVertex]>) {
     let allocator = StandardMemoryAllocator::new_default(device.clone());
 
     Buffer::new_slice(
         &allocator,
         BufferCreateInfo {
-            usage: BUFFER_USAGE,
+            usage: BufferUsage::VERTEX_BUFFER,
             ..Default::default()
         },
         AllocationCreateInfo {
             usage: MemoryUsage::Upload,
             ..Default::default()
         },
-        NOTE_BUFFER_SIZE,
+        NOTE_BUFFER_SIZE * 2,
     )
     .expect("failed to create buffer")
+    .split_at(NOTE_BUFFER_SIZE)
 }
 
 impl BufferSet {
     fn new(device: &Arc<Device>) -> Self {
+        let buffer = get_buffer(device);
         Self {
-            vertex_buffers: vec![get_buffer(device), get_buffer(device)],
+            vertex_buffers: [buffer.0, buffer.1],
             index: 0,
         }
     }
@@ -190,7 +181,7 @@ impl NoteRenderPass {
         let key_locations = Buffer::from_iter(
             &allocator,
             BufferCreateInfo {
-                usage: BUFFER_USAGE,
+                usage: BufferUsage::UNIFORM_BUFFER,
                 ..Default::default()
             },
             AllocationCreateInfo {
