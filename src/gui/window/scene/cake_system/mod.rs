@@ -56,11 +56,11 @@ struct CakeNoteColumn {
     left: f32,
     #[format(R32_SFLOAT)]
     right: f32,
-    #[format(R32_UINT)]
+    #[format(R32_SINT)]
     start: i32,
-    #[format(R32_UINT)]
+    #[format(R32_SINT)]
     end: i32,
-    #[format(R32_UINT)]
+    #[format(R32_SINT)]
     buffer_index: i32,
 }
 
@@ -78,7 +78,7 @@ impl BufferSet {
         let data = Buffer::from_iter(
             allocator,
             BufferCreateInfo {
-                usage: BufferUsage::VERTEX_BUFFER,
+                usage: BufferUsage::STORAGE_BUFFER,
                 ..Default::default()
             },
             AllocationCreateInfo {

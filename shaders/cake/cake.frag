@@ -59,11 +59,25 @@ void main()
 
     ivec4 note = getNoteAt(time);
 
+    vec3 color;
+
     if (note.z == -1) {
         discard;
     } else {
-        fsout_Color = vec4(((note.z >> 16) & 0xFF) / 255.0, ((note.z >> 8) & 0xFF) / 255.0, (note.z & 0xFF) / 255.0, 1);
+        color = vec3(((note.z >> 16) & 0xFF) / 255.0, ((note.z >> 8) & 0xFF) / 255.0, (note.z & 0xFF) / 255.0);
     }
+
+    // Adjust color
+
+    float gradient = cos(v_uv.x + 1);
+    vec3 color_grad = vec3(gradient, gradient, gradient) * color;
+
+    vec3 desaturated = 1 - (1 - color) * (1 - gradient);
+
+    color *= desaturated;
+    color += color_grad;
+
+    // Check borders
 
     float note_top = ticks_to_screen_y(note.x);
     float note_bottom = ticks_to_screen_y(note.y);
@@ -82,6 +96,8 @@ void main()
     float min_dist = min(min_x_dist, min_y_dist);
 
     if(min_dist < border_width) {
-        fsout_Color = fsout_Color * 0.034;
+        color = color * 0.034;
     }
+
+    fsout_Color = vec4(color, 1);
 }

@@ -142,6 +142,11 @@ pub fn draw_settings(
                                 MidiLoading::Live,
                                 "Live",
                             );
+                            ui.selectable_value(
+                                &mut settings.midi.midi_loading,
+                                MidiLoading::Cake,
+                                "Cake",
+                            );
                         });
                 });
 
