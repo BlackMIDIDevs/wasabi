@@ -153,35 +153,36 @@ impl GuiWasabiWindow {
                     let one_sec = Duration::from_secs(1);
                     let time = midi_file.timer().get_time();
 
-                    let events = ui.input().events.clone();
-                    for event in &events {
-                        if let egui::Event::Key { key, pressed, .. } = event {
-                            if pressed == &true {
-                                match key {
-                                    egui::Key::ArrowRight => {
-                                        midi_file.timer_mut().seek(time + one_sec)
-                                    }
-                                    egui::Key::ArrowLeft => {
-                                        if midi_file.allows_seeking_backward() {
-                                            midi_file.timer_mut().seek(if time <= one_sec {
-                                                Duration::from_secs(0)
-                                            } else {
-                                                time - one_sec
-                                            })
+                    ui.input(|events| {
+                        for event in &events.events {
+                            if let egui::Event::Key { key, pressed, .. } = event {
+                                if pressed == &true {
+                                    match key {
+                                        egui::Key::ArrowRight => {
+                                            midi_file.timer_mut().seek(time + one_sec)
                                         }
+                                        egui::Key::ArrowLeft => {
+                                            if midi_file.allows_seeking_backward() {
+                                                midi_file.timer_mut().seek(if time <= one_sec {
+                                                    Duration::from_secs(0)
+                                                } else {
+                                                    time - one_sec
+                                                })
+                                            }
+                                        }
+                                        egui::Key::ArrowUp => {
+                                            settings.midi.note_speed += 0.05;
+                                        }
+                                        egui::Key::ArrowDown => {
+                                            settings.midi.note_speed -= 0.05;
+                                        }
+                                        egui::Key::Space => midi_file.timer_mut().toggle_pause(),
+                                        _ => {}
                                     }
-                                    egui::Key::ArrowUp => {
-                                        settings.midi.note_speed += 0.05;
-                                    }
-                                    egui::Key::ArrowDown => {
-                                        settings.midi.note_speed -= 0.05;
-                                    }
-                                    egui::Key::Space => midi_file.timer_mut().toggle_pause(),
-                                    _ => {}
                                 }
                             }
                         }
-                    }
+                    });
 
                     let result = self.render_scene.draw(
                         state,
@@ -201,33 +202,35 @@ impl GuiWasabiWindow {
             .frame(no_frame)
             .show_separator_line(false)
             .show(&ctx, |ui| {
-                let events = ui.input().events.clone();
-                for event in &events {
-                    if let egui::Event::Key {
-                        key,
-                        pressed,
-                        modifiers,
-                    } = event
-                    {
-                        if *pressed && modifiers.ctrl {
-                            match key {
-                                egui::Key::F => {
-                                    settings.visual.show_top_pannel =
-                                        !settings.visual.show_top_pannel
+                ui.input(|events| {
+                    for event in &events.events {
+                        if let egui::Event::Key {
+                            key,
+                            pressed,
+                            modifiers,
+                            ..
+                        } = event
+                        {
+                            if *pressed && modifiers.ctrl {
+                                match key {
+                                    egui::Key::F => {
+                                        settings.visual.show_top_pannel =
+                                            !settings.visual.show_top_pannel
+                                    }
+                                    egui::Key::G => {
+                                        settings.visual.show_statistics =
+                                            !settings.visual.show_statistics
+                                    }
+                                    //egui::Key::O => self.open_midi_dialog(wasabi_state),
+                                    _ => {}
                                 }
-                                egui::Key::G => {
-                                    settings.visual.show_statistics =
-                                        !settings.visual.show_statistics;
-                                }
-                                //egui::Key::O => self.open_midi_dialog(wasabi_state),
-                                _ => {}
+                            }
+                            if *pressed && modifiers.alt && key == &egui::Key::Enter {
+                                wasabi_state.fullscreen = !wasabi_state.fullscreen
                             }
                         }
-                        if *pressed && modifiers.alt && key == &egui::Key::Enter {
-                            wasabi_state.fullscreen = !wasabi_state.fullscreen
-                        }
                     }
-                }
+                });
 
                 let colors = if let Some(data) = render_result_data {
                     data.key_colors
@@ -250,20 +253,18 @@ impl GuiWasabiWindow {
     }
 
     pub fn open_midi_dialog(&mut self, state: &mut WasabiState) {
-        let filter = |path: &std::path::Path| {
+        fn filter(path: &std::path::Path) -> bool {
             if let Some(path) = path.to_str() {
                 path.ends_with(".mid")
             } else {
                 false
             }
-        };
-        let filter = Box::new(filter);
+        }
 
-        let mut dialog = FileDialog::open_file(state.last_midi_file.clone())
+        let mut dialog = FileDialog::open_file(state.last_midi_file.clone(), Some(filter))
             .show_rename(true)
             .show_new_folder(true)
-            .resizable(true)
-            .filter(filter);
+            .resizable(true);
 
         dialog.open();
         self.file_dialogs.midi_file_dialog = Some(dialog);

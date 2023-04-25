@@ -58,13 +58,10 @@ impl ManagedSwapchain {
                 min_image_count: surface_capabilities.min_image_count,
                 image_format,
                 image_extent,
-                image_usage: ImageUsage {
-                    color_attachment: true,
-                    ..ImageUsage::empty()
-                },
+                image_usage: ImageUsage::COLOR_ATTACHMENT,
                 composite_alpha: surface_capabilities
                     .supported_composite_alpha
-                    .iter()
+                    .into_iter()
                     .next()
                     .unwrap(),
                 present_mode,

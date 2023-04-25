@@ -5,7 +5,7 @@ use std::sync::Arc;
 use vulkano::{
     device::{
         physical::PhysicalDeviceType, Device, DeviceCreateInfo, DeviceExtensions, Features, Queue,
-        QueueCreateInfo,
+        QueueCreateInfo, QueueFlags,
     },
     format::Format,
     instance::{Instance, InstanceCreateInfo, InstanceExtensions},
@@ -16,9 +16,9 @@ use vulkano::{
 
 use vulkano_win::create_surface_from_winit;
 #[cfg(unix)]
-use winit::platform::unix::EventLoopWindowTargetExtUnix;
+use winit::platform::wayland::EventLoopWindowTargetExtWayland;
 #[cfg(unix)]
-use winit::platform::unix::WindowExtUnix;
+use winit::platform::wayland::WindowExtWayland;
 use winit::{
     dpi::PhysicalSize,
     event_loop::EventLoop,
@@ -103,7 +103,7 @@ impl Renderer {
                     .iter()
                     .enumerate()
                     .position(|(i, q)| {
-                        q.queue_flags.graphics
+                        q.queue_flags.contains(QueueFlags::GRAPHICS)
                             && p.surface_support(i as u32, &surface).unwrap_or(false)
                     })
                     .map(|i| (p, i as u32))

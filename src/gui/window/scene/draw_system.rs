@@ -3,7 +3,7 @@ mod notes_render_pass;
 use std::{cell::UnsafeCell, sync::Arc};
 
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
-use vulkano::{buffer::TypedBufferAccess, image::ImageViewAbstract};
+use vulkano::image::ImageViewAbstract;
 
 use crate::{
     gui::{window::keyboard_layout::KeyboardView, GuiRenderer},
@@ -183,7 +183,7 @@ impl NoteRenderer {
             });
 
         // Sort for output metrics
-        columns_view_info.sort_by_key(|k| k.key);
+        columns_view_info.sort_unstable_by_key(|k| k.key);
 
         RenderResultData {
             notes_rendered: notes_pushed as u64,

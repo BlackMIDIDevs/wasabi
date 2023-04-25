@@ -5,7 +5,7 @@ mod ram;
 
 mod shared;
 use enum_dispatch::enum_dispatch;
-use palette::convert::FromColorUnclamped;
+use palette::{convert::FromColorUnclamped, Hsv, Srgb};
 use rand::Rng;
 
 pub use live::LiveLoadMIDIFile;
@@ -40,7 +40,7 @@ impl MIDIColor {
     }
 
     pub fn new_from_hue(hue: f64) -> Self {
-        let hsv = palette::Hsv::new(hue, 1.0, 0.8);
+        let hsv: Hsv<Srgb, f64> = palette::Hsv::new(hue, 1.0, 0.8);
         let rgb = palette::rgb::Rgb::from_color_unclamped(hsv);
         Self::new(
             (rgb.red * 255.0) as u8,

@@ -10,7 +10,7 @@ mod scenes;
 mod settings;
 mod state;
 
-use egui_winit_vulkano::Gui;
+use egui_winit_vulkano::{Gui, GuiConfig};
 use gui::{window::GuiWasabiWindow, GuiRenderer, GuiState};
 use renderer::Renderer;
 use vulkano::swapchain::PresentMode;
@@ -57,9 +57,12 @@ pub fn main() {
     let mut gui = Gui::new(
         &event_loop,
         renderer.surface(),
-        Some(renderer.format()),
         renderer.queue(),
-        false,
+        GuiConfig {
+            is_overlay: true,
+            preferred_format: Some(renderer.format()),
+            ..Default::default()
+        },
     );
 
     let mut gui_render_data = GuiRenderer {
