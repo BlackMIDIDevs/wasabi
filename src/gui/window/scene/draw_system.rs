@@ -183,7 +183,7 @@ impl NoteRenderer {
             });
 
         // Sort for output metrics
-        glidesort::sort_in_vec_by_key(&mut columns_view_info, |k| k.key);
+        columns_view_info.sort_unstable_by_key(|k| k.key);
 
         RenderResultData {
             notes_rendered: notes_pushed as u64,

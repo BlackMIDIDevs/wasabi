@@ -2839,7 +2839,6 @@ dependencies = [
  "egui_winit_vulkano",
  "enum_dispatch",
  "gen-iter 0.3.0",
- "glidesort",
  "kdmapi",
  "midi-toolkit-rs",
  "palette",
