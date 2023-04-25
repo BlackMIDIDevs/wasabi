@@ -1,11 +1,9 @@
 use std::{
-    collections::VecDeque,
     sync::{Arc, RwLock},
     thread,
     time::Duration,
 };
 
-use bytemuck::{Pod, Zeroable};
 use midi_toolkit::{
     events::{Event, MIDIEventEnum},
     io::MIDIFile as TKMIDIFile,
@@ -15,19 +13,17 @@ use midi_toolkit::{
         unwrap_items, TimeCaster,
     },
 };
-use rustc_hash::FxHashMap;
 
 use crate::{
     audio_playback::SimpleTemporaryPlayer,
     midi::{
         audio::ram::InRamAudioPlayer,
         cake::tree_threader::{NoteEvent, ThreadedTreeSerializers},
-        ram::{column::InRamNoteColumn, view::InRamNoteViewData},
-        shared::{audio::CompressedAudio, timer::TimeKeeper, track_channel::TrackAndChannel},
+        shared::{audio::CompressedAudio, timer::TimeKeeper},
     },
 };
 
-use self::{blocks::CakeBlock, intvec4::IntVector4};
+use self::blocks::CakeBlock;
 
 use super::{MIDIFileBase, MIDIFileStats};
 
@@ -49,7 +45,7 @@ impl CakeMIDIFile {
     pub fn load_from_file(
         path: &str,
         player: Arc<RwLock<SimpleTemporaryPlayer>>,
-        random_colors: bool,
+        _random_colors: bool,
     ) -> Self {
         let ticks_per_second = 1000;
 

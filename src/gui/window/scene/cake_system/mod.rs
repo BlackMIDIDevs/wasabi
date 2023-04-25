@@ -12,10 +12,11 @@ use vulkano::{
     },
     device::{Device, Queue},
     format::Format,
-    image::{view::ImageView, AttachmentImage, ImageViewAbstract},
+    image::{view::ImageView, AttachmentImage, ImageAccess, ImageViewAbstract},
     memory::allocator::StandardMemoryAllocator,
     pipeline::{
         graphics::{
+            depth_stencil::DepthStencilState,
             input_assembly::{InputAssemblyState, PrimitiveTopology},
             vertex_input::BuffersDefinition,
             viewport::{Viewport, ViewportState},
@@ -23,7 +24,7 @@ use vulkano::{
         GraphicsPipeline, Pipeline, PipelineBindPoint,
     },
     render_pass::{Framebuffer, FramebufferCreateInfo, RenderPass, Subpass},
-    sync::{self, FenceSignalFuture, GpuFuture},
+    sync::{self, GpuFuture},
 };
 
 use crate::{
@@ -31,7 +32,7 @@ use crate::{
         window::keyboard_layout::{KeyPosition, KeyboardView},
         GuiRenderer,
     },
-    midi::{self, CakeBlock, CakeMIDIFile, IntVector4, MIDIColor, MIDIFile, MIDIFileBase},
+    midi::{CakeBlock, CakeMIDIFile, IntVector4},
 };
 
 use super::RenderResultData;
@@ -39,8 +40,6 @@ use super::RenderResultData;
 const BUFFER_ARRAY_LEN: u64 = 256;
 
 struct CakeBuffer {
-    verts: Arc<CpuAccessibleBuffer<[CakeVertex; 4]>>,
-    index: Arc<CpuAccessibleBuffer<[u32]>>,
     data: Arc<CpuAccessibleBuffer<[IntVector4]>>,
     start: i32,
     end: i32,
@@ -87,7 +86,7 @@ struct CakeVertex2 {
 vulkano::impl_vertex!(CakeVertex2, left, right, start, end, buffer_index);
 
 impl BufferSet {
-    fn new(device: &Arc<Device>) -> Self {
+    fn new(_device: &Arc<Device>) -> Self {
         Self { buffers: vec![] }
     }
 
@@ -97,44 +96,6 @@ impl BufferSet {
         block: &CakeBlock,
         key: &KeyPosition,
     ) {
-        let buffer_data = [
-            CakeVertex {
-                uv: [1.0, 0.0],
-                left_right: [key.left, key.right],
-                start: block.start_time as i32,
-                end: block.end_time as i32,
-                x: key.right,
-            },
-            CakeVertex {
-                uv: [0.0, 0.0],
-                left_right: [key.left, key.right],
-                start: block.start_time as i32,
-                end: block.end_time as i32,
-                x: key.left,
-            },
-            CakeVertex {
-                uv: [1.0, 1.0],
-                left_right: [key.left, key.right],
-                start: block.start_time as i32,
-                end: block.end_time as i32,
-                x: key.left,
-            },
-            CakeVertex {
-                uv: [0.0, 1.0],
-                left_right: [key.left, key.right],
-                start: block.start_time as i32,
-                end: block.end_time as i32,
-                x: key.right,
-            },
-        ];
-
-        let verts =
-            CpuAccessibleBuffer::from_data(allocator, BUFFER_USAGE, false, buffer_data).unwrap();
-
-        let index =
-            CpuAccessibleBuffer::from_iter(allocator, BUFFER_USAGE, false, [0, 1, 2, 0, 2, 3])
-                .unwrap();
-
         dbg!(block.tree.len());
 
         let data = CpuAccessibleBuffer::from_iter(
@@ -146,9 +107,7 @@ impl BufferSet {
         .unwrap();
 
         let buffer = CakeBuffer {
-            verts,
             data,
-            index,
             start: block.start_time as i32,
             end: block.end_time as i32,
         };
@@ -161,10 +120,9 @@ pub struct CakeRenderer {
     gfx_queue: Arc<Queue>,
     buffers: BufferSet,
     pipeline_clear: Arc<GraphicsPipeline>,
-    pipeline_draw_over: Arc<GraphicsPipeline>,
     render_pass_clear: Arc<RenderPass>,
-    render_pass_draw_over: Arc<RenderPass>,
     allocator: StandardMemoryAllocator,
+    depth_buffer: Arc<ImageView<AttachmentImage>>,
     cb_allocator: StandardCommandBufferAllocator,
     sd_allocator: StandardDescriptorSetAllocator,
     buffers_init: Arc<CpuAccessibleBuffer<[CakeVertex2]>>,
@@ -183,34 +141,27 @@ impl CakeRenderer {
                     store: Store,
                     format: renderer.format,
                     samples: 1,
-                }
-            },
-            passes: [
-                {
-                    color: [final_color],
-                    depth_stencil: {},
-                    input: []
-                }
-            ]
-        )
-        .unwrap();
-
-        let render_pass_draw_over = vulkano::ordered_passes_renderpass!(gfx_queue.device().clone(),
-            attachments: {
-                final_color: {
-                    load: DontCare,
+                },
+                depth: {
+                    load: Clear,
                     store: Store,
-                    format: renderer.format,
+                    format: Format::D16_UNORM,
                     samples: 1,
                 }
             },
             passes: [
                 {
                     color: [final_color],
-                    depth_stencil: {},
+                    depth_stencil: {depth},
                     input: []
                 }
             ]
+        )
+        .unwrap();
+
+        let depth_buffer = ImageView::new_default(
+            AttachmentImage::transient_input_attachment(&allocator, [1, 1], Format::D16_UNORM)
+                .unwrap(),
         )
         .unwrap();
 
@@ -224,16 +175,12 @@ impl CakeRenderer {
             .vertex_shader(vs.entry_point("main").unwrap(), ())
             .fragment_shader(fs.entry_point("main").unwrap(), ())
             .geometry_shader(gs.entry_point("main").unwrap(), ())
-            .viewport_state(ViewportState::viewport_dynamic_scissor_irrelevant());
+            .viewport_state(ViewportState::viewport_dynamic_scissor_irrelevant())
+            .depth_stencil_state(DepthStencilState::simple_depth_test());
 
         let pipeline_clear = pipeline_base
             .clone()
             .render_pass(Subpass::from(render_pass_clear.clone(), 0).unwrap())
-            .build(gfx_queue.device().clone())
-            .unwrap();
-
-        let pipeline_draw_over = pipeline_base
-            .render_pass(Subpass::from(render_pass_draw_over.clone(), 0).unwrap())
             .build(gfx_queue.device().clone())
             .unwrap();
 
@@ -251,9 +198,8 @@ impl CakeRenderer {
             gfx_queue,
             buffers: BufferSet::new(&renderer.device),
             pipeline_clear,
-            pipeline_draw_over,
             render_pass_clear,
-            render_pass_draw_over,
+            depth_buffer,
             allocator,
             cb_allocator: StandardCommandBufferAllocator::new(
                 renderer.device.clone(),
@@ -272,6 +218,17 @@ impl CakeRenderer {
         view_range: f64,
     ) -> RenderResultData {
         let img_dims = final_image.image().dimensions().width_height();
+        if self.depth_buffer.image().dimensions().width_height() != img_dims {
+            self.depth_buffer = ImageView::new_default(
+                AttachmentImage::transient_input_attachment(
+                    &self.allocator,
+                    img_dims,
+                    Format::D16_UNORM,
+                )
+                .unwrap(),
+            )
+            .unwrap();
+        }
 
         if self.buffers.buffers.is_empty() {
             for (i, block) in midi_file.key_blocks().iter().enumerate() {
@@ -294,30 +251,33 @@ impl CakeRenderer {
         };
 
         let mut buffer_instances = self.buffers_init.write().unwrap();
-        // White keys first
+        // Black keys first
+        let mut written_instances = 0;
         for (i, buffer) in self.buffers.buffers.iter().enumerate() {
-            let key = key_view.key(i);
-            if !key.black {
-                buffer_instances[i] = CakeVertex2 {
+            let key = key_view.note(i);
+            if key.black {
+                buffer_instances[written_instances] = CakeVertex2 {
                     buffer_index: i as i32,
                     start: buffer.start,
                     end: buffer.end,
                     left: key.left,
                     right: key.right,
                 };
+                written_instances += 1;
             }
         }
-        // Then black keys
+        // Then white keys
         for (i, buffer) in self.buffers.buffers.iter().enumerate() {
-            let key = key_view.key(i);
-            if key.black {
-                buffer_instances[i] = CakeVertex2 {
+            let key = key_view.note(i);
+            if !key.black {
+                buffer_instances[written_instances] = CakeVertex2 {
                     buffer_index: i as i32,
                     start: buffer.start,
                     end: buffer.end,
                     left: key.left,
                     right: key.right,
                 };
+                written_instances += 1;
             }
         }
         drop(buffer_instances);
@@ -338,7 +298,7 @@ impl CakeRenderer {
         let framebuffer = Framebuffer::new(
             render_pass.clone(),
             FramebufferCreateInfo {
-                attachments: vec![final_image.clone()],
+                attachments: vec![final_image.clone(), self.depth_buffer.clone()],
                 ..Default::default()
             },
         )
@@ -389,7 +349,7 @@ impl CakeRenderer {
                 data_descriptor.clone(),
             )
             .bind_vertex_buffers(0, self.buffers_init.clone())
-            .draw(self.buffers.buffers.len() as u32, 1, 0, 0)
+            .draw(written_instances as u32, 1, 0, 0)
             .unwrap();
 
         command_buffer_builder.end_render_pass().unwrap();

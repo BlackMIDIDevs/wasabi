@@ -1,24 +1,6 @@
-use std::{
-    convert::TryInto,
-    sync::{Arc, Mutex},
-    time::{Duration, Instant},
-};
+use std::sync::{Arc, Mutex};
 
-use midi_toolkit::{
-    events::{Event, MIDIEvent, MIDIEventEnum},
-    io::{MIDIFile, MIDIParseError},
-    pipe,
-    sequence::{
-        event::{
-            cancel_tempo_events, flatten_track_batches_to_events, get_channels_array_statistics,
-            scale_event_time, Delta, EventBatch, Track,
-        },
-        to_vec, unwrap_items, TimeCaster,
-    },
-};
-use rayon::iter::{
-    IndexedParallelIterator, IntoParallelRefIterator, IntoParallelRefMutIterator, ParallelIterator,
-};
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
 
 use super::{intvec4::IntVector4, tree_serializer::TreeSerializer};
 
@@ -125,8 +107,8 @@ impl ThreadedTreeSerializers {
         let trees = Arc::try_unwrap(self.trees).unwrap().into_inner().unwrap();
 
         let mut serialized = Vec::new();
-        for (i, tree) in trees.into_iter().enumerate() {
-            let mut sealed = tree.complete_and_seal(time);
+        for (_i, tree) in trees.into_iter().enumerate() {
+            let sealed = tree.complete_and_seal(time);
             serialized.push(sealed);
         }
 

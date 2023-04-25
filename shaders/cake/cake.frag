@@ -48,11 +48,6 @@ ivec4 getNoteAt(int time) {
     return note;
 }
 
-// bool midi_is_white(int p) {
-//   float k = fract(p * 5 / 12.0);
-//   return 0.1 < k && k < 0.55;
-// }
-
 float ticks_to_screen_y(int ticks) {
     float screen_y = float(ticks - consts.start_time) / float(consts.end_time - consts.start_time);
     return screen_y;
@@ -60,43 +55,12 @@ float ticks_to_screen_y(int ticks) {
 
 void main()
 {
-    // int testKey = int(floor(position.x * keyCount));
-
-    // int whiteKey = -1;
-    // int blackKey = -1;
-
-    // for (int i = 0; i < 9; i++) {
-    //     int odd = i % 2;
-    //     int o = (i - odd) / 2;
-    //     if(odd == 1) o = -o;
-
-    //     int k = testKey + o;
-    //     if(k < 0 || k >= keyCount) continue;
-
-    //     KeyLocation keyData = KeyLocations[k];
-    //     if(keyData.left < position.x && keyData.right >= position.x) {
-    //         if(keyData.flags == 1) blackKey = k;
-    //         else whiteKey = k;
-    //     }
-    // }
-
-    // vec4 tex = texture(sampler2D(t_Color, s_Color), position);
-    // float mag = length(position-vec2(0.5));
-    // fsout_Color = vec4(mix(tex.xyz, vec3(0.0), mag*mag), 1.0);
-
-    // return;
-
     int time = ticks_start + int(ticks_height * v_uv.y);
 
-    // int key;
-    ivec4 note;
-
-    note = getNoteAt(time);
-
-    // fsout_Color = vec4(0, 0, 1, 1) / 10.0 * steps;
+    ivec4 note = getNoteAt(time);
 
     if (note.z == -1) {
-        fsout_Color = vec4(0, 0, 0, 0);
+        discard;
     } else {
         fsout_Color = vec4(((note.z >> 16) & 0xFF) / 255.0, ((note.z >> 8) & 0xFF) / 255.0, (note.z & 0xFF) / 255.0, 1);
     }
@@ -121,48 +85,9 @@ void main()
         fsout_Color = fsout_Color * 0.2;
     }
 
-    // if (!midi_is_white(key)) {
-    //     fsout_Color = vec4(1, 1, 1, 1);
-    // } else {
-    //     fsout_Color = vec4(0, 0, 0, 1);
-    // }
-
-    return;
-
-    // if(blackKey == -1 || note.z == -1) {
-    //     note = getNoteAt(whiteKey, time);
-    //     key = whiteKey;
-    // }
-
-    // KeyLocation kdata = KeyLocations[key];
-
-    // float left = 1.0 / keyCount * key;
-    // float right = 1.0 / keyCount * (key + 1);
-
-    // if(note.z == -1) {
-    //     fsout_Color = vec4(0, 0, 0, 1);
-    // }
-    // else {
-    //     int viewHeight = end - start;
-
-    //     float distFromTop = float(note.y - time);
-    //     float distFromBottom = float(time - note.x);
-
-    //     float distFromLeft = float(position.x - left);
-    //     float distFromRight = float(right - position.x);
-
-    //     float vdist = min(distFromTop, distFromBottom) / viewHeight / width * height;
-    //     float hdist = min(distFromLeft, distFromRight);
-
-    //     float minDist = min(vdist, hdist);
-
-    //     vec4 col = vec4(0, 0, 1, 1);
-
-    //     if(minDist < borderWidth) {
-    //         fsout_Color = col * 0.6;
-    //     }
-    //     else {
-    //         fsout_Color = col;
-    //     }
-    // }
+    if (!midi_is_white(key)) {
+        fsout_Color = vec4(1, 1, 1, 1);
+    } else {
+        fsout_Color = vec4(0, 0, 0, 1);
+    }
 }
