@@ -44,8 +44,4 @@ impl CakeBlock {
             })
         }
     }
-
-    pub fn get_notes_passed_at(&self, time: u32) -> u64 {
-        return 0;
-    }
 }

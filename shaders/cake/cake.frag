@@ -5,6 +5,7 @@ layout(location = 1) in vec2 screen_pos;
 layout(location = 2) in vec2 left_right;
 layout(location = 3) flat in int ticks_height;
 layout(location = 4) flat in int ticks_start;
+layout(location = 5) flat in int buffer_index;
 
 layout(location = 0) out vec4 fsout_Color;
 
@@ -15,67 +16,19 @@ layout(push_constant) uniform PushConstants {
     int screen_height;
 } consts;
 
-layout (set = 0, binding = 0) readonly buffer BinaryTree
+layout(set = 0, binding = 0) readonly buffer BufferArray
 {
-    ivec3 BinTree[];
-};
-
-// void main()
-// {
-//     fsout_Color = vec4(1, 1, 1, 1);
-// }
-
-// struct KeyLocation {
-//     float left;
-//     float right;
-//     int flags;
-//     int _;
-// };
-
-// layout(location = 1) in vec2 position;
-// layout(location = 0) out vec4 fsout_Color;
-
-// layout (binding = 0) uniform UniformBuffer
-// {
-//     int width;
-//     int height;
-//     int _start;
-//     int _end;
-//     int _keyCount;
-// };
-
-// const int start = 0;
-// const int end = 1505340;
-
-// const int keyCount = 128;
-
-// layout (binding = 1) readonly buffer BinaryTree
-// {
-//     ivec3 BinTree[];
-// };
-
-// // layout (binding = 2) readonly buffer Colors
-// // {
-// //     vec4 NoteColor[];
-// // };
-
-// // layout (binding = 3) readonly buffer Keys
-// // {
-// //     KeyLocation KeyLocations[];
-// // };
+    ivec4 BinTree[];
+} buffers[256];
 
 const float border_width = 0.0015;
 
-ivec3 sampleAt(int pos) {
-    return BinTree[pos];
-}
-
-ivec3 getNoteAt(int time) {
-    int nextIndex = sampleAt(0).x;
+ivec4 getNoteAt(int time) {
+    int nextIndex = buffers[buffer_index].BinTree[0].x;
 
     int steps = 0;
     while(steps < 100) {
-        ivec3 node = sampleAt(nextIndex);
+        ivec4 node = buffers[buffer_index].BinTree[nextIndex];
 
         int offset = 0;
         if(time < node.x) offset = node.y;
@@ -90,7 +43,7 @@ ivec3 getNoteAt(int time) {
         steps++;
     }
 
-    ivec3 note = sampleAt(nextIndex);
+    ivec4 note = buffers[buffer_index].BinTree[nextIndex];
 
     return note;
 }
@@ -136,7 +89,7 @@ void main()
     int time = ticks_start + int(ticks_height * v_uv.y);
 
     // int key;
-    ivec3 note;
+    ivec4 note;
 
     note = getNoteAt(time);
 

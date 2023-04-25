@@ -180,7 +180,7 @@ impl NoteRenderer {
             });
 
         // Sort for output metrics
-        columns_view_info.sort_by_key(|k| k.key);
+        columns_view_info.sort_unstable_by_key(|k| k.key);
 
         RenderResultData {
             notes_rendered: notes_pushed as u64,

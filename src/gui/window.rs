@@ -75,7 +75,7 @@ impl GuiWasabiWindow {
         };
 
         let mut midi_file = MIDIFileUnion::Cake(CakeMIDIFile::load_from_file(
-            "/mnt/fat/Midis/Clubstep.mid",
+            "/mnt/fat/Midis/The Nuker 4 F2.mid",
             synth.clone(),
             settings.random_colors,
         ));
