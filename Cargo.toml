@@ -34,6 +34,8 @@ directories = "5.0.0"
 rustc-hash = "1.1.0"
 atomic_float = "0.1.0"
 egui_file = { git = "https://github.com/StratusFearMe21/egui_file.git", rev = "88b3f1e" }
+clap = "4.2.4"
+num_enum = "0.6.1"
 
 [profile.dev]
 opt-level = 2
