@@ -34,13 +34,24 @@ pub const WAYLAND_PRESENT_MODE: PresentMode = PresentMode::Mailbox;
 pub fn main() {
     // Winit event loop
     let event_loop = EventLoop::new();
+    let monitor = event_loop
+        .available_monitors()
+        .next()
+        .expect("no monitor found!");
+
+    let mode = monitor.video_modes().next().expect("no mode found");
 
     // Load the settings values
     let mut settings = WasabiSettings::new_or_load();
     let mut wasabi_state = WasabiState::default();
 
     // Create renderer for our scene & ui
-    let mut renderer = Renderer::new(&event_loop, "Wasabi");
+    let mut renderer = Renderer::new(
+        &event_loop,
+        "Wasabi",
+        settings.visual.fullscreen,
+        mode.clone(),
+    );
 
     // Vulkano & Winit & egui integration
     let mut gui = Gui::new(
@@ -59,13 +70,6 @@ pub fn main() {
     };
 
     let mut gui_state = GuiWasabiWindow::new(&mut gui_render_data, &mut settings);
-
-    let monitor = event_loop
-        .available_monitors()
-        .next()
-        .expect("no monitor found!");
-
-    let mode = monitor.video_modes().next().expect("no mode found");
 
     event_loop.run(move |event, _, control_flow| {
         // Update Egui integration so the UI works!
