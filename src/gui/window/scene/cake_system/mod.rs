@@ -85,8 +85,6 @@ impl BufferSet {
         block: &CakeBlock,
         _key: &KeyPosition,
     ) {
-        dbg!(block.tree.len());
-
         let data = CpuAccessibleBuffer::from_iter(
             allocator,
             BUFFER_USAGE,
@@ -230,10 +228,8 @@ impl CakeRenderer {
             self.current_file_signature = Some(curr_signature);
             self.buffers.clear();
             for (i, block) in midi_file.key_blocks().iter().enumerate() {
-                if block.tree.is_empty() {
-                    let key = key_view.key(i);
-                    self.buffers.add_buffer(&self.allocator, block, &key);
-                }
+                let key = key_view.key(i);
+                self.buffers.add_buffer(&self.allocator, block, &key);
             }
         }
 
@@ -366,6 +362,20 @@ impl CakeRenderer {
             .iter()
             .map(|block| block.get_note_at(screen_start as u32).map(|n| n.color))
             .collect();
+        let rendered_notes = midi_file
+            .key_blocks()
+            .iter()
+            .map(|block| {
+                let passed = block.get_notes_passed_at(screen_end as u32)
+                    - block.get_notes_passed_at(screen_start as u32);
+
+                if block.get_note_at(screen_start as u32).is_some() {
+                    passed as u64 + 1
+                } else {
+                    passed as u64
+                }
+            })
+            .sum();
 
         render_future
             .then_signal_fence_and_flush()
@@ -374,7 +384,7 @@ impl CakeRenderer {
             .unwrap();
 
         RenderResultData {
-            notes_rendered: 0,
+            notes_rendered: rendered_notes,
             key_colors: colors,
         }
     }

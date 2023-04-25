@@ -74,11 +74,18 @@ impl GuiWasabiWindow {
             }
         };
 
+        let mut midi_file = MIDIFileUnion::Cake(CakeMIDIFile::load_from_file(
+            "/mnt/fat/Midis/The Nuker 4 F2.mid",
+            synth.clone(),
+            settings.random_colors,
+        ));
+        midi_file.timer_mut().play();
+
         GuiWasabiWindow {
             render_scene: GuiRenderScene::new(renderer),
             keyboard_layout: keyboard_layout::KeyboardLayout::new(&Default::default()),
             keyboard: GuiKeyboard::new(),
-            midi_file: None,
+            midi_file: Some(midi_file),
             synth,
             fps: fps::Fps::new(),
             file_dialogs: WasabiFileDialogs {

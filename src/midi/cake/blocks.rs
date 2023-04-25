@@ -14,34 +14,59 @@ pub struct CakeNoteData {
 
 impl CakeBlock {
     pub fn get_note_at(&self, time: u32) -> Option<CakeNoteData> {
-        let mut next_index = self.tree[0].val1;
+        let mut next_index = self.tree[0].length_marker_len();
 
         loop {
-            let node = self.tree[next_index as usize];
+            let node = self.tree[next_index];
 
-            let offset = if time < node.val1 as u32 {
-                node.val2
+            let offset = if time < node.leaf_cutoff() as u32 {
+                node.leaf_left()
             } else {
-                node.val3
+                node.leaf_right()
             };
 
             if offset > 0 {
-                next_index -= offset;
+                next_index -= offset as usize;
                 break;
             }
-            next_index += offset;
+            let offset = -offset;
+            next_index -= offset as usize;
         }
 
-        let note = self.tree[next_index as usize];
+        let note = self.tree[next_index];
 
-        if note.val3 == -1 {
+        if note.is_note_empty() {
             None
         } else {
             Some(CakeNoteData {
-                start_time: note.val1 as u32,
-                end_time: note.val2 as u32,
-                color: MIDIColor::from_u32(note.val3 as u32),
+                start_time: note.note_start(),
+                end_time: note.note_end(),
+                color: MIDIColor::from_u32(note.note_color()),
             })
         }
+    }
+    pub fn get_notes_passed_at(&self, time: u32) -> u32 {
+        let mut last_notes_passed;
+        let mut next_index = self.tree[0].length_marker_len();
+
+        loop {
+            let node = self.tree[next_index];
+
+            let offset = if time < node.leaf_cutoff() as u32 {
+                node.leaf_left()
+            } else {
+                node.leaf_right()
+            };
+
+            last_notes_passed = node.leaf_notes_to_the_left();
+
+            if offset > 0 {
+                break;
+            }
+            let offset = -offset;
+            next_index -= offset as usize;
+        }
+
+        last_notes_passed
     }
 }

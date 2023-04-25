@@ -82,6 +82,6 @@ void main()
     float min_dist = min(min_x_dist, min_y_dist);
 
     if(min_dist < border_width) {
-        fsout_Color = fsout_Color * 0.2;
+        fsout_Color = fsout_Color * 0.034;
     }
 }
