@@ -84,10 +84,4 @@ void main()
     if(min_dist < border_width) {
         fsout_Color = fsout_Color * 0.2;
     }
-
-    if (!midi_is_white(key)) {
-        fsout_Color = vec4(1, 1, 1, 1);
-    } else {
-        fsout_Color = vec4(0, 0, 0, 1);
-    }
 }
