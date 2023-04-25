@@ -51,7 +51,7 @@ struct BufferSet {
 
 #[derive(Default, Debug, Copy, Clone, Zeroable, Pod, Vertex)]
 #[repr(C)]
-struct CakeVertex {
+struct CakeNoteColumn {
     #[format(R32_SFLOAT)]
     left: f32,
     #[format(R32_SFLOAT)]
@@ -112,7 +112,7 @@ pub struct CakeRenderer {
     depth_buffer: Arc<ImageView<AttachmentImage>>,
     cb_allocator: StandardCommandBufferAllocator,
     sd_allocator: StandardDescriptorSetAllocator,
-    buffers_init: Subbuffer<[CakeVertex]>,
+    buffers_init: Subbuffer<[CakeNoteColumn]>,
     current_file_signature: Option<CakeSignature>,
 }
 
@@ -159,7 +159,7 @@ impl CakeRenderer {
 
         let pipeline_base = GraphicsPipeline::start()
             .input_assembly_state(InputAssemblyState::new().topology(PrimitiveTopology::PointList))
-            .vertex_input_state(CakeVertex::per_vertex())
+            .vertex_input_state(CakeNoteColumn::per_vertex())
             .vertex_shader(vs.entry_point("main").unwrap(), ())
             .fragment_shader(fs.entry_point("main").unwrap(), ())
             .geometry_shader(gs.entry_point("main").unwrap(), ())
@@ -250,7 +250,7 @@ impl CakeRenderer {
         for (i, buffer) in self.buffers.buffers.iter().enumerate() {
             let key = key_view.note(i);
             if key.black {
-                buffer_instances[written_instances] = CakeVertex {
+                buffer_instances[written_instances] = CakeNoteColumn {
                     buffer_index: i as i32,
                     start: buffer.start,
                     end: buffer.end,
@@ -264,7 +264,7 @@ impl CakeRenderer {
         for (i, buffer) in self.buffers.buffers.iter().enumerate() {
             let key = key_view.note(i);
             if !key.black {
-                buffer_instances[written_instances] = CakeVertex {
+                buffer_instances[written_instances] = CakeNoteColumn {
                     buffer_index: i as i32,
                     start: buffer.start,
                     end: buffer.end,
