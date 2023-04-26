@@ -21,7 +21,7 @@ layout(set = 0, binding = 0) readonly buffer BufferArray
     ivec4 BinTree[];
 } buffers[256];
 
-const float border_width = 0.0015;
+const float border_width = 2;
 
 ivec4 getNoteAt(int time) {
     int nextIndex = buffers[buffer_index].BinTree[0].x;
@@ -82,17 +82,15 @@ void main()
     float note_top = ticks_to_screen_y(note.x);
     float note_bottom = ticks_to_screen_y(note.y);
 
-    float y_multiplier = float(consts.screen_height) / float(consts.screen_width);
-
     float y = 1 - screen_pos.y;
-    float note_top_dist = (y - note_top) * y_multiplier;
-    float note_bottom_dist = (note_bottom - y) * y_multiplier;
+    float note_top_dist = (y - note_top);
+    float note_bottom_dist = (note_bottom - y);
 
     float note_left_dist = (screen_pos.x - left_right.x);
     float note_right_dist = (left_right.y - screen_pos.x);
 
-    float min_x_dist = min(note_left_dist, note_right_dist);
-    float min_y_dist = min(note_top_dist, note_bottom_dist);
+    float min_x_dist = min(note_left_dist, note_right_dist) * consts.screen_width;
+    float min_y_dist = min(note_top_dist, note_bottom_dist) * consts.screen_height;
     float min_dist = min(min_x_dist, min_y_dist);
 
     if(min_dist < border_width) {
