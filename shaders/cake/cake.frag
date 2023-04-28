@@ -59,13 +59,15 @@ void main()
 
     ivec4 note = getNoteAt(time);
 
-    vec3 color;
+    vec3 frag_color;
 
     if (note.z == -1) {
         discard;
     } else {
-        color = vec3(((note.z >> 16) & 0xFF) / 255.0, ((note.z >> 8) & 0xFF) / 255.0, (note.z & 0xFF) / 255.0);
+        frag_color = vec3(((note.z >> 16) & 0xFF) / 255.0, ((note.z >> 8) & 0xFF) / 255.0, (note.z & 0xFF) / 255.0);
     }
+
+    vec3 color = frag_color;
 
     // Adjust color
 
@@ -94,7 +96,7 @@ void main()
     float min_dist = min(min_x_dist, min_y_dist);
 
     if(min_dist < border_width) {
-        color = color * 0.034;
+        color = frag_color * 0.034;
     }
 
     fsout_Color = vec4(color, 1);
