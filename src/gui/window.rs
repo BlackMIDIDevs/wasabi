@@ -22,7 +22,7 @@ use crate::{
         AudioPlayerType, SimpleTemporaryPlayer,
     },
     gui::window::{keyboard::GuiKeyboard, scene::GuiRenderScene},
-    midi::{InRamMIDIFile, LiveLoadMIDIFile, MIDIFileBase, MIDIFileUnion},
+    midi::{CakeMIDIFile, InRamMIDIFile, LiveLoadMIDIFile, MIDIFileBase, MIDIFileUnion},
     settings::{MidiLoading, Synth, WasabiSettings},
     state::WasabiState,
     GuiRenderer, GuiState,
@@ -73,6 +73,7 @@ impl GuiWasabiWindow {
                 synth
             }
         };
+
         GuiWasabiWindow {
             render_scene: GuiRenderScene::new(renderer),
             keyboard_layout: keyboard_layout::KeyboardLayout::new(&Default::default()),
@@ -94,7 +95,7 @@ impl GuiWasabiWindow {
         settings: &mut WasabiSettings,
         wasabi_state: &mut WasabiState,
     ) {
-        let ctx = state.gui.context();
+        let ctx = state.renderer.gui.context();
         self.fps.update();
         ctx.set_visuals(Visuals::dark());
 
@@ -290,6 +291,15 @@ impl GuiWasabiWindow {
                 }
                 MidiLoading::Live => {
                     let mut midi_file = MIDIFileUnion::Live(LiveLoadMIDIFile::load_from_file(
+                        midi_path,
+                        self.synth.clone(),
+                        settings.midi.random_colors,
+                    ));
+                    midi_file.timer_mut().play();
+                    self.midi_file = Some(midi_file);
+                }
+                MidiLoading::Cake => {
+                    let mut midi_file = MIDIFileUnion::Cake(CakeMIDIFile::load_from_file(
                         midi_path,
                         self.synth.clone(),
                         settings.midi.random_colors,

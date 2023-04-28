@@ -1,20 +1,21 @@
 use self::view::{InRamCurrentNoteViews, InRamNoteViewData};
 
-use super::{shared::timer::TimeKeeper, MIDIFile, MIDIFileBase, MIDIViewRange};
+use super::{
+    shared::timer::TimeKeeper, MIDIFile, MIDIFileBase, MIDIFileUniqueSignature, MIDIViewRange,
+};
 
-mod audio_player;
 pub mod block;
 pub mod column;
 mod parse;
 pub mod view;
 
 pub struct MIDIFileStats {
-    pub total_notes: usize,
-    pub passed_notes: usize,
+    pub total_notes: u64,
+    pub passed_notes: u64,
 }
 
 impl MIDIFileStats {
-    pub fn new(notes: usize) -> Self {
+    pub fn new(notes: u64) -> Self {
         Self {
             total_notes: notes,
             passed_notes: 0,
@@ -26,7 +27,8 @@ pub struct InRamMIDIFile {
     view_data: InRamNoteViewData,
     timer: TimeKeeper,
     length: f64,
-    note_count: usize,
+    note_count: u64,
+    signature: MIDIFileUniqueSignature,
 }
 
 impl InRamMIDIFile {}
@@ -54,6 +56,10 @@ impl MIDIFileBase for InRamMIDIFile {
 
     fn stats(&self) -> MIDIFileStats {
         MIDIFileStats::new(self.note_count)
+    }
+
+    fn signature(&self) -> &MIDIFileUniqueSignature {
+        &self.signature
     }
 }
 

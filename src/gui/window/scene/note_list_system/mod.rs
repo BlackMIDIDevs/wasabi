@@ -12,6 +12,8 @@ use crate::{
 
 use self::notes_render_pass::{NotePassStatus, NoteRenderPass, NoteVertex};
 
+use super::RenderResultData;
+
 pub struct NoteRenderer {
     render_pass: NoteRenderPass,
     thrad_pool: rayon::ThreadPool,
@@ -32,11 +34,6 @@ impl<T> UnsafeSyncCell<T> {
 
 unsafe impl<T> Sync for UnsafeSyncCell<T> {}
 unsafe impl<T> Send for UnsafeSyncCell<T> {}
-
-pub struct RenderResultData {
-    pub notes_rendered: u64,
-    pub key_colors: Vec<Option<MIDIColor>>,
-}
 
 impl NoteRenderer {
     pub fn new(renderer: &GuiRenderer) -> NoteRenderer {

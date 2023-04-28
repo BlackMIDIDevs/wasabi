@@ -11,6 +11,7 @@ const float border = 2;
 
 void main() {
     vec2 v_uv = frag_tex_coord;
+    
     vec3 color = frag_color;
     float aspect = win_size.y / win_size.x;
 

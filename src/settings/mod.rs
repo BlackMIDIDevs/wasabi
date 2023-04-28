@@ -177,14 +177,15 @@ pub enum MidiLoading {
     #[default]
     Ram = 0,
     Live = 1,
+    Cake = 2,
 }
 
 impl MidiLoading {
-    #[inline]
     pub const fn as_str(self) -> &'static str {
         match self {
             MidiLoading::Ram => "In RAM",
             MidiLoading::Live => "Live",
+            MidiLoading::Cake => "Cake",
         }
     }
 }
@@ -196,8 +197,9 @@ impl FromStr for MidiLoading {
         match s.to_lowercase().as_str() {
             "ram" => Ok(MidiLoading::Ram),
             "live" => Ok(MidiLoading::Live),
+            "cake" => Ok(MidiLoading::Cake),
             s => Err(format!(
-                "{} was not expected. Expected one of `ram`, or `live`",
+                "{} was not expected. Expected one of `ram`, `live` or `cake`",
                 s
             )),
         }

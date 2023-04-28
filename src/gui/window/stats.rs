@@ -5,7 +5,7 @@ use crate::{gui::window::GuiWasabiWindow, midi::MIDIFileBase};
 pub struct GuiMidiStats {
     time_passed: f64,
     time_total: f64,
-    notes_total: usize,
+    notes_total: u64,
     notes_on_screen: u64,
     voice_count: u64,
 }
@@ -85,8 +85,10 @@ pub fn draw_stats(win: &mut GuiWasabiWindow, ctx: &Context, pos: Pos2, mut stats
 
                 stats.notes_total = midi_file.stats().total_notes;
 
+                // FIXME: Use an enum instead lmao
                 match midi_file {
                     crate::midi::MIDIFileUnion::InRam(..) => load_type = 0,
+                    crate::midi::MIDIFileUnion::Cake(..) => load_type = 0,
                     crate::midi::MIDIFileUnion::Live(..) => load_type = 1,
                 }
             }

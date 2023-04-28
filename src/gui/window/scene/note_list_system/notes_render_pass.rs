@@ -196,26 +196,22 @@ impl NoteRenderPass {
         let fs = fs::load(gfx_queue.device().clone()).expect("failed to create shader module");
         let gs = gs::load(gfx_queue.device().clone()).expect("failed to create shader module");
 
-        let pipeline_clear = GraphicsPipeline::start()
+        let pipeline_base = GraphicsPipeline::start()
             .input_assembly_state(InputAssemblyState::new().topology(PrimitiveTopology::PointList))
             .vertex_input_state(NoteVertex::per_vertex())
             .vertex_shader(vs.entry_point("main").unwrap(), ())
             .geometry_shader(gs.entry_point("main").unwrap(), ())
             .fragment_shader(fs.entry_point("main").unwrap(), ())
             .viewport_state(ViewportState::viewport_dynamic_scissor_irrelevant())
-            .depth_stencil_state(DepthStencilState::simple_depth_test())
+            .depth_stencil_state(DepthStencilState::simple_depth_test());
+
+        let pipeline_clear = pipeline_base
+            .clone()
             .render_pass(Subpass::from(render_pass_clear.clone(), 0).unwrap())
             .build(gfx_queue.device().clone())
             .unwrap();
 
-        let pipeline_draw_over = GraphicsPipeline::start()
-            .input_assembly_state(InputAssemblyState::new().topology(PrimitiveTopology::PointList))
-            .vertex_input_state(NoteVertex::per_vertex())
-            .vertex_shader(vs.entry_point("main").unwrap(), ())
-            .geometry_shader(gs.entry_point("main").unwrap(), ())
-            .fragment_shader(fs.entry_point("main").unwrap(), ())
-            .viewport_state(ViewportState::viewport_dynamic_scissor_irrelevant())
-            .depth_stencil_state(DepthStencilState::simple_depth_test())
+        let pipeline_draw_over = pipeline_base
             .render_pass(Subpass::from(render_pass_draw_over.clone(), 0).unwrap())
             .build(gfx_queue.device().clone())
             .unwrap();
@@ -401,7 +397,7 @@ impl NoteRenderPass {
 mod gs {
     vulkano_shaders::shader! {
         ty: "geometry",
-        path: "shaders/notes.geom",
+        path: "shaders/notes/notes.geom",
     }
 }
 
@@ -426,6 +422,6 @@ void main() {
 mod fs {
     vulkano_shaders::shader! {
         ty: "fragment",
-        path: "shaders/notes.frag"
+        path: "shaders/notes/notes.frag"
     }
 }

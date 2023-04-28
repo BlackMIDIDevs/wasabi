@@ -75,6 +75,10 @@ pub fn main() {
     let mut gui_state = GuiWasabiWindow::new(&mut gui_render_data, &mut settings);
 
     event_loop.run(move |event, _, control_flow| {
+        let device = renderer.device();
+        let queue = renderer.queue();
+        let format = renderer.format();
+
         // Update Egui integration so the UI works!
         match event {
             Event::WindowEvent { event, window_id } if window_id == renderer.window().id() => {
@@ -99,7 +103,17 @@ pub fn main() {
                 renderer.render(|frame, future| {
                     // Generate egui layouts
                     gui.immediate_ui(|gui| {
-                        let mut state = GuiState { gui, frame };
+                        let mut gui_render_data = GuiRenderer {
+                            gui,
+                            device,
+                            queue,
+                            format,
+                        };
+
+                        let mut state = GuiState {
+                            renderer: &mut gui_render_data,
+                            frame,
+                        };
                         gui_state.layout(&mut state, &mut settings, &mut wasabi_state);
                     });
 
