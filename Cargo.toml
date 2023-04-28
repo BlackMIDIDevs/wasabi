@@ -33,7 +33,7 @@ colors-transform = "0.2.11"
 directories = "5.0.0"
 rustc-hash = "1.1.0"
 atomic_float = "0.1.0"
-egui_file = { git = "https://github.com/StratusFearMe21/egui_file.git", rev = "88b3f1e" }
+egui_file = { git = "https://github.com/StratusFearMe21/egui_file.git", rev = "afc1f38" }
 clap = "4.2.4"
 num_enum = "0.6.1"
 

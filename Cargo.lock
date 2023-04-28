@@ -788,9 +788,10 @@ dependencies = [
 
 [[package]]
 name = "egui_file"
-version = "0.6.0"
-source = "git+https://github.com/StratusFearMe21/egui_file.git?rev=88b3f1e#88b3f1e8861a3bff5639c61f7577233e6f75cf1e"
+version = "0.8.1"
+source = "git+https://github.com/StratusFearMe21/egui_file.git?rev=afc1f38#afc1f38790d015bc67a0ea95791e52fc937d4921"
 dependencies = [
+ "cfg-if",
  "egui",
  "fst",
  "memchr",
