@@ -46,9 +46,11 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update; sudo apt-get install -y libgtk-3-dev libasound2-dev portaudio19-dev build-essential libpulse-dev libdbus-1-dev
 
-      - name: Build binary
-        run: |
-          cross build --release --target=${{ matrix.target.name }}
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --release --target=${{ matrix.target.name }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
