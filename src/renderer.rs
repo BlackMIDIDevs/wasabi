@@ -145,7 +145,7 @@ impl Renderer {
             window.clone(),
             physical_device,
             device.clone(),
-            #[cfg(unix)]
+            #[cfg(all(unix, not(target_os = "macos")))]
             if event_loop.is_wayland() {
                 println!("Present Mode: {:?}", crate::WAYLAND_PRESENT_MODE);
                 crate::WAYLAND_PRESENT_MODE
@@ -153,7 +153,7 @@ impl Renderer {
                 println!("Present Mode: {:?}", crate::PRESENT_MODE);
                 crate::PRESENT_MODE
             },
-            #[cfg(not(unix))]
+            #[cfg(not(all(unix, not(target_os = "macos"))))]
             crate::PRESENT_MODE,
         );
 
@@ -195,13 +195,13 @@ impl Renderer {
 
     pub fn set_fullscreen(&self, mode: VideoMode) {
         if self.window.fullscreen().is_none() {
-            #[cfg(unix)]
+            #[cfg(all(unix, not(target_os = "macos")))]
             let fullscreen = if self.window.wayland_display().is_some() {
                 Some(Fullscreen::Borderless(None))
             } else {
                 Some(Fullscreen::Exclusive(mode))
             };
-            #[cfg(not(unix))]
+            #[cfg(not(all(unix, not(target_os = "macos"))))]
             let fullscreen = Some(Fullscreen::Exclusive(mode));
 
             self.window.set_fullscreen(fullscreen);
