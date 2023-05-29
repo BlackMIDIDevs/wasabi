@@ -21,9 +21,18 @@ jobs:
           override: true
 
       - name: Get current version
-        run: cargo metadata --format-version 1 --no-deps | jq ".packages[0].version" -r > current-version.txt
+        run: |
+          cargo metadata --format-version 1 --no-deps | \
+          jq ".packages[0].version" -r > \
+          version.txt
 
-      - uses: salsify/action-detect-and-tag-new-version@v2
+      - name: Output version
+        id: get-version
+        run: |
+          echo ::set-output name=version::v$(cat version.txt)
+
+      - uses: rickstaa/action-create-tag@v1
         with:
-          version-command: |
-            cat current-version.txt
+          tag: ${{ steps.get-version.outputs.version }}
+          tag_exists_error: false
+          message: "Release ${{ steps.get-version.outputs.version }}"
