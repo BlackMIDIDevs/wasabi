@@ -15,9 +15,9 @@ use vulkano::{
 };
 
 use vulkano_win::create_surface_from_winit;
-#[cfg(unix)]
+#[cfg(target_os = "linux")]
 use winit::platform::wayland::EventLoopWindowTargetExtWayland;
-#[cfg(unix)]
+#[cfg(target_os = "linux")]
 use winit::platform::wayland::WindowExtWayland;
 use winit::{
     dpi::PhysicalSize,
