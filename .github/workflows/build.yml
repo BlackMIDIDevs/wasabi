@@ -43,14 +43,11 @@ jobs:
           override: true
           profile: minimal
 
-      - name: Install dependencies
-        run: sudo apt-get update; sudo apt-get install -y libgtk-3-dev libasound2-dev portaudio19-dev build-essential libpulse-dev libdbus-1-dev
-
       - uses: actions-rs/cargo@v1
         with:
           use-cross: true
           command: build
-          args: --release
+          args: --release --target=${{ matrix.target.name }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
