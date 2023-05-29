@@ -15,12 +15,12 @@ jobs:
         target:
           - name: x86_64-unknown-linux-gnu
             arch: x64
-          - name: x86_64-unknown-linux-musl
-            arch: x64-musl
+          # - name: x86_64-unknown-linux-musl
+          #   arch: x64-musl
           - name: aarch64-unknown-linux-gnu
             arch: arm64
-          - name: aarch64-unknown-linux-musl
-            arch: arm64-musl
+          # - name: aarch64-unknown-linux-musl
+          #   arch: arm64-musl
 
     steps:
       - name: Checkout repository
