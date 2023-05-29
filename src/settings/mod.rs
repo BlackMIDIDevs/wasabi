@@ -645,7 +645,7 @@ impl WasabiSettings {
             path.push("wasabi");
             path.push(CONFIG_PATH);
 
-            if let Ok(..) = std::fs::create_dir_all(path.parent().unwrap()) {
+            if std::fs::create_dir_all(path.parent().unwrap()).is_ok() {
                 if let Some(path) = path.to_str() {
                     path.to_string()
                 } else {
