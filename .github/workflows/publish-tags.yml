@@ -7,6 +7,7 @@ on:
 
 jobs:
   tag-new-versions:
+    name: Tag new versions
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -29,10 +30,10 @@ jobs:
       - name: Output version
         id: get-version
         run: |
-          echo ::set-output name=version::v$(cat version.txt)
+          echo "version=v$(cat version.txt)" >> "$GITHUB_ENV"
 
       - uses: rickstaa/action-create-tag@v1
         with:
-          tag: ${{ steps.get-version.outputs.version }}
+          tag: ${{ env.version }}
           tag_exists_error: false
-          message: "Release ${{ steps.get-version.outputs.version }}"
+          message: "Release ${{ env.version }}"
