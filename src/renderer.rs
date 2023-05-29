@@ -62,13 +62,13 @@ impl Renderer {
         let window = WindowBuilder::new()
             .with_fullscreen({
                 if fullscreen {
-                    #[cfg(unix)]
+                    #[cfg(target_os = "linux")]
                     let fullscreen = if event_loop.is_wayland() {
                         Some(Fullscreen::Borderless(None))
                     } else {
                         Some(Fullscreen::Exclusive(mode))
                     };
-                    #[cfg(not(unix))]
+                    #[cfg(not(target_os = "linux"))]
                     let fullscreen = Some(Fullscreen::Exclusive(mode));
                     fullscreen
                 } else {
