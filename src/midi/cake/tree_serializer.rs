@@ -62,7 +62,7 @@ impl TreeSerializer {
             None => 0,
 
             // Negative are returned because note addresses are negative
-            Some(mut marker) => match marker.written_pos {
+            Some(marker) => match marker.written_pos {
                 Some(pos) => -pos,
                 None => {
                     let written_pos = self.written_values.len() as i32;

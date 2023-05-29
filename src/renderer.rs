@@ -15,9 +15,9 @@ use vulkano::{
 };
 
 use vulkano_win::create_surface_from_winit;
-#[cfg(unix)]
+#[cfg(target_os = "linux")]
 use winit::platform::wayland::EventLoopWindowTargetExtWayland;
-#[cfg(unix)]
+#[cfg(target_os = "linux")]
 use winit::platform::wayland::WindowExtWayland;
 use winit::{
     dpi::PhysicalSize,
@@ -62,13 +62,13 @@ impl Renderer {
         let window = WindowBuilder::new()
             .with_fullscreen({
                 if fullscreen {
-                    #[cfg(unix)]
+                    #[cfg(target_os = "linux")]
                     let fullscreen = if event_loop.is_wayland() {
                         Some(Fullscreen::Borderless(None))
                     } else {
                         Some(Fullscreen::Exclusive(mode))
                     };
-                    #[cfg(not(unix))]
+                    #[cfg(not(target_os = "linux"))]
                     let fullscreen = Some(Fullscreen::Exclusive(mode));
                     fullscreen
                 } else {
@@ -145,7 +145,7 @@ impl Renderer {
             window.clone(),
             physical_device,
             device.clone(),
-            #[cfg(unix)]
+            #[cfg(target_os = "linux")]
             if event_loop.is_wayland() {
                 println!("Present Mode: {:?}", crate::WAYLAND_PRESENT_MODE);
                 crate::WAYLAND_PRESENT_MODE
@@ -153,7 +153,7 @@ impl Renderer {
                 println!("Present Mode: {:?}", crate::PRESENT_MODE);
                 crate::PRESENT_MODE
             },
-            #[cfg(not(unix))]
+            #[cfg(not(target_os = "linux"))]
             crate::PRESENT_MODE,
         );
 
@@ -195,13 +195,13 @@ impl Renderer {
 
     pub fn set_fullscreen(&self, mode: VideoMode) {
         if self.window.fullscreen().is_none() {
-            #[cfg(unix)]
+            #[cfg(target_os = "linux")]
             let fullscreen = if self.window.wayland_display().is_some() {
                 Some(Fullscreen::Borderless(None))
             } else {
                 Some(Fullscreen::Exclusive(mode))
             };
-            #[cfg(not(unix))]
+            #[cfg(not(target_os = "linux"))]
             let fullscreen = Some(Fullscreen::Exclusive(mode));
 
             self.window.set_fullscreen(fullscreen);

@@ -1,0 +1,29 @@
+name: Check Version Change
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  tag-new-versions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+
+      - uses: actions-rs/toolchain@v1
+        name: Initialize Cargo
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+
+      - name: Get current version
+        run: cargo metadata --format-version 1 --no-deps | jq ".packages[0].version" -r > current-version.txt
+
+      - uses: salsify/action-detect-and-tag-new-version@v2
+        with:
+          version-command: |
+            cat current-version.txt
