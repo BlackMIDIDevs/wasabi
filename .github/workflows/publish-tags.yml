@@ -12,7 +12,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 2
           ssh-key: "${{ secrets.DEPLOY_KEY }}"
 
       - uses: actions-rs/toolchain@v1
@@ -34,8 +33,6 @@ jobs:
           echo "version=v$(cat version.txt)" >> "$GITHUB_ENV"
 
       - uses: rickstaa/action-create-tag@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets. PATNAME }}
         with:
           tag: ${{ env.version }}
           tag_exists_error: false
