@@ -13,6 +13,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 2
+          ssh-key: "${{ secrets.DEPLOY_KEY }}"
 
       - uses: actions-rs/toolchain@v1
         name: Initialize Cargo
