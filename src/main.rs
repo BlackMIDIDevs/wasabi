@@ -10,7 +10,7 @@ mod scenes;
 mod settings;
 mod state;
 
-use egui_winit_vulkano::Gui;
+use egui_winit_vulkano::{Gui, GuiConfig};
 use gui::{window::GuiWasabiWindow, GuiRenderer, GuiState};
 use renderer::Renderer;
 use vulkano::swapchain::PresentMode;
@@ -34,21 +34,35 @@ pub const WAYLAND_PRESENT_MODE: PresentMode = PresentMode::Mailbox;
 pub fn main() {
     // Winit event loop
     let event_loop = EventLoop::new();
+    let monitor = event_loop
+        .available_monitors()
+        .next()
+        .expect("no monitor found!");
+
+    let mode = monitor.video_modes().next().expect("no mode found");
 
     // Load the settings values
     let mut settings = WasabiSettings::new_or_load();
     let mut wasabi_state = WasabiState::default();
 
     // Create renderer for our scene & ui
-    let mut renderer = Renderer::new(&event_loop, "Wasabi");
+    let mut renderer = Renderer::new(
+        &event_loop,
+        "Wasabi",
+        settings.visual.fullscreen,
+        mode.clone(),
+    );
 
     // Vulkano & Winit & egui integration
     let mut gui = Gui::new(
         &event_loop,
         renderer.surface(),
-        Some(renderer.format()),
         renderer.queue(),
-        false,
+        GuiConfig {
+            is_overlay: true,
+            preferred_format: Some(renderer.format()),
+            ..Default::default()
+        },
     );
 
     let mut gui_render_data = GuiRenderer {
@@ -60,14 +74,11 @@ pub fn main() {
 
     let mut gui_state = GuiWasabiWindow::new(&mut gui_render_data, &mut settings);
 
-    let monitor = event_loop
-        .available_monitors()
-        .next()
-        .expect("no monitor found!");
-
-    let mode = monitor.video_modes().next().expect("no mode found");
-
     event_loop.run(move |event, _, control_flow| {
+        let device = renderer.device();
+        let queue = renderer.queue();
+        let format = renderer.format();
+
         // Update Egui integration so the UI works!
         match event {
             Event::WindowEvent { event, window_id } if window_id == renderer.window().id() => {
@@ -92,7 +103,17 @@ pub fn main() {
                 renderer.render(|frame, future| {
                     // Generate egui layouts
                     gui.immediate_ui(|gui| {
-                        let mut state = GuiState { gui, frame };
+                        let mut gui_render_data = GuiRenderer {
+                            gui,
+                            device,
+                            queue,
+                            format,
+                        };
+
+                        let mut state = GuiState {
+                            renderer: &mut gui_render_data,
+                            frame,
+                        };
                         gui_state.layout(&mut state, &mut settings, &mut wasabi_state);
                     });
 

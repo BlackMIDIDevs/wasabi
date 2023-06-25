@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use bytemuck::{Pod, Zeroable};
 use vulkano::{
-    buffer::{BufferUsage, CpuAccessibleBuffer, TypedBufferAccess},
+    buffer::{Buffer, BufferCreateInfo, BufferUsage, Subbuffer},
     command_buffer::{
         allocator::StandardCommandBufferAllocator, AutoCommandBufferBuilder, CommandBufferUsage,
         RenderPassBeginInfo, SubpassContents,
@@ -13,18 +13,18 @@ use vulkano::{
     device::{Device, Queue},
     format::Format,
     image::{view::ImageView, AttachmentImage, ImageAccess, ImageViewAbstract},
-    memory::allocator::StandardMemoryAllocator,
+    memory::allocator::{AllocationCreateInfo, MemoryUsage, StandardMemoryAllocator},
     pipeline::{
         graphics::{
             depth_stencil::DepthStencilState,
             input_assembly::{InputAssemblyState, PrimitiveTopology},
-            vertex_input::BuffersDefinition,
+            vertex_input::Vertex,
             viewport::{Viewport, ViewportState},
         },
         GraphicsPipeline, Pipeline, PipelineBindPoint,
     },
     render_pass::{Framebuffer, FramebufferCreateInfo, RenderPass, Subpass},
-    sync::{self, FenceSignalFuture, GpuFuture},
+    sync::{self, future::FenceSignalFuture, GpuFuture},
 };
 
 use crate::gui::{window::keyboard_layout::KeyboardView, GuiRenderer};
@@ -32,12 +32,13 @@ use crate::gui::{window::keyboard_layout::KeyboardView, GuiRenderer};
 const NOTE_BUFFER_SIZE: u64 = 25000000;
 
 #[repr(C)]
-#[derive(Default, Debug, Copy, Clone, Zeroable, Pod)]
+#[derive(Default, Debug, Copy, Clone, Zeroable, Pod, Vertex)]
 pub struct NoteVertex {
+    #[format(R32G32_SFLOAT)]
     pub start_length: [f32; 2],
+    #[format(R32_UINT)]
     pub key_color: u32,
 }
-vulkano::impl_vertex!(NoteVertex, start_length, key_color);
 
 impl NoteVertex {
     pub fn new(start: f32, len: f32, key: u8, color: u32) -> Self {
@@ -49,42 +50,39 @@ impl NoteVertex {
 }
 
 struct BufferSet {
-    vertex_buffers: Vec<Arc<CpuAccessibleBuffer<[NoteVertex]>>>,
+    vertex_buffers: [Subbuffer<[NoteVertex]>; 2],
     index: usize,
 }
 
-const BUFFER_USAGE: BufferUsage = BufferUsage {
-    transfer_src: true,
-    transfer_dst: true,
-    uniform_texel_buffer: true,
-    storage_texel_buffer: true,
-    uniform_buffer: true,
-    storage_buffer: true,
-    index_buffer: true,
-    vertex_buffer: true,
-    indirect_buffer: true,
-    shader_device_address: true,
-    ..BufferUsage::empty()
-};
-
-fn get_buffer(device: &Arc<Device>) -> Arc<CpuAccessibleBuffer<[NoteVertex]>> {
+fn get_buffer(device: &Arc<Device>) -> (Subbuffer<[NoteVertex]>, Subbuffer<[NoteVertex]>) {
     let allocator = StandardMemoryAllocator::new_default(device.clone());
 
-    unsafe {
-        CpuAccessibleBuffer::uninitialized_array(&allocator, NOTE_BUFFER_SIZE, BUFFER_USAGE, false)
-            .expect("failed to create buffer")
-    }
+    Buffer::new_slice(
+        &allocator,
+        BufferCreateInfo {
+            usage: BufferUsage::VERTEX_BUFFER,
+            ..Default::default()
+        },
+        AllocationCreateInfo {
+            usage: MemoryUsage::Upload,
+            ..Default::default()
+        },
+        NOTE_BUFFER_SIZE * 2,
+    )
+    .expect("failed to create buffer")
+    .split_at(NOTE_BUFFER_SIZE)
 }
 
 impl BufferSet {
     fn new(device: &Arc<Device>) -> Self {
+        let buffer = get_buffer(device);
         Self {
-            vertex_buffers: vec![get_buffer(device), get_buffer(device)],
+            vertex_buffers: [buffer.0, buffer.1],
             index: 0,
         }
     }
 
-    fn next(&mut self) -> &Arc<CpuAccessibleBuffer<[NoteVertex]>> {
+    fn next(&mut self) -> &Subbuffer<[NoteVertex]> {
         self.index = (self.index + 1) % self.vertex_buffers.len();
         &self.vertex_buffers[self.index]
     }
@@ -111,7 +109,7 @@ pub struct NoteRenderPass {
     pipeline_draw_over: Arc<GraphicsPipeline>,
     render_pass_clear: Arc<RenderPass>,
     render_pass_draw_over: Arc<RenderPass>,
-    key_locations: Arc<CpuAccessibleBuffer<[[KeyPosition; 256]]>>,
+    key_locations: Subbuffer<[[KeyPosition; 256]]>,
     depth_buffer: Arc<ImageView<AttachmentImage>>,
     allocator: StandardMemoryAllocator,
     cb_allocator: StandardCommandBufferAllocator,
@@ -180,10 +178,16 @@ impl NoteRenderPass {
         )
         .unwrap();
 
-        let key_locations = CpuAccessibleBuffer::from_iter(
+        let key_locations = Buffer::from_iter(
             &allocator,
-            BUFFER_USAGE,
-            false,
+            BufferCreateInfo {
+                usage: BufferUsage::UNIFORM_BUFFER,
+                ..Default::default()
+            },
+            AllocationCreateInfo {
+                usage: MemoryUsage::Upload,
+                ..Default::default()
+            },
             [[Default::default(); 256]].into_iter(),
         )
         .unwrap();
@@ -192,26 +196,22 @@ impl NoteRenderPass {
         let fs = fs::load(gfx_queue.device().clone()).expect("failed to create shader module");
         let gs = gs::load(gfx_queue.device().clone()).expect("failed to create shader module");
 
-        let pipeline_clear = GraphicsPipeline::start()
+        let pipeline_base = GraphicsPipeline::start()
             .input_assembly_state(InputAssemblyState::new().topology(PrimitiveTopology::PointList))
-            .vertex_input_state(BuffersDefinition::new().vertex::<NoteVertex>())
+            .vertex_input_state(NoteVertex::per_vertex())
             .vertex_shader(vs.entry_point("main").unwrap(), ())
             .geometry_shader(gs.entry_point("main").unwrap(), ())
             .fragment_shader(fs.entry_point("main").unwrap(), ())
             .viewport_state(ViewportState::viewport_dynamic_scissor_irrelevant())
-            .depth_stencil_state(DepthStencilState::simple_depth_test())
+            .depth_stencil_state(DepthStencilState::simple_depth_test());
+
+        let pipeline_clear = pipeline_base
+            .clone()
             .render_pass(Subpass::from(render_pass_clear.clone(), 0).unwrap())
             .build(gfx_queue.device().clone())
             .unwrap();
 
-        let pipeline_draw_over = GraphicsPipeline::start()
-            .input_assembly_state(InputAssemblyState::new().topology(PrimitiveTopology::PointList))
-            .vertex_input_state(BuffersDefinition::new().vertex::<NoteVertex>())
-            .vertex_shader(vs.entry_point("main").unwrap(), ())
-            .geometry_shader(gs.entry_point("main").unwrap(), ())
-            .fragment_shader(fs.entry_point("main").unwrap(), ())
-            .viewport_state(ViewportState::viewport_dynamic_scissor_irrelevant())
-            .depth_stencil_state(DepthStencilState::simple_depth_test())
+        let pipeline_draw_over = pipeline_base
             .render_pass(Subpass::from(render_pass_draw_over.clone(), 0).unwrap())
             .build(gfx_queue.device().clone())
             .unwrap();
@@ -239,7 +239,7 @@ impl NoteRenderPass {
         final_image: Arc<dyn ImageViewAbstract + 'static>,
         key_view: &KeyboardView,
         view_range: f32,
-        mut fill_buffer: impl FnMut(&Arc<CpuAccessibleBuffer<[NoteVertex]>>) -> NotePassStatus,
+        mut fill_buffer: impl FnMut(&Subbuffer<[NoteVertex]>) -> NotePassStatus,
     ) {
         let img_dims = final_image.image().dimensions().width_height();
         if self.depth_buffer.image().dimensions().width_height() != img_dims {
@@ -335,7 +335,7 @@ impl NoteRenderPass {
                 )
                 .unwrap();
 
-            let push_constants = gs::ty::PushConstants {
+            let push_constants = gs::PushConstants {
                 height_time: view_range,
                 win_width: img_dims[0] as f32,
                 win_height: img_dims[1] as f32,
@@ -397,12 +397,7 @@ impl NoteRenderPass {
 mod gs {
     vulkano_shaders::shader! {
         ty: "geometry",
-        path: "shaders/notes.geom",
-        types_meta: {
-            use bytemuck::{Pod, Zeroable};
-
-            #[derive(Clone, Copy, Zeroable, Pod)]
-        },
+        path: "shaders/notes/notes.geom",
     }
 }
 
@@ -427,6 +422,6 @@ void main() {
 mod fs {
     vulkano_shaders::shader! {
         ty: "fragment",
-        path: "shaders/notes.frag"
+        path: "shaders/notes/notes.frag"
     }
 }

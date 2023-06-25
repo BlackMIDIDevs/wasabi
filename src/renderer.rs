@@ -5,7 +5,7 @@ use std::sync::Arc;
 use vulkano::{
     device::{
         physical::PhysicalDeviceType, Device, DeviceCreateInfo, DeviceExtensions, Features, Queue,
-        QueueCreateInfo,
+        QueueCreateInfo, QueueFlags,
     },
     format::Format,
     instance::{Instance, InstanceCreateInfo, InstanceExtensions},
@@ -15,10 +15,10 @@ use vulkano::{
 };
 
 use vulkano_win::create_surface_from_winit;
-#[cfg(unix)]
-use winit::platform::unix::EventLoopWindowTargetExtUnix;
-#[cfg(unix)]
-use winit::platform::unix::WindowExtUnix;
+#[cfg(target_os = "linux")]
+use winit::platform::wayland::EventLoopWindowTargetExtWayland;
+#[cfg(target_os = "linux")]
+use winit::platform::wayland::WindowExtWayland;
 use winit::{
     dpi::PhysicalSize,
     event_loop::EventLoop,
@@ -40,7 +40,7 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new(event_loop: &EventLoop<()>, name: &str) -> Self {
+    pub fn new(event_loop: &EventLoop<()>, name: &str, fullscreen: bool, mode: VideoMode) -> Self {
         // Why
         let library = VulkanLibrary::new().unwrap();
 
@@ -63,6 +63,21 @@ impl Renderer {
         // Create rendering surface along with window
         let window = WindowBuilder::new()
             .with_window_icon(Some(Icon::from_rgba(ICON.to_vec(), 16, 16).unwrap()))
+            .with_fullscreen({
+                if fullscreen {
+                    #[cfg(target_os = "linux")]
+                    let fullscreen = if event_loop.is_wayland() {
+                        Some(Fullscreen::Borderless(None))
+                    } else {
+                        Some(Fullscreen::Exclusive(mode))
+                    };
+                    #[cfg(not(target_os = "linux"))]
+                    let fullscreen = Some(Fullscreen::Exclusive(mode));
+                    fullscreen
+                } else {
+                    None
+                }
+            })
             .with_inner_size(crate::WINDOW_SIZE)
             .with_title(name)
             .build(event_loop)
@@ -91,7 +106,7 @@ impl Renderer {
                     .iter()
                     .enumerate()
                     .position(|(i, q)| {
-                        q.queue_flags.graphics
+                        q.queue_flags.contains(QueueFlags::GRAPHICS)
                             && p.surface_support(i as u32, &surface).unwrap_or(false)
                     })
                     .map(|i| (p, i as u32))
@@ -133,7 +148,7 @@ impl Renderer {
             window.clone(),
             physical_device,
             device.clone(),
-            #[cfg(unix)]
+            #[cfg(target_os = "linux")]
             if event_loop.is_wayland() {
                 println!("Present Mode: {:?}", crate::WAYLAND_PRESENT_MODE);
                 crate::WAYLAND_PRESENT_MODE
@@ -141,7 +156,7 @@ impl Renderer {
                 println!("Present Mode: {:?}", crate::PRESENT_MODE);
                 crate::PRESENT_MODE
             },
-            #[cfg(not(unix))]
+            #[cfg(not(target_os = "linux"))]
             crate::PRESENT_MODE,
         );
 
@@ -183,13 +198,13 @@ impl Renderer {
 
     pub fn set_fullscreen(&self, mode: VideoMode) {
         if self.window.fullscreen().is_none() {
-            #[cfg(unix)]
+            #[cfg(target_os = "linux")]
             let fullscreen = if self.window.wayland_display().is_some() {
                 Some(Fullscreen::Borderless(None))
             } else {
                 Some(Fullscreen::Exclusive(mode))
             };
-            #[cfg(not(unix))]
+            #[cfg(not(target_os = "linux"))]
             let fullscreen = Some(Fullscreen::Exclusive(mode));
 
             self.window.set_fullscreen(fullscreen);

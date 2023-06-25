@@ -3,7 +3,7 @@ mod notes_render_pass;
 use std::{cell::UnsafeCell, sync::Arc};
 
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
-use vulkano::{buffer::TypedBufferAccess, image::ImageViewAbstract};
+use vulkano::image::ImageViewAbstract;
 
 use crate::{
     gui::{window::keyboard_layout::KeyboardView, GuiRenderer},
@@ -11,6 +11,8 @@ use crate::{
 };
 
 use self::notes_render_pass::{NotePassStatus, NoteRenderPass, NoteVertex};
+
+use super::RenderResultData;
 
 pub struct NoteRenderer {
     render_pass: NoteRenderPass,
@@ -32,11 +34,6 @@ impl<T> UnsafeSyncCell<T> {
 
 unsafe impl<T> Sync for UnsafeSyncCell<T> {}
 unsafe impl<T> Send for UnsafeSyncCell<T> {}
-
-pub struct RenderResultData {
-    pub notes_rendered: u64,
-    pub key_colors: Vec<Option<MIDIColor>>,
-}
 
 impl NoteRenderer {
     pub fn new(renderer: &GuiRenderer) -> NoteRenderer {
@@ -183,7 +180,7 @@ impl NoteRenderer {
             });
 
         // Sort for output metrics
-        columns_view_info.sort_by_key(|k| k.key);
+        columns_view_info.sort_unstable_by_key(|k| k.key);
 
         RenderResultData {
             notes_rendered: notes_pushed as u64,

@@ -8,7 +8,7 @@ use crate::renderer::swapchain::SwapchainFrame;
 pub mod window;
 
 pub struct GuiState<'a> {
-    pub gui: &'a mut Gui,
+    pub renderer: &'a mut GuiRenderer<'a>,
 
     pub frame: &'a SwapchainFrame<'a>,
 }

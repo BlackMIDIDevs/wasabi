@@ -18,7 +18,9 @@ use rustc_hash::FxHashMap;
 use crate::{
     audio_playback::SimpleTemporaryPlayer,
     midi::{
-        ram::{audio_player::InRamAudioPlayer, column::InRamNoteColumn, view::InRamNoteViewData},
+        audio::ram::InRamAudioPlayer,
+        open_file_and_signature,
+        ram::{column::InRamNoteColumn, view::InRamNoteViewData},
         shared::{audio::CompressedAudio, timer::TimeKeeper, track_channel::TrackAndChannel},
     },
 };
@@ -102,7 +104,8 @@ impl InRamMIDIFile {
         player: Arc<RwLock<SimpleTemporaryPlayer>>,
         random_colors: bool,
     ) -> Self {
-        let midi = TKMIDIFile::open(path, None).unwrap();
+        let (file, signature) = open_file_and_signature(path);
+        let midi = TKMIDIFile::open_from_stream(file, None).unwrap();
 
         let ppq = midi.ppq();
         let merged = pipe!(
@@ -122,7 +125,7 @@ impl InRamMIDIFile {
 
             let mut time = 0.0;
 
-            let mut notes: usize = 0;
+            let mut notes = 0;
 
             fn flush_keys(time: f64, keys: &mut [Key]) {
                 for key in keys.iter_mut() {
@@ -197,6 +200,7 @@ impl InRamMIDIFile {
             timer,
             length,
             note_count,
+            signature,
         }
     }
 }

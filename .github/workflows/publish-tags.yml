@@ -1,0 +1,52 @@
+name: Check Version Change
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  tag-new-versions:
+    name: Tag new versions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ssh-key: "${{ secrets.DEPLOY_KEY }}"
+          fetch-depth: 0
+
+      - uses: actions-rs/toolchain@v1
+        name: Initialize Cargo
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+
+      - name: Get current version
+        run: |
+          cargo metadata --format-version 1 --no-deps | \
+          jq ".packages[0].version" -r > \
+          version.txt
+
+      - name: Output version
+        id: get-version
+        run: |
+          echo "version=v$(cat version.txt)" >> "$GITHUB_ENV"
+
+      # - name: Set up Git
+      #   run: |
+      #     git config --local user.email "action@github.com"
+      #     git config --local user.name "GitHub Action"
+
+      - name: Check if tag exists and create if not
+        env:
+          TAG: ${{ env.version }}
+        run: |
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists"
+          else
+            git tag $TAG
+            git push origin $TAG
+            echo "Created new tag: $TAG"
+          fi
+

@@ -1,13 +1,20 @@
 #[allow(dead_code)]
+mod cake;
+#[allow(dead_code)]
 mod live;
 #[allow(dead_code)]
 mod ram;
 
+mod audio;
+
 mod shared;
+use std::{fs::File, time::UNIX_EPOCH};
+
 use enum_dispatch::enum_dispatch;
-use palette::convert::FromColorUnclamped;
+use palette::{convert::FromColorUnclamped, Hsv, Srgb};
 use rand::Rng;
 
+pub use cake::{blocks::CakeBlock, intvec4::IntVector4, CakeMIDIFile, CakeSignature};
 pub use live::LiveLoadMIDIFile;
 pub use ram::{InRamMIDIFile, MIDIFileStats};
 
@@ -30,6 +37,34 @@ impl MIDIViewRange {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MIDIFileUniqueSignature {
+    pub filepath: String,
+    pub length_in_bytes: u64,
+    pub last_modified: u128,
+}
+
+fn open_file_and_signature(path: &str) -> (File, MIDIFileUniqueSignature) {
+    let file = std::fs::File::open(path).unwrap();
+    let file_length = file.metadata().unwrap().len();
+    let file_last_modified = file
+        .metadata()
+        .unwrap()
+        .modified()
+        .unwrap()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_micros();
+
+    let signature = MIDIFileUniqueSignature {
+        filepath: path.to_string(),
+        length_in_bytes: file_length,
+        last_modified: file_last_modified,
+    };
+
+    (file, signature)
+}
+
 #[derive(Debug, Clone, Copy, Default)]
 pub struct MIDIColor(u32);
 
@@ -40,7 +75,7 @@ impl MIDIColor {
     }
 
     pub fn new_from_hue(hue: f64) -> Self {
-        let hsv = palette::Hsv::new(hue, 1.0, 0.8);
+        let hsv: Hsv<Srgb, f64> = palette::Hsv::new(hue, 1.0, 0.8);
         let rgb = palette::rgb::Rgb::from_color_unclamped(hsv);
         Self::new(
             (rgb.red * 255.0) as u8,
@@ -81,6 +116,10 @@ impl MIDIColor {
         self.0
     }
 
+    pub fn from_u32(num: u32) -> Self {
+        MIDIColor(num)
+    }
+
     pub fn red(&self) -> u8 {
         (self.0 >> 16) as u8
     }
@@ -107,6 +146,8 @@ pub trait MIDIFileBase {
     fn stats(&self) -> MIDIFileStats;
 
     fn allows_seeking_backward(&self) -> bool;
+
+    fn signature(&self) -> &MIDIFileUniqueSignature;
 }
 
 /// This trait contains a function to retrieve the column view of the midi
@@ -145,4 +186,5 @@ pub struct DisplacedMIDINote {
 pub enum MIDIFileUnion {
     InRam(ram::InRamMIDIFile),
     Live(live::LiveLoadMIDIFile),
+    Cake(cake::CakeMIDIFile),
 }
