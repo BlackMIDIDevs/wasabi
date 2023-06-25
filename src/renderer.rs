@@ -23,10 +23,12 @@ use winit::{
     dpi::PhysicalSize,
     event_loop::EventLoop,
     monitor::VideoMode,
-    window::{Fullscreen, Window, WindowBuilder},
+    window::{Fullscreen, Icon, Window, WindowBuilder},
 };
 
 use self::swapchain::{ManagedSwapchain, SwapchainFrame};
+
+const ICON: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/icon.bitmap"));
 
 pub struct Renderer {
     _instance: Arc<Instance>,
@@ -60,6 +62,7 @@ impl Renderer {
 
         // Create rendering surface along with window
         let window = WindowBuilder::new()
+            .with_window_icon(Some(Icon::from_rgba(ICON.to_vec(), 16, 16).unwrap()))
             .with_fullscreen({
                 if fullscreen {
                     #[cfg(target_os = "linux")]

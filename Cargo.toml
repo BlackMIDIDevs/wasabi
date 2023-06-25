@@ -34,6 +34,7 @@ directories = "5.0.0"
 rustc-hash = "1.1.0"
 atomic_float = "0.1.0"
 egui_file = { git = "https://github.com/StratusFearMe21/egui_file.git", rev = "afc1f38" }
+ico = { git = "https://github.com/StratusFearMe21/rust-ico", branch = "patch-1" }
 clap = "4.2.4"
 num_enum = "0.6.1"
 
@@ -44,3 +45,10 @@ opt-level = 2
 opt-level = 3
 codegen-units = 1
 lto = true
+
+[build-dependencies]
+resvg = { version = "0.31.0", default-features = false }
+ico = { git = "https://github.com/StratusFearMe21/rust-ico", branch = "patch-1" }
+
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1.12"
