@@ -33,7 +33,7 @@ colors-transform = "0.2.11"
 directories = "5.0.0"
 rustc-hash = "1.1.0"
 atomic_float = "0.1.0"
-egui_file = { git = "https://github.com/Kaydax/egui_file.git", rev = "7ac26fb" }
+egui_file = { git = "https://github.com/StratusFearMe21/egui_file.git", rev = "afc1f38" }
 ico = { git = "https://github.com/StratusFearMe21/rust-ico", branch = "patch-1" }
 clap = "4.2.4"
 num_enum = "0.6.1"
