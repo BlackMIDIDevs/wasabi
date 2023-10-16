@@ -49,7 +49,7 @@ impl CakeMIDIFile {
         player: Arc<RwLock<SimpleTemporaryPlayer>>,
         _random_colors: bool,
     ) -> Self {
-        let ticks_per_second = 1000;
+        let ticks_per_second = 10000;
 
         let (file, signature) = open_file_and_signature(path);
         let midi = TKMIDIFile::open_from_stream(file, None).unwrap();
