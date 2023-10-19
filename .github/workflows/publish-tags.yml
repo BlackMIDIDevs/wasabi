@@ -33,11 +33,6 @@ jobs:
         run: |
           echo "version=v$(cat version.txt)" >> "$GITHUB_ENV"
 
-      # - name: Set up Git
-      #   run: |
-      #     git config --local user.email "action@github.com"
-      #     git config --local user.name "GitHub Action"
-
       - name: Check if tag exists and create if not
         env:
           TAG: ${{ env.version }}
@@ -49,4 +44,3 @@ jobs:
             git push origin $TAG
             echo "Created new tag: $TAG"
           fi
-
