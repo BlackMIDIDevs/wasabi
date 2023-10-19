@@ -3315,7 +3315,7 @@ dependencies = [
 
 [[package]]
 name = "wasabi"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "atomic_float",
  "bytemuck",
