@@ -62,9 +62,8 @@ pub fn draw_xsynth_settings(
                         if ui.button("Browse...").clicked() {
                             if cfg!(target_os = "windows") {
                                 // If windows, just use the native dialog
-                                let sfz_path = RFileDialog::new()
-                                    .add_filter("sfz", &["sfz"])
-                                    .pick_file();
+                                let sfz_path =
+                                    RFileDialog::new().add_filter("sfz", &["sfz"]).pick_file();
 
                                 if let Some(sfz_path) = sfz_path {
                                     if let Ok(path) = sfz_path.into_os_string().into_string() {
