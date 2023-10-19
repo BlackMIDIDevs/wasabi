@@ -1,7 +1,3 @@
-#![allow(dead_code)]
-
-use std::ops::Range;
-
 use gen_iter::GenIter;
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
 
@@ -40,21 +36,12 @@ impl InRamNoteViewData {
             },
         }
     }
-}
 
-pub struct InRamNoteColumnViewData {
-    notes_to_end: usize,
-    notes_to_start: usize,
-    block_range: Range<usize>,
-}
-
-impl InRamNoteColumnViewData {
-    pub fn new() -> Self {
-        InRamNoteColumnViewData {
-            notes_to_end: 0,
-            notes_to_start: 0,
-            block_range: 0..0,
-        }
+    pub fn passed_notes(&self) -> u64 {
+        self.columns
+            .iter()
+            .map(|column| column.data.notes_to_keyboard)
+            .sum()
     }
 }
 
@@ -80,7 +67,7 @@ impl InRamNoteViewData {
                     if block.start >= new_view_range.end {
                         break;
                     }
-                    data.notes_to_end += block.notes.len();
+                    data.notes_to_render_end += block.notes.len() as u64;
                     new_block_end += 1;
                 }
             } else if new_view_range.end < old_view_range.end {
@@ -89,7 +76,7 @@ impl InRamNoteViewData {
                     if block.start < new_view_range.end {
                         break;
                     }
-                    data.notes_to_end -= block.notes.len();
+                    data.notes_to_render_end -= block.notes.len() as u64;
                     new_block_end -= 1;
                 }
             } else {
@@ -97,25 +84,54 @@ impl InRamNoteViewData {
             }
 
             if new_view_range.start > old_view_range.start {
+                // Increment the note view start
                 while new_block_start < blocks.len() {
                     let block = &blocks[new_block_start];
                     if block.max_end() >= new_view_range.start {
                         break;
                     }
-                    data.notes_to_start += block.notes.len();
+                    data.notes_to_render_start += block.notes.len() as u64;
                     new_block_start += 1;
+                }
+
+                // Increment the keyboard passed notes/blocks
+                while data.blocks_to_keyboard < blocks.len() {
+                    let block = &blocks[data.blocks_to_keyboard];
+                    if block.start > new_view_range.start {
+                        break;
+                    }
+                    data.notes_to_keyboard += block.notes.len() as u64;
+                    data.blocks_to_keyboard += 1;
                 }
             } else if new_view_range.start < old_view_range.start {
                 // It is smaller, we have to start from the beginning
-                data.notes_to_start = 0;
+                data.notes_to_render_start = 0;
                 new_block_start = 0;
+
+                data.notes_to_keyboard = 0;
+                data.blocks_to_keyboard = 0;
+
+                // Increment both view start notes and keyboard notes until we reach view start cutoff
                 while new_block_start < blocks.len() {
                     let block = &blocks[new_block_start];
                     if block.max_end() >= new_view_range.start {
                         break;
                     }
-                    data.notes_to_start += block.notes.len();
+                    data.notes_to_render_start += block.notes.len() as u64;
                     new_block_start += 1;
+
+                    data.notes_to_keyboard += block.notes.len() as u64;
+                    data.blocks_to_keyboard += 1;
+                }
+
+                // Increment the remaining keyboard blocks
+                while data.blocks_to_keyboard < blocks.len() {
+                    let block = &blocks[data.blocks_to_keyboard];
+                    if block.start > new_view_range.start {
+                        break;
+                    }
+                    data.notes_to_keyboard += block.notes.len() as u64;
+                    data.blocks_to_keyboard += 1;
                 }
             } else {
                 // No change in view start
@@ -189,7 +205,7 @@ impl<Iter: Iterator<Item = DisplacedMIDINote>> Iterator for InRamNoteBlockIter<'
 impl<Iter: Iterator<Item = DisplacedMIDINote>> ExactSizeIterator for InRamNoteBlockIter<'_, Iter> {
     fn len(&self) -> usize {
         let data = &self.view.column.data;
-        data.notes_to_end - data.notes_to_start
+        (data.notes_to_render_end - data.notes_to_render_start) as usize
     }
 }
 

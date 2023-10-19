@@ -5,7 +5,6 @@ use crate::{gui::window::GuiWasabiWindow, midi::MIDIFileBase};
 pub struct GuiMidiStats {
     time_passed: f64,
     time_total: f64,
-    notes_total: u64,
     notes_on_screen: u64,
     voice_count: u64,
 }
@@ -15,7 +14,6 @@ impl GuiMidiStats {
         GuiMidiStats {
             time_passed: 0.0,
             time_total: 0.0,
-            notes_total: 0,
             notes_on_screen: 0,
             voice_count: 0,
         }
@@ -59,7 +57,7 @@ pub fn draw_stats(win: &mut GuiWasabiWindow, ctx: &Context, pos: Pos2, mut stats
             let mut length_sec: u64 = 0;
             let mut length_min: u64 = 0;
 
-            let mut load_type = -1; // 0=RAM, 1=Live
+            let mut note_stats = Default::default();
 
             if let Some(midi_file) = win.midi_file.as_mut() {
                 stats.time_total = if let Some(length) = midi_file.midi_length() {
@@ -83,14 +81,7 @@ pub fn draw_stats(win: &mut GuiWasabiWindow, ctx: &Context, pos: Pos2, mut stats
                 time_sec = stats.time_passed as u64 % 60;
                 time_min = stats.time_passed as u64 / 60;
 
-                stats.notes_total = midi_file.stats().total_notes;
-
-                // FIXME: Use an enum instead lmao
-                match midi_file {
-                    crate::midi::MIDIFileUnion::InRam(..) => load_type = 0,
-                    crate::midi::MIDIFileUnion::Cake(..) => load_type = 0,
-                    crate::midi::MIDIFileUnion::Live(..) => load_type = 1,
-                }
+                note_stats = midi_file.stats();
             }
 
             ui.horizontal(|ui| {
@@ -130,21 +121,20 @@ pub fn draw_stats(win: &mut GuiWasabiWindow, ctx: &Context, pos: Pos2, mut stats
                 });
             });
 
-            match load_type {
-                1 => {
-                    ui.horizontal(|ui| {
-                        ui.monospace("Notes:");
-                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                            ui.monospace(format!("{}", 0));
-                        });
-                    });
+            fn num_or_q(num: Option<impl ToString>) -> String {
+                if let Some(num) = num {
+                    num.to_string()
+                } else {
+                    "?".to_string()
                 }
-                0 => {
-                    ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
-                        ui.monospace(format!("0 / {}", stats.notes_total));
-                    });
-                }
-                _ => {}
             }
+
+            ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
+                ui.monospace(format!(
+                    "{} / {}",
+                    num_or_q(note_stats.passed_notes),
+                    num_or_q(note_stats.total_notes)
+                ));
+            });
         });
 }

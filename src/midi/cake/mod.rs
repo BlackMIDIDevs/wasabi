@@ -211,7 +211,19 @@ impl MIDIFileBase for CakeMIDIFile {
     }
 
     fn stats(&self) -> MIDIFileStats {
-        MIDIFileStats::new(self.note_count)
+        let time = self.timer.get_time().as_secs_f64();
+        let time_int = (time * self.ticks_per_second as f64) as u32;
+
+        let passed_notes = self
+            .key_blocks()
+            .iter()
+            .map(|b| b.get_notes_passed_at(time_int) as u64)
+            .sum();
+
+        MIDIFileStats {
+            total_notes: Some(self.note_count),
+            passed_notes: Some(passed_notes),
+        }
     }
 
     fn signature(&self) -> &MIDIFileUniqueSignature {
