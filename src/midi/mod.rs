@@ -16,9 +16,15 @@ use rand::Rng;
 
 pub use cake::{blocks::CakeBlock, intvec4::IntVector4, CakeMIDIFile, CakeSignature};
 pub use live::LiveLoadMIDIFile;
-pub use ram::{InRamMIDIFile, MIDIFileStats};
+pub use ram::InRamMIDIFile;
 
 use self::shared::timer::TimeKeeper;
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct MIDIFileStats {
+    pub total_notes: Option<u64>,
+    pub passed_notes: Option<u64>,
+}
 
 /// A struct that represents the view range of a midi screen render
 #[derive(Debug, Clone, Copy, Default)]

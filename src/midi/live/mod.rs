@@ -1,9 +1,8 @@
 use std::{
-    sync::{atomic::Ordering, Arc, RwLock},
+    sync::{Arc, RwLock},
     thread,
 };
 
-use atomic_float::AtomicF64;
 use midi_toolkit::{io::MIDIFile as TKMIDIFile, sequence::event::get_channels_array_statistics};
 
 use crate::audio_playback::SimpleTemporaryPlayer;
@@ -23,10 +22,15 @@ pub mod column;
 mod parse;
 pub mod view;
 
+struct ParseStats {
+    length: f64,
+    note_count: u64,
+}
+
 pub struct LiveLoadMIDIFile {
     view_data: LiveNoteViewData,
     timer: TimeKeeper,
-    length: Arc<AtomicF64>,
+    stats: Arc<RwLock<Option<ParseStats>>>,
     signature: MIDIFileUniqueSignature,
 }
 
@@ -40,18 +44,19 @@ impl LiveLoadMIDIFile {
 
         let midi = TKMIDIFile::open_from_stream(file, None).unwrap();
 
-        let parse_length_outer = Arc::new(AtomicF64::new(f64::NAN));
-        let parse_length = parse_length_outer.clone();
+        let stats_outer = Arc::new(RwLock::new(None));
+        let stats = stats_outer.clone();
 
         let ppq = midi.ppq();
         let tracks = midi.iter_all_tracks().collect();
         thread::spawn(move || {
             let stats = get_channels_array_statistics(tracks);
             if let Ok(stats) = stats {
-                parse_length.store(
-                    stats.calculate_total_duration(ppq).as_secs_f64(),
-                    Ordering::Relaxed,
-                );
+                let mut parser_stats = stats_outer.write().unwrap();
+                *parser_stats = Some(ParseStats {
+                    length: stats.calculate_total_duration(ppq).as_secs_f64(),
+                    note_count: stats.note_count(),
+                });
             }
         });
 
@@ -63,7 +68,7 @@ impl LiveLoadMIDIFile {
         LiveLoadMIDIFile {
             view_data: file,
             timer,
-            length: parse_length_outer,
+            stats,
             signature,
         }
     }
@@ -71,12 +76,8 @@ impl LiveLoadMIDIFile {
 
 impl MIDIFileBase for LiveLoadMIDIFile {
     fn midi_length(&self) -> Option<f64> {
-        let value = self.length.load(Ordering::Relaxed);
-        if value.is_nan() {
-            None
-        } else {
-            Some(value)
-        }
+        let data = self.stats.read().unwrap();
+        data.as_ref().map(|data| data.length)
     }
 
     fn parsed_up_to(&self) -> Option<f64> {
@@ -96,7 +97,12 @@ impl MIDIFileBase for LiveLoadMIDIFile {
     }
 
     fn stats(&self) -> MIDIFileStats {
-        MIDIFileStats::new(0)
+        let stats = self.stats.read().unwrap();
+
+        MIDIFileStats {
+            passed_notes: Some(self.view_data.passed_notes()),
+            total_notes: stats.as_ref().map(|stats| stats.note_count),
+        }
     }
 
     fn signature(&self) -> &MIDIFileUniqueSignature {

@@ -74,9 +74,19 @@ impl LiveNoteViewData {
                 data.end_block += 1;
             }
 
+            while data.blocks_passed_keyboard_index < blocks.len() {
+                if blocks[data.blocks_passed_keyboard_index].start > new_view_range.start {
+                    break;
+                }
+                data.notes_passed_keyboard +=
+                    blocks[data.blocks_passed_keyboard_index].notes.len() as u64;
+                data.blocks_passed_keyboard_index += 1;
+            }
+
             while let Some(block) = blocks.front() {
                 if block.max_end() < new_view_range.start {
                     data.rendered_notes -= block.notes.len();
+                    data.blocks_passed_keyboard_index -= 1;
                     blocks.pop_front();
 
                     // Unconditionally reduce this value because blocks that have an
@@ -92,6 +102,13 @@ impl LiveNoteViewData {
 
     pub fn parse_time(&self) -> f64 {
         self.parser.parse_time()
+    }
+
+    pub fn passed_notes(&self) -> u64 {
+        self.columns
+            .iter()
+            .map(|column| column.data.notes_passed_keyboard)
+            .sum()
     }
 }
 
