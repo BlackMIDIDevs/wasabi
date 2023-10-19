@@ -22,7 +22,7 @@ pub fn draw_panel(
         .show(ctx, |ui| {
             ui.horizontal(|ui| {
                 if ui.button("Open").clicked() {
-                    win.open_midi_dialog(state);
+                    win.open_midi_dialog(settings, state);
                 }
 
                 if let Some(midi_file) = win.midi_file.as_mut() {
