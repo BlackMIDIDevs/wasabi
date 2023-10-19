@@ -68,6 +68,7 @@ impl LiveRefNoteBlock {
         Self,
         impl ExactSizeIterator<Item = LiveNoteEnderHandleWithTrackChan>,
     ) {
+        #[allow(clippy::arc_with_non_send_sync)]
         let block = LiveRefNoteBlock(Arc::new(UnsafeCell::new(
             LiveNoteBlock::new_from_trackchans(time, track_chans_iter),
         )));

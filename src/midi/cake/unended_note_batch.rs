@@ -45,7 +45,7 @@ impl<K: Ord, T> UnendedNotes<K, T> {
         let id = self.id_counter;
         self.id_counter += 1;
 
-        let ids = self.ids.entry(key).or_insert_with(VecDeque::new);
+        let ids = self.ids.entry(key).or_default();
         ids.push_back(id);
 
         self.notes.insert(id, note);

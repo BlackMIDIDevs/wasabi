@@ -188,7 +188,7 @@ impl NoteRenderPass {
                 usage: MemoryUsage::Upload,
                 ..Default::default()
             },
-            [[Default::default(); 256]].into_iter(),
+            [[Default::default(); 256]],
         )
         .unwrap();
 
