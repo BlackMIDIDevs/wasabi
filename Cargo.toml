@@ -28,7 +28,7 @@ rand = "0.8.5"
 confy = "0.5.1"
 serde_derive = "1.0.160"
 serde = "1.0.160"
-toml = "0.7.3"
+toml = "0.8.0"
 colors-transform = "0.2.11"
 directories = "5.0.0"
 rustc-hash = "1.1.0"
@@ -36,7 +36,7 @@ atomic_float = "0.1.0"
 egui_file = { git = "https://github.com/StratusFearMe21/egui_file.git", rev = "afc1f38" }
 ico = { git = "https://github.com/StratusFearMe21/rust-ico", branch = "patch-1" }
 clap = "4.2.4"
-num_enum = "0.6.1"
+num_enum = "0.7.0"
 
 [profile.dev]
 opt-level = 2

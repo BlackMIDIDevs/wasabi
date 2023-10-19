@@ -43,12 +43,10 @@ impl ManagedSwapchain {
         let surface_capabilities = physical
             .surface_capabilities(&surface, Default::default())
             .unwrap();
-        let image_format = Some(
-            physical
-                .surface_formats(&surface, Default::default())
-                .unwrap()[0]
-                .0,
-        );
+        let image_format = physical
+            .surface_formats(&surface, Default::default())
+            .unwrap()[0]
+            .0;
         let image_extent = window.inner_size().into();
 
         let (swapchain, images) = Swapchain::new(
@@ -56,7 +54,7 @@ impl ManagedSwapchain {
             surface,
             SwapchainCreateInfo {
                 min_image_count: surface_capabilities.min_image_count,
-                image_format,
+                image_format: Some(image_format),
                 image_extent,
                 image_usage: ImageUsage::COLOR_ATTACHMENT,
                 composite_alpha: surface_capabilities
@@ -80,7 +78,7 @@ impl ManagedSwapchain {
                 size: image_extent,
                 images_state: ImagesState {
                     count: images.len(),
-                    format: image_format.unwrap(),
+                    format: image_format,
                 },
             },
             swap_chain: swapchain,

@@ -51,10 +51,7 @@ impl Key {
         let block_index = self.block_builder.len();
         let column_index = self.column.len();
         self.block_builder.push(track_chan);
-        let unended_queue = self
-            .unended_notes
-            .entry(track_chan)
-            .or_insert_with(VecDeque::new);
+        let unended_queue = self.unended_notes.entry(track_chan).or_default();
         unended_queue.push_back(UnendedNote {
             column_index,
             block_index,
