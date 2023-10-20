@@ -13,7 +13,6 @@ use crate::{
 };
 
 use egui_file::FileDialog as EFileDialog;
-use rfd::FileDialog as RFileDialog;
 
 pub fn draw_xsynth_settings(
     win: &mut GuiWasabiWindow,
@@ -60,28 +59,14 @@ pub fn draw_xsynth_settings(
                         }
 
                         if ui.button("Browse...").clicked() {
-                            if cfg!(target_os = "windows") {
-                                // If windows, just use the native dialog
-                                let sfz_path =
-                                    RFileDialog::new().add_filter("sfz", &["sfz"]).pick_file();
-
-                                if let Some(sfz_path) = sfz_path {
-                                    if let Ok(path) = sfz_path.into_os_string().into_string() {
-                                        settings.synth.sfz_path = path;
-                                    }
-                                }
-                            } else {
-                                let mut dialog = EFileDialog::open_file(
-                                    state.last_sfz_file.clone(),
-                                    Some(filter),
-                                )
-                                .show_rename(false)
-                                .show_new_folder(false)
-                                .resizable(true)
-                                .anchor(egui::Align2::CENTER_TOP, egui::Vec2::new(0.0, 10.0));
-                                dialog.open();
-                                win.file_dialogs.sf_file_dialog = Some(dialog);
-                            }
+                            let mut dialog =
+                                EFileDialog::open_file(state.last_sfz_file.clone(), Some(filter))
+                                    .show_rename(false)
+                                    .show_new_folder(false)
+                                    .resizable(true)
+                                    .anchor(egui::Align2::CENTER_TOP, egui::Vec2::new(0.0, 10.0));
+                            dialog.open();
+                            win.file_dialogs.sf_file_dialog = Some(dialog);
                         }
 
                         if let Some(dialog) = &mut win.file_dialogs.sf_file_dialog {

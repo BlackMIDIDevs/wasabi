@@ -29,7 +29,6 @@ use crate::{
 };
 
 use egui_file::FileDialog as EFileDialog;
-use rfd::FileDialog as RFileDialog;
 
 pub struct WasabiFileDialogs {
     midi_file_dialog: Option<EFileDialog>,
@@ -255,31 +254,21 @@ impl GuiWasabiWindow {
     }
 
     pub fn open_midi_dialog(&mut self, settings: &mut WasabiSettings, state: &mut WasabiState) {
-        if cfg!(target_os = "windows") {
-            // If windows, just use the native dialog
-            let midi_path = RFileDialog::new().add_filter("mid", &["mid"]).pick_file();
-
-            if let Some(midi_path) = midi_path {
-                state.last_midi_file = Some(midi_path.clone());
-                self.load_midi(settings, midi_path);
+        fn filter(path: &std::path::Path) -> bool {
+            if let Some(path) = path.to_str() {
+                path.ends_with(".mid")
+            } else {
+                false
             }
-        } else {
-            fn filter(path: &std::path::Path) -> bool {
-                if let Some(path) = path.to_str() {
-                    path.ends_with(".mid")
-                } else {
-                    false
-                }
-            }
-
-            let mut dialog = EFileDialog::open_file(state.last_midi_file.clone(), Some(filter))
-                .show_rename(true)
-                .show_new_folder(true)
-                .resizable(true);
-
-            dialog.open();
-            self.file_dialogs.midi_file_dialog = Some(dialog);
         }
+
+        let mut dialog = EFileDialog::open_file(state.last_midi_file.clone(), Some(filter))
+            .show_rename(true)
+            .show_new_folder(true)
+            .resizable(true);
+
+        dialog.open();
+        self.file_dialogs.midi_file_dialog = Some(dialog);
     }
 
     pub fn load_midi(&mut self, settings: &mut WasabiSettings, midi_path: PathBuf) {

@@ -37,7 +37,6 @@ egui_file = { git = "https://github.com/StratusFearMe21/egui_file.git", rev = "a
 ico = { git = "https://github.com/StratusFearMe21/rust-ico", branch = "patch-1" }
 clap = "4.2.4"
 num_enum = "0.7.0"
-rfd = "0.12.0"
 
 [profile.dev]
 opt-level = 2
