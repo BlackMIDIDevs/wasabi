@@ -28,11 +28,11 @@ use crate::{
     GuiRenderer, GuiState,
 };
 
-use egui_file::FileDialog as EFileDialog;
+use egui_file::FileDialog;
 
 pub struct WasabiFileDialogs {
-    midi_file_dialog: Option<EFileDialog>,
-    sf_file_dialog: Option<EFileDialog>,
+    midi_file_dialog: Option<FileDialog>,
+    sf_file_dialog: Option<FileDialog>,
 }
 
 pub struct GuiWasabiWindow {
@@ -253,22 +253,40 @@ impl GuiWasabiWindow {
         }
     }
 
-    pub fn open_midi_dialog(&mut self, _settings: &mut WasabiSettings, state: &mut WasabiState) {
-        fn filter(path: &std::path::Path) -> bool {
-            if let Some(path) = path.to_str() {
-                path.ends_with(".mid")
-            } else {
-                false
+    #[allow(unused_variables)]
+    pub fn open_midi_dialog(&mut self, settings: &mut WasabiSettings, state: &mut WasabiState) {
+        // TODO: Make this cleaner
+        #[cfg(target_os = "windows")]
+        {
+            // If windows, just use the native dialog
+            let midi_path = rfd::FileDialog::new()
+                .add_filter("mid", &["mid"])
+                .pick_file();
+
+            if let Some(midi_path) = midi_path {
+                state.last_midi_file = Some(midi_path.clone());
+                self.load_midi(settings, midi_path);
             }
         }
 
-        let mut dialog = EFileDialog::open_file(state.last_midi_file.clone(), Some(filter))
-            .show_rename(true)
-            .show_new_folder(true)
-            .resizable(true);
+        #[cfg(not(target_os = "windows"))]
+        {
+            fn filter(path: &std::path::Path) -> bool {
+                if let Some(path) = path.to_str() {
+                    path.ends_with(".mid")
+                } else {
+                    false
+                }
+            }
 
-        dialog.open();
-        self.file_dialogs.midi_file_dialog = Some(dialog);
+            let mut dialog = FileDialog::open_file(state.last_midi_file.clone(), Some(filter))
+                .show_rename(true)
+                .show_new_folder(true)
+                .resizable(true);
+
+            dialog.open();
+            self.file_dialogs.midi_file_dialog = Some(dialog);
+        }
     }
 
     pub fn load_midi(&mut self, settings: &mut WasabiSettings, midi_path: PathBuf) {
