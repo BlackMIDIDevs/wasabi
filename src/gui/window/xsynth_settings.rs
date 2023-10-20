@@ -12,8 +12,7 @@ use crate::{
     state::WasabiState,
 };
 
-use egui_file::FileDialog as EFileDialog;
-use rfd::FileDialog as RFileDialog;
+use egui_file::FileDialog;
 
 pub fn draw_xsynth_settings(
     win: &mut GuiWasabiWindow,
@@ -60,18 +59,24 @@ pub fn draw_xsynth_settings(
                         }
 
                         if ui.button("Browse...").clicked() {
-                            if cfg!(target_os = "windows") {
+                            // TODO: Make this cleaner
+                            #[cfg(target_os = "windows")]
+                            {
                                 // If windows, just use the native dialog
-                                let sfz_path =
-                                    RFileDialog::new().add_filter("sfz", &["sfz"]).pick_file();
+                                let sfz_path = rfd::FileDialog::new()
+                                    .add_filter("sfz", &["sfz"])
+                                    .pick_file();
 
                                 if let Some(sfz_path) = sfz_path {
                                     if let Ok(path) = sfz_path.into_os_string().into_string() {
                                         settings.synth.sfz_path = path;
                                     }
                                 }
-                            } else {
-                                let mut dialog = EFileDialog::open_file(
+                            }
+
+                            #[cfg(not(target_os = "windows"))]
+                            {
+                                let mut dialog = FileDialog::open_file(
                                     state.last_sfz_file.clone(),
                                     Some(filter),
                                 )
