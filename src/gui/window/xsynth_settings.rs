@@ -12,8 +12,6 @@ use crate::{
     state::WasabiState,
 };
 
-use egui_file::FileDialog;
-
 pub fn draw_xsynth_settings(
     win: &mut GuiWasabiWindow,
     settings: &mut WasabiSettings,
@@ -50,51 +48,15 @@ pub fn draw_xsynth_settings(
                     ui.horizontal(|ui| {
                         ui.add(egui::TextEdit::singleline(&mut settings.synth.sfz_path));
 
-                        fn filter(path: &std::path::Path) -> bool {
-                            if let Some(path) = path.to_str() {
-                                path.ends_with(".sfz")
-                            } else {
-                                false
-                            }
-                        }
-
                         if ui.button("Browse...").clicked() {
-                            // TODO: Make this cleaner
-                            #[cfg(target_os = "windows")]
-                            {
-                                // If windows, just use the native dialog
-                                let sfz_path = rfd::FileDialog::new()
-                                    .add_filter("sfz", &["sfz"])
-                                    .pick_file();
+                            // If windows, just use the native dialog
+                            let sfz_path = rfd::FileDialog::new()
+                                .add_filter("sfz", &["sfz"])
+                                .pick_file();
 
-                                if let Some(sfz_path) = sfz_path {
-                                    if let Ok(path) = sfz_path.into_os_string().into_string() {
-                                        settings.synth.sfz_path = path;
-                                    }
-                                }
-                            }
-
-                            #[cfg(not(target_os = "windows"))]
-                            {
-                                let mut dialog = FileDialog::open_file(
-                                    state.last_sfz_file.clone(),
-                                    Some(filter),
-                                )
-                                .show_rename(false)
-                                .show_new_folder(false)
-                                .resizable(true)
-                                .anchor(egui::Align2::CENTER_TOP, egui::Vec2::new(0.0, 10.0));
-                                dialog.open();
-                                win.file_dialogs.sf_file_dialog = Some(dialog);
-                            }
-                        }
-
-                        if let Some(dialog) = &mut win.file_dialogs.sf_file_dialog {
-                            if dialog.show(ctx).selected() {
-                                if let Some(sfz_path) = dialog.path() {
-                                    state.last_sfz_file = Some(sfz_path.clone());
-                                    settings.synth.sfz_path =
-                                        sfz_path.to_str().unwrap_or("").to_owned();
+                            if let Some(sfz_path) = sfz_path {
+                                if let Ok(path) = sfz_path.into_os_string().into_string() {
+                                    settings.synth.sfz_path = path;
                                 }
                             }
                         }

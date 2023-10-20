@@ -33,13 +33,12 @@ colors-transform = "0.2.11"
 directories = "5.0.0"
 rustc-hash = "1.1.0"
 atomic_float = "0.1.0"
-egui_file = { git = "https://github.com/StratusFearMe21/egui_file.git", rev = "afc1f38" }
 ico = { git = "https://github.com/StratusFearMe21/rust-ico", branch = "patch-1" }
 clap = "4.2.4"
 num_enum = "0.7.0"
-
-[target.'cfg(windows)'.dependencies]
-rfd = "0.12.0"
+rfd = { version = "0.12.0", default-features = false, features = [
+    'xdg-portal',
+] }
 
 [profile.dev]
 opt-level = 2
