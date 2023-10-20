@@ -28,13 +28,6 @@ use crate::{
     GuiRenderer, GuiState,
 };
 
-use egui_file::FileDialog;
-
-pub struct WasabiFileDialogs {
-    midi_file_dialog: Option<FileDialog>,
-    sf_file_dialog: Option<FileDialog>,
-}
-
 pub struct GuiWasabiWindow {
     render_scene: GuiRenderScene,
     keyboard_layout: keyboard_layout::KeyboardLayout,
@@ -42,7 +35,6 @@ pub struct GuiWasabiWindow {
     midi_file: Option<MIDIFileUnion>,
     synth: Arc<RwLock<SimpleTemporaryPlayer>>,
     fps: fps::Fps,
-    file_dialogs: WasabiFileDialogs,
 }
 
 impl GuiWasabiWindow {
@@ -81,10 +73,6 @@ impl GuiWasabiWindow {
             midi_file: None,
             synth,
             fps: fps::Fps::new(),
-            file_dialogs: WasabiFileDialogs {
-                midi_file_dialog: None,
-                sf_file_dialog: None,
-            },
         }
     }
 
@@ -104,16 +92,6 @@ impl GuiWasabiWindow {
         }
         if wasabi_state.xsynth_settings_visible {
             xsynth_settings::draw_xsynth_settings(self, settings, wasabi_state, &ctx);
-        }
-
-        if let Some(dialog) = &mut self.file_dialogs.midi_file_dialog {
-            if dialog.show(&ctx).selected() {
-                if let Some(midi_path) = dialog.path() {
-                    wasabi_state.last_midi_file = Some(midi_path.clone());
-                    self.load_midi(settings, midi_path);
-                }
-                self.file_dialogs.midi_file_dialog = None;
-            }
         }
 
         let height_prev = ctx.available_rect().height();
@@ -255,37 +233,14 @@ impl GuiWasabiWindow {
 
     #[allow(unused_variables)]
     pub fn open_midi_dialog(&mut self, settings: &mut WasabiSettings, state: &mut WasabiState) {
-        // TODO: Make this cleaner
-        #[cfg(target_os = "windows")]
-        {
-            // If windows, just use the native dialog
-            let midi_path = rfd::FileDialog::new()
-                .add_filter("mid", &["mid"])
-                .pick_file();
+        // If windows, just use the native dialog
+        let midi_path = rfd::FileDialog::new()
+            .add_filter("mid", &["mid"])
+            .pick_file();
 
-            if let Some(midi_path) = midi_path {
-                state.last_midi_file = Some(midi_path.clone());
-                self.load_midi(settings, midi_path);
-            }
-        }
-
-        #[cfg(not(target_os = "windows"))]
-        {
-            fn filter(path: &std::path::Path) -> bool {
-                if let Some(path) = path.to_str() {
-                    path.ends_with(".mid")
-                } else {
-                    false
-                }
-            }
-
-            let mut dialog = FileDialog::open_file(state.last_midi_file.clone(), Some(filter))
-                .show_rename(true)
-                .show_new_folder(true)
-                .resizable(true);
-
-            dialog.open();
-            self.file_dialogs.midi_file_dialog = Some(dialog);
+        if let Some(midi_path) = midi_path {
+            state.last_midi_file = Some(midi_path.clone());
+            self.load_midi(settings, midi_path);
         }
     }
 
