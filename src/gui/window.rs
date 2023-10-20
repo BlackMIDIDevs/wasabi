@@ -253,7 +253,7 @@ impl GuiWasabiWindow {
         }
     }
 
-    pub fn open_midi_dialog(&mut self, settings: &mut WasabiSettings, state: &mut WasabiState) {
+    pub fn open_midi_dialog(&mut self, _settings: &mut WasabiSettings, state: &mut WasabiState) {
         fn filter(path: &std::path::Path) -> bool {
             if let Some(path) = path.to_str() {
                 path.ends_with(".mid")
