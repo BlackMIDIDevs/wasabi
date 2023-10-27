@@ -317,7 +317,7 @@ impl NoteRenderPass {
 
             let pipeline_layout = pipeline.layout();
 
-            let desc_layout = pipeline_layout.set_layouts().get(0).unwrap();
+            let desc_layout = pipeline_layout.set_layouts().first().unwrap();
             let set = PersistentDescriptorSet::new(
                 &self.sd_allocator,
                 desc_layout.clone(),
