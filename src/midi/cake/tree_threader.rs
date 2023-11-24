@@ -107,7 +107,7 @@ impl ThreadedTreeSerializers {
         let trees = Arc::try_unwrap(self.trees).unwrap().into_inner().unwrap();
 
         let mut serialized = Vec::new();
-        for (_i, tree) in trees.into_iter().enumerate() {
+        for tree in trees.into_iter() {
             let sealed = tree.complete_and_seal(time);
             serialized.push(sealed);
         }
