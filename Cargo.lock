@@ -1678,7 +1678,7 @@ dependencies = [
 [[package]]
 name = "kdmapi"
 version = "0.1.0"
-source = "git+https://github.com/arduano/kdmapi.git?rev=9329cfc#9329cfc57e808a5e05d537d1e4ae1bd219416292"
+source = "git+https://github.com/arduano/kdmapi.git?rev=4116b00#4116b0095c48e0cbcbb003f2ee453cf0c6e8bc4f"
 dependencies = [
  "lazy_static",
  "libloading 0.7.4",
@@ -3655,7 +3655,7 @@ dependencies = [
 
 [[package]]
 name = "wasabi"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "atomic_float",
  "bytemuck",
