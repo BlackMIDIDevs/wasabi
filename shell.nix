@@ -5,21 +5,14 @@ pkgs.mkShell {
   ];
 
   buildInputs = with pkgs; [
-    libGL
-    libxkbcommon
-    xorg.libX11
-    xorg.libXcursor
-    xorg.libXi
-    xorg.libXrandr
-
-    vulkan-tools
-
+    # Build dependency
     alsa-lib
   ];
 
   shellHook =
     with pkgs; let
       libs = [
+        # Runtime dependencies
         vulkan-loader
 
         libGL
