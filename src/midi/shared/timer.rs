@@ -120,10 +120,14 @@ impl TimeKeeper {
     }
 
     pub fn seek(&mut self, time: Duration) {
-        self.current_state = TimerState::Running {
-            continue_time: Instant::now(),
-            time_offset: time,
-        };
+        if self.current_state.is_paused() {
+            self.current_state = TimerState::Paused { time_offset: time };
+        } else {
+            self.current_state = TimerState::Running {
+                continue_time: Instant::now(),
+                time_offset: time,
+            };
+        }
         self.notify_listeners(true);
     }
 }
