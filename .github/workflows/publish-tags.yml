@@ -19,7 +19,7 @@ jobs:
         name: Initialize Cargo
         with:
           profile: minimal
-          toolchain: nightly
+          toolchain: nightly-2024-04-02
           override: true
 
       - name: Get current version
