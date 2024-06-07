@@ -280,7 +280,7 @@ impl Default for MidiSettings {
             note_speed: 0.25,
             random_colors: false,
             key_range: 0..=127,
-            midi_loading: MidiLoading::Ram,
+            midi_loading: MidiLoading::Cake,
         }
     }
 }
