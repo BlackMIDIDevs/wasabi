@@ -7,6 +7,7 @@ pub mod xsynth;
 pub enum AudioPlayerType {
     XSynth {
         buffer: f64,
+        use_threadpool: bool,
         ignore_range: RangeInclusive<u8>,
         options: ChannelInitOptions,
     },
@@ -24,10 +25,12 @@ impl SimpleTemporaryPlayer {
         let (xsynth, kdmapi) = match player_type.clone() {
             AudioPlayerType::XSynth {
                 buffer,
+                use_threadpool,
                 ignore_range,
                 options,
             } => {
-                let xsynth = xsynth::XSynthPlayer::new(buffer, ignore_range, options);
+                let xsynth =
+                    xsynth::XSynthPlayer::new(buffer, use_threadpool, ignore_range, options);
                 (Some(xsynth), None)
             }
             AudioPlayerType::Kdmapi => {

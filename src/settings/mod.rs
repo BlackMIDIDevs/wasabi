@@ -290,6 +290,7 @@ impl Default for MidiSettings {
 pub struct SynthSettings {
     pub synth: Synth,
     pub buffer_ms: f64,
+    pub use_threadpool: bool,
     pub sfz_path: String,
     pub limit_layers: bool,
     pub layer_count: usize,
@@ -305,6 +306,7 @@ impl Default for SynthSettings {
         SynthSettings {
             synth: Synth::XSynth,
             buffer_ms: XSynthRealtimeConfig::default().render_window_ms,
+            use_threadpool: false,
             sfz_path: String::new(),
             limit_layers: true,
             layer_count: 4,

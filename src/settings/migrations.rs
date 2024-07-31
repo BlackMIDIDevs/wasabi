@@ -16,6 +16,7 @@ pub struct WasabiConfigFileV0 {
     last_key: u8,
     midi_loading: usize,
     buffer_ms: f64,
+    use_threadpool: bool,
     limit_layers: bool,
     layer_count: usize,
     fade_out_kill: bool,
@@ -39,6 +40,7 @@ impl WasabiConfigFileV0 {
                 synth: SynthSettings {
                     synth: Synth::from(cfg.synth),
                     buffer_ms: cfg.buffer_ms,
+                    use_threadpool: cfg.use_threadpool,
                     limit_layers: cfg.limit_layers,
                     layer_count: cfg.layer_count,
                     fade_out_kill: cfg.fade_out_kill,

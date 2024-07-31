@@ -59,6 +59,7 @@ pub fn draw_settings(
                                     .unwrap()
                                     .switch_player(AudioPlayerType::XSynth {
                                         buffer: settings.synth.buffer_ms,
+                                        use_threadpool: settings.synth.use_threadpool,
                                         ignore_range: settings.synth.vel_ignore.clone(),
                                         options: convert_to_channel_init(settings),
                                     });
