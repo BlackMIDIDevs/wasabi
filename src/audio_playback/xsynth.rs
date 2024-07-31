@@ -43,10 +43,15 @@ pub struct XSynthPlayer {
 }
 
 impl XSynthPlayer {
-    pub fn new(buffer: f64, ignore_range: RangeInclusive<u8>, options: ChannelInitOptions) -> Self {
+    pub fn new(
+        buffer: f64,
+        use_threadpool: bool,
+        ignore_range: RangeInclusive<u8>,
+        options: ChannelInitOptions,
+    ) -> Self {
         let config = XSynthRealtimeConfig {
             render_window_ms: buffer,
-            use_threadpool: false,
+            use_threadpool,
             channel_init_options: options,
             ignore_range,
             ..Default::default()

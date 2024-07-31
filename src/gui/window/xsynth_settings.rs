@@ -51,7 +51,7 @@ pub fn draw_xsynth_settings(
                         if ui.button("Browse...").clicked() {
                             // If windows, just use the native dialog
                             let sfz_path = rfd::FileDialog::new()
-                                .add_filter("sfz", &["sfz"])
+                                .add_filter("sfz/sf2", &["sfz", "sf2"])
                                 .pick_file();
 
                             if let Some(sfz_path) = sfz_path {
@@ -141,6 +141,10 @@ pub fn draw_xsynth_settings(
                     ui.label("Use Effects*: ");
                     ui.checkbox(&mut settings.synth.use_effects, "");
                     ui.end_row();
+
+                    ui.label("Use Threadpool*: ");
+                    ui.checkbox(&mut settings.synth.use_threadpool, "");
+                    ui.end_row();
                 });
 
             ui.separator();
@@ -152,6 +156,7 @@ pub fn draw_xsynth_settings(
                         .unwrap()
                         .switch_player(AudioPlayerType::XSynth {
                             buffer: settings.synth.buffer_ms,
+                            use_threadpool: settings.synth.use_threadpool,
                             ignore_range: settings.synth.vel_ignore.clone(),
                             options: convert_to_channel_init(settings),
                         });
