@@ -36,9 +36,7 @@ atomic_float = "0.1.0"
 ico = { git = "https://github.com/StratusFearMe21/rust-ico", branch = "patch-1" }
 clap = "4.2.4"
 num_enum = "0.7.0"
-rfd = { version = "0.12.0", default-features = false, features = [
-    'xdg-portal',
-] }
+rfd = { version = "0.12.0" }
 
 [profile.dev]
 opt-level = 2
