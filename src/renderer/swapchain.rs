@@ -47,11 +47,10 @@ impl ManagedSwapchain {
         let formats = physical
             .surface_formats(&surface, Default::default())
             .unwrap();
-        let image_format = if formats.iter().any(|v| v.0 == Format::B8G8R8A8_SRGB) {
-            Some(Format::B8G8R8A8_SRGB)
-        } else {
-            None
-        };
+        let image_format = formats
+            .iter()
+            .find(|v| v.0 == Format::B8G8R8A8_SRGB)
+            .map(|v| v.0);
         let image_extent = window.inner_size().into();
 
         let (swapchain, images) = Swapchain::new(
