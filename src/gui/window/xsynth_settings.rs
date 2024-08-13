@@ -44,14 +44,14 @@ pub fn draw_xsynth_settings(
                     );
                     ui.end_row();
 
-                    ui.label("SFZ Path: ");
+                    ui.label("SoundFont Path: ");
                     ui.horizontal(|ui| {
                         ui.add(egui::TextEdit::singleline(&mut settings.synth.sfz_path));
 
                         if ui.button("Browse...").clicked() {
                             // If windows, just use the native dialog
                             let sfz_path = rfd::FileDialog::new()
-                                .add_filter("sfz/sf2", &["sfz", "sf2"])
+                                .add_filter("Supported SoundFonts", &["sfz", "sf2", "SF2"])
                                 .pick_file();
 
                             if let Some(sfz_path) = sfz_path {
