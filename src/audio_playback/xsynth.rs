@@ -12,7 +12,7 @@ use xsynth_core::{
     AudioStreamParams,
 };
 use xsynth_realtime::{
-    config::XSynthRealtimeConfig, RealtimeEventSender, RealtimeSynth, RealtimeSynthStatsReader,
+    RealtimeEventSender, RealtimeSynth, RealtimeSynthStatsReader, ThreadCount, XSynthRealtimeConfig,
 };
 
 #[repr(transparent)]
@@ -51,9 +51,13 @@ impl XSynthPlayer {
     ) -> Self {
         let config = XSynthRealtimeConfig {
             render_window_ms: buffer,
-            use_threadpool,
             channel_init_options: options,
             ignore_range,
+            multithreading: if use_threadpool {
+                ThreadCount::Auto
+            } else {
+                ThreadCount::None
+            },
             ..Default::default()
         };
 

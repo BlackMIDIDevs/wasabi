@@ -13,7 +13,7 @@ use std::{
     str::FromStr,
 };
 use xsynth_core::{channel::ChannelInitOptions, soundfont::SoundfontInitOptions};
-use xsynth_realtime::config::XSynthRealtimeConfig;
+use xsynth_realtime::XSynthRealtimeConfig;
 
 mod migrations;
 

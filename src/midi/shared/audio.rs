@@ -29,81 +29,85 @@ impl CompressedAudio {
     ) -> impl Iterator<Item = CompressedAudio> {
         let mut builder_vec: Vec<u8> = Vec::new();
         let mut control_builder_vec: Vec<u8> = Vec::new();
-        GenIter(move || {
-            let mut time = 0.0;
+        GenIter(
+            #[coroutine]
+            move || {
+                let mut time = 0.0;
 
-            for block in iter {
-                time += block.delta;
+                for block in iter {
+                    time += block.delta;
 
-                let min_len: usize = block.count() * 3;
+                    let min_len: usize = block.count() * 3;
 
-                builder_vec.reserve(min_len);
-                builder_vec.clear();
+                    builder_vec.reserve(min_len);
+                    builder_vec.clear();
 
-                for event in block.iter_events() {
-                    match event.as_event() {
-                        Event::NoteOn(e) => {
-                            let head = EV_ON | e.channel;
-                            let events = &[head, e.key, e.velocity];
-                            builder_vec.extend_from_slice(events);
+                    for event in block.iter_events() {
+                        match event.as_event() {
+                            Event::NoteOn(e) => {
+                                let head = EV_ON | e.channel;
+                                let events = &[head, e.key, e.velocity];
+                                builder_vec.extend_from_slice(events);
+                            }
+                            Event::NoteOff(e) => {
+                                let head = EV_OFF | e.channel;
+                                let events = &[head, e.key];
+                                builder_vec.extend_from_slice(events);
+                            }
+                            Event::PolyphonicKeyPressure(e) => {
+                                let head = EV_POLYPHONIC | e.channel;
+                                let events = &[head, e.key, e.velocity];
+                                builder_vec.extend_from_slice(events);
+                            }
+                            Event::ControlChange(e) => {
+                                let head = EV_CONTROL | e.channel;
+                                let events = &[head, e.controller, e.value];
+                                builder_vec.extend_from_slice(events);
+                                control_builder_vec.extend_from_slice(events);
+                            }
+                            Event::ProgramChange(e) => {
+                                let head = EV_PROGRAM | e.channel;
+                                let events = &[head, e.program];
+                                builder_vec.extend_from_slice(events);
+                                control_builder_vec.extend_from_slice(events);
+                            }
+                            Event::ChannelPressure(e) => {
+                                let head = EV_CHAN_PRESSURE | e.channel;
+                                let events = &[head, e.pressure];
+                                builder_vec.extend_from_slice(events);
+                                control_builder_vec.extend_from_slice(events);
+                            }
+                            Event::PitchWheelChange(e) => {
+                                let head = EV_PITCH_BEND | e.channel;
+                                let value = e.pitch + 8192;
+                                let events =
+                                    &[head, (value & 0x7F) as u8, ((value >> 7) & 0x7F) as u8];
+                                builder_vec.extend_from_slice(events);
+                                control_builder_vec.extend_from_slice(events);
+                            }
+                            _ => {}
                         }
-                        Event::NoteOff(e) => {
-                            let head = EV_OFF | e.channel;
-                            let events = &[head, e.key];
-                            builder_vec.extend_from_slice(events);
-                        }
-                        Event::PolyphonicKeyPressure(e) => {
-                            let head = EV_POLYPHONIC | e.channel;
-                            let events = &[head, e.key, e.velocity];
-                            builder_vec.extend_from_slice(events);
-                        }
-                        Event::ControlChange(e) => {
-                            let head = EV_CONTROL | e.channel;
-                            let events = &[head, e.controller, e.value];
-                            builder_vec.extend_from_slice(events);
-                            control_builder_vec.extend_from_slice(events);
-                        }
-                        Event::ProgramChange(e) => {
-                            let head = EV_PROGRAM | e.channel;
-                            let events = &[head, e.program];
-                            builder_vec.extend_from_slice(events);
-                            control_builder_vec.extend_from_slice(events);
-                        }
-                        Event::ChannelPressure(e) => {
-                            let head = EV_CHAN_PRESSURE | e.channel;
-                            let events = &[head, e.pressure];
-                            builder_vec.extend_from_slice(events);
-                            control_builder_vec.extend_from_slice(events);
-                        }
-                        Event::PitchWheelChange(e) => {
-                            let head = EV_PITCH_BEND | e.channel;
-                            let value = e.pitch + 8192;
-                            let events = &[head, (value & 0x7F) as u8, ((value >> 7) & 0x7F) as u8];
-                            builder_vec.extend_from_slice(events);
-                            control_builder_vec.extend_from_slice(events);
-                        }
-                        _ => {}
                     }
+
+                    let mut new_vec = Vec::with_capacity(builder_vec.len());
+                    new_vec.append(&mut builder_vec);
+
+                    let new_control_vec = if control_builder_vec.is_empty() {
+                        None
+                    } else {
+                        let mut new_control_vec = Vec::with_capacity(control_builder_vec.len());
+                        new_control_vec.append(&mut control_builder_vec);
+                        Some(new_control_vec)
+                    };
+
+                    yield CompressedAudio {
+                        data: new_vec,
+                        control_only_data: new_control_vec,
+                        time,
+                    };
                 }
-
-                let mut new_vec = Vec::with_capacity(builder_vec.len());
-                new_vec.append(&mut builder_vec);
-
-                let new_control_vec = if control_builder_vec.is_empty() {
-                    None
-                } else {
-                    let mut new_control_vec = Vec::with_capacity(control_builder_vec.len());
-                    new_control_vec.append(&mut control_builder_vec);
-                    Some(new_control_vec)
-                };
-
-                yield CompressedAudio {
-                    data: new_vec,
-                    control_only_data: new_control_vec,
-                    time,
-                };
-            }
-        })
+            },
+        )
     }
 
     pub fn iter_events(&self) -> impl '_ + Iterator<Item = u32> {
@@ -117,24 +121,27 @@ impl CompressedAudio {
     pub fn iter_events_from_vec<'a>(
         mut iter: impl 'a + Iterator<Item = u8>,
     ) -> impl 'a + Iterator<Item = u32> {
-        GenIter(move || {
-            while let Some(next) = iter.next() {
-                let ev = next & 0xF0;
-                let val = match ev {
-                    EV_OFF | EV_PROGRAM | EV_CHAN_PRESSURE => {
-                        let val2 = iter.next().unwrap() as u32;
-                        (next as u32) | (val2 << 8)
-                    }
-                    EV_ON | EV_POLYPHONIC | EV_CONTROL | EV_PITCH_BEND => {
-                        let val2 = iter.next().unwrap() as u32;
-                        let val3 = iter.next().unwrap() as u32;
-                        (next as u32) | (val2 << 8) | (val3 << 16)
-                    }
-                    _ => panic!("Can't reach {next:#x}"),
-                };
+        GenIter(
+            #[coroutine]
+            move || {
+                while let Some(next) = iter.next() {
+                    let ev = next & 0xF0;
+                    let val = match ev {
+                        EV_OFF | EV_PROGRAM | EV_CHAN_PRESSURE => {
+                            let val2 = iter.next().unwrap() as u32;
+                            (next as u32) | (val2 << 8)
+                        }
+                        EV_ON | EV_POLYPHONIC | EV_CONTROL | EV_PITCH_BEND => {
+                            let val2 = iter.next().unwrap() as u32;
+                            let val3 = iter.next().unwrap() as u32;
+                            (next as u32) | (val2 << 8) | (val3 << 16)
+                        }
+                        _ => panic!("Can't reach {next:#x}"),
+                    };
 
-                yield val;
-            }
-        })
+                    yield val;
+                }
+            },
+        )
     }
 }
