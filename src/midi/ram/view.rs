@@ -175,20 +175,23 @@ impl<'a> MIDINoteColumnView for InRamNoteColumnView<'a> {
     fn iterate_displaced_notes(&self) -> Self::Iter<'_> {
         let colors = &self.view.default_track_colors;
 
-        let iter = GenIter(move || {
-            for block_index in self.column.data.block_range.clone().rev() {
-                let block = &self.column.blocks[block_index];
-                let start = (block.start - self.view_range.start) as f32;
+        let iter = GenIter(
+            #[coroutine]
+            move || {
+                for block_index in self.column.data.block_range.clone().rev() {
+                    let block = &self.column.blocks[block_index];
+                    let start = (block.start - self.view_range.start) as f32;
 
-                for note in block.notes.iter().rev() {
-                    yield DisplacedMIDINote {
-                        start,
-                        len: note.len,
-                        color: colors[note.track_chan.as_usize()],
-                    };
+                    for note in block.notes.iter().rev() {
+                        yield DisplacedMIDINote {
+                            start,
+                            len: note.len,
+                            color: colors[note.track_chan.as_usize()],
+                        };
+                    }
                 }
-            }
-        });
+            },
+        );
 
         InRamNoteBlockIter { view: self, iter }
     }

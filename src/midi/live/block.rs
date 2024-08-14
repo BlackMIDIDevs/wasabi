@@ -50,7 +50,7 @@ impl LiveNoteBlock {
         if self.unended_notes == 0 {
             self.start + self.max_length as f64
         } else {
-            std::f64::INFINITY
+            f64::INFINITY
         }
     }
 }

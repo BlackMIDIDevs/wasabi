@@ -60,11 +60,7 @@ pub fn draw_stats(win: &mut GuiWasabiWindow, ctx: &Context, pos: Pos2, mut stats
             let mut note_stats = Default::default();
 
             if let Some(midi_file) = win.midi_file.as_mut() {
-                stats.time_total = if let Some(length) = midi_file.midi_length() {
-                    length
-                } else {
-                    0.0
-                };
+                stats.time_total = midi_file.midi_length().unwrap_or(0.0);
                 let time = midi_file.timer().get_time().as_secs_f64();
 
                 length_millis = (stats.time_total * 10.0) as u64 % 10;

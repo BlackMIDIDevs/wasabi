@@ -1,3 +1,4 @@
 /target
 wasabi_config.toml
 .direnv
+.vscode
