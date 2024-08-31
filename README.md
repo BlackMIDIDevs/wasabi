@@ -27,4 +27,4 @@ To use Wasabi, your system must support Vulkan.
 - **Ctrl+G** - Show/Hide statistics
 
 ## License
-Wasabi is licensed under the ["Dont Be a Dick" Public License](https://github.com/arduano/wasabi/blob/master/LICENSE).
+Wasabi is licensed under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html#license-text).
