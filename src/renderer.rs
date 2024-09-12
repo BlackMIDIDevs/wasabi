@@ -41,24 +41,26 @@ pub struct Renderer {
 
 impl Renderer {
     pub fn new(event_loop: &EventLoop<()>, name: &str, fullscreen: bool, mode: VideoMode) -> Self {
-        // Why
+        // Load Vulkan library
         let library = VulkanLibrary::new().unwrap();
 
-        // Add instance extensions based on needs
+        // Enable the VK_KHR_portability_enumeration extension
         let instance_extensions = InstanceExtensions {
+            khr_portability_enumeration: true,
             ..vulkano_win::required_extensions(&library)
         };
 
-        // Create instance
+        // Create the Vulkan instance with VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR flag
         let instance = Instance::new(
             library,
             InstanceCreateInfo {
                 application_version: Version::V1_2,
                 enabled_extensions: instance_extensions,
+                enumerate_portability: true,
                 ..Default::default()
             },
         )
-        .expect("Failed to create instance");
+        .expect("Failed to create Vulkan instance");
 
         // Create rendering surface along with window
         let window = WindowBuilder::new()
@@ -81,7 +83,7 @@ impl Renderer {
             .with_inner_size(crate::WINDOW_SIZE)
             .with_title(name)
             .build(event_loop)
-            .expect("Failed to create vulkan surface & window");
+            .expect("Failed to create Vulkan surface & window");
         let window = Arc::new(window);
 
         let surface = create_surface_from_winit(window.clone(), instance.clone())
@@ -92,8 +94,10 @@ impl Renderer {
             khr_swapchain: true,
             ..DeviceExtensions::empty()
         };
+
+        // Don't request geometry shader support, as it is not supported on macOS
         let features = Features {
-            geometry_shader: true,
+            // geometry_shader: true, // Removed as it is not supported by Metal/MoltenVK
             ..Features::empty()
         };
 
@@ -132,7 +136,7 @@ impl Renderer {
             physical_device.clone(),
             DeviceCreateInfo {
                 enabled_extensions: device_extensions,
-                enabled_features: features,
+                enabled_features: features, // No geometry_shader feature request
                 queue_create_infos: vec![QueueCreateInfo {
                     queue_family_index,
                     ..Default::default()
@@ -171,7 +175,6 @@ impl Renderer {
             window,
         }
     }
-
     pub fn queue(&self) -> Arc<Queue> {
         self.queue.clone()
     }
