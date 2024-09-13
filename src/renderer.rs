@@ -94,10 +94,9 @@ impl Renderer {
             khr_swapchain: true,
             ..DeviceExtensions::empty()
         };
-
-        // Don't request geometry shader support, as it is not supported on macOS
+        
         let features = Features {
-            // geometry_shader: true, // Removed as it is not supported by Metal/MoltenVK
+            geometry_shader: true,
             ..Features::empty()
         };
 
@@ -136,7 +135,7 @@ impl Renderer {
             physical_device.clone(),
             DeviceCreateInfo {
                 enabled_extensions: device_extensions,
-                enabled_features: features, // No geometry_shader feature request
+                enabled_features: features,
                 queue_create_infos: vec![QueueCreateInfo {
                     queue_family_index,
                     ..Default::default()
