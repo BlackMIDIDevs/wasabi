@@ -8,9 +8,7 @@ use crate::WasabiSettings;
 
 use xsynth_core::{
     channel::{ChannelConfigEvent, ChannelEvent, ChannelInitOptions},
-    soundfont::{
-        EnvelopeCurveType, EnvelopeOptions, SampleSoundfont, SoundfontBase, SoundfontInitOptions,
-    },
+    soundfont::{EnvelopeOptions, SampleSoundfont, SoundfontBase, SoundfontInitOptions},
     AudioStreamParams,
 };
 use xsynth_realtime::{
