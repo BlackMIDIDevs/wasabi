@@ -134,10 +134,6 @@ pub fn draw_xsynth_settings(
                     ui.checkbox(&mut settings.synth.fade_out_kill, "");
                     ui.end_row();
 
-                    ui.label("Linear release envelope*: ");
-                    ui.checkbox(&mut settings.synth.linear_envelope, "");
-                    ui.end_row();
-
                     ui.label("Use Effects*: ");
                     ui.checkbox(&mut settings.synth.use_effects, "");
                     ui.end_row();

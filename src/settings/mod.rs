@@ -297,7 +297,6 @@ pub struct SynthSettings {
     #[serde(with = "range_serde")]
     pub vel_ignore: RangeInclusive<u8>,
     pub fade_out_kill: bool,
-    pub linear_envelope: bool,
     pub use_effects: bool,
 }
 
@@ -312,7 +311,6 @@ impl Default for SynthSettings {
             layer_count: 4,
             vel_ignore: 0..=0,
             fade_out_kill: ChannelInitOptions::default().fade_out_killing,
-            linear_envelope: SoundfontInitOptions::default().linear_release,
             use_effects: SoundfontInitOptions::default().use_effects,
         }
     }
@@ -451,18 +449,6 @@ impl WasabiSettings {
                     )
                     .short('F')
                     .long("fade-out-kill")
-                    .action(ArgAction::SetTrue),
-            )
-            .arg(
-                Arg::new("linear-envelope")
-                    .help("Adjust the rate of decay on the synth's voices")
-                    .long_help(
-                        "Switch the synth's voice's rate of decay from \
-                        exponential to linear. This may be bring a performance \
-                        improvement on some systems.",
-                    )
-                    .short('L')
-                    .long("linear-envelope")
                     .action(ArgAction::SetTrue),
             )
             .arg(
@@ -617,7 +603,6 @@ impl WasabiSettings {
         set!(synth.layer_count, "layer-count");
         set_owned!(synth.vel_ignore, "vel-ignore", RangeInclusive<u8>);
         set_flag!(synth.fade_out_kill, "fade-out-kill");
-        set_flag!(synth.linear_envelope, "linear-envelope");
         set_flag!(synth.use_effects, "no-effects");
 
         // MIDI settings
