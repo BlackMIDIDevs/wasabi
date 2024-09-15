@@ -1774,7 +1774,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c2a198fb6b0eada2a8df47933734e6d35d350665a33a3593d7164fa52c75c19"
 dependencies = [
  "cfg-if",
- "windows-targets 0.48.5",
+ "windows-targets 0.52.6",
 ]
 
 [[package]]
@@ -4381,9 +4381,9 @@ checksum = "ec7a2a501ed189703dba8b08142f057e887dfc4b2cc4db2d343ac6376ba3e0b9"
 
 [[package]]
 name = "xsynth-core"
-version = "0.2.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6fa2617eb4a2625d57d1671be6c5c32cb80ced9ca4cd8350e36199a3fccd8590"
+checksum = "dae271d1273f7b89fa64dea59aa1ac2118ff10e45bc68534ec90af1ebf2b922a"
 dependencies = [
  "atomic_refcell",
  "biquad",
@@ -4402,9 +4402,9 @@ dependencies = [
 
 [[package]]
 name = "xsynth-realtime"
-version = "0.2.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "351bbb233badd6e09d91d83c0c3e38f1dc6f3cf74adc4228645a5adea0ddc788"
+checksum = "f9aff201315141cc7b717110be1423dc1c39903159ebfbfda1b9170d4a83b337"
 dependencies = [
  "atomic_refcell",
  "bytemuck",
@@ -4421,9 +4421,9 @@ dependencies = [
 
 [[package]]
 name = "xsynth-soundfonts"
-version = "0.2.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ad43da58a8c4d3f3d971c3bb60d2fbf24f27aa86e4839d4dca2d8bd95175660"
+checksum = "ec960ddf8437cf3711aee93e6b5e29c8c52dda57521ee5bfa3b13da4ca4a35bf"
 dependencies = [
  "encoding_rs",
  "encoding_rs_io",

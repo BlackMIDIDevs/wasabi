@@ -7,12 +7,15 @@ use std::{
 use crate::WasabiSettings;
 
 use xsynth_core::{
-    channel::{ChannelConfigEvent, ChannelInitOptions},
-    soundfont::{SampleSoundfont, SoundfontBase, SoundfontInitOptions},
+    channel::{ChannelConfigEvent, ChannelEvent, ChannelInitOptions},
+    soundfont::{
+        EnvelopeCurveType, EnvelopeOptions, SampleSoundfont, SoundfontBase, SoundfontInitOptions,
+    },
     AudioStreamParams,
 };
 use xsynth_realtime::{
-    RealtimeEventSender, RealtimeSynth, RealtimeSynthStatsReader, ThreadCount, XSynthRealtimeConfig,
+    RealtimeEventSender, RealtimeSynth, RealtimeSynthStatsReader, SynthEvent, ThreadCount,
+    XSynthRealtimeConfig,
 };
 
 #[repr(transparent)]
@@ -88,7 +91,9 @@ impl XSynthPlayer {
 
     pub fn set_layer_count(&mut self, layers: Option<usize>) {
         self.sender
-            .send_config(ChannelConfigEvent::SetLayerCount(layers));
+            .send_event(SynthEvent::AllChannels(ChannelEvent::Config(
+                ChannelConfigEvent::SetLayerCount(layers),
+            )));
     }
 
     pub fn set_soundfont(&mut self, path: &str, options: SoundfontInitOptions) {
@@ -97,7 +102,9 @@ impl XSynthPlayer {
             if let Ok(sf) = samplesf {
                 let soundfont: Arc<dyn SoundfontBase> = Arc::new(sf);
                 self.sender
-                    .send_config(ChannelConfigEvent::SetSoundfonts(vec![soundfont]));
+                    .send_event(SynthEvent::AllChannels(ChannelEvent::Config(
+                        ChannelConfigEvent::SetSoundfonts(vec![soundfont]),
+                    )));
             }
         }
     }
@@ -105,7 +112,7 @@ impl XSynthPlayer {
 
 pub fn convert_to_sf_init(settings: &WasabiSettings) -> SoundfontInitOptions {
     SoundfontInitOptions {
-        linear_release: settings.synth.linear_envelope,
+        vol_envelope_options: EnvelopeOptions::default(),
         use_effects: settings.synth.use_effects,
         ..Default::default()
     }
