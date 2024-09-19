@@ -7,7 +7,8 @@ layout(location = 3) in vec2 win_size;
 
 layout(location = 0) out vec4 out_color;
 
-const float border = 2;
+const float border = 1;
+const float pi = 3.1415926535897;
 
 void main() {
     vec2 v_uv = frag_tex_coord;
@@ -15,13 +16,7 @@ void main() {
     vec3 color = frag_color;
     float aspect = win_size.y / win_size.x;
 
-    float gradient = cos(v_uv.x + 1);
-    vec3 color_grad = vec3(gradient, gradient, gradient) * color;
-
-    vec3 desaturated = 1 - (1 - color) * (1 - gradient);
-
-    color *= desaturated;
-    color += color_grad;
+    color *= (1.0 + cos(pi * 0.5 * v_uv.x)) * 0.5;
 
     float horiz_width_pixels = v_note_size.x / 2 * win_size.x;
     float vert_width_pixels = v_note_size.y / 2 * win_size.y;
@@ -37,8 +32,10 @@ void main() {
 
     if(border)
     {
-        color = vec3(frag_color * 0.034);
+        color = vec3(frag_color * 0.2);
     }
 
+    // Square for SRGB
+    color *= color;
     out_color = vec4(color, 1.0);
 }

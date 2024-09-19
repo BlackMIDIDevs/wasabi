@@ -10,8 +10,16 @@ pub struct MidiData {
 }
 
 pub enum NoteEvent {
-    On { time: i32, channel_track: i32 },
-    Off { time: i32, channel_track: i32 },
+    On {
+        time: i32,
+        channel_track: i32,
+        color: i32,
+    },
+    Off {
+        time: i32,
+        channel_track: i32,
+        color: i32,
+    },
 }
 
 pub struct ThreadedTreeSerializers {
@@ -49,12 +57,14 @@ impl ThreadedTreeSerializers {
                                 NoteEvent::On {
                                     time,
                                     channel_track,
+                                    color,
                                 } => {
-                                    tree.start_note(time, channel_track);
+                                    tree.start_note(time, channel_track, color);
                                 }
                                 NoteEvent::Off {
                                     time,
                                     channel_track,
+                                    color: _color,
                                 } => {
                                     tree.end_note(time, channel_track);
                                 }

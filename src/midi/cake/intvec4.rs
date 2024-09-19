@@ -1,13 +1,5 @@
 use bytemuck::{Pod, Zeroable};
 
-use crate::midi::MIDIColor;
-
-fn get_col(c: i32) -> i32 {
-    let rgb = MIDIColor::new_from_hue((c * 123) as f64);
-
-    rgb.0 as i32
-}
-
 #[repr(C)]
 #[derive(Pod, Debug, Copy, Clone, Zeroable)]
 pub struct IntVector4 {
@@ -27,11 +19,11 @@ impl IntVector4 {
         }
     }
 
-    pub fn new_note(start: i32, end: i32, track_channel: i32) -> IntVector4 {
+    pub fn new_note(start: i32, end: i32, color: i32) -> IntVector4 {
         IntVector4 {
             val1: start,
             val2: end,
-            val3: get_col(track_channel),
+            val3: color,
             val4: 0,
         }
     }
