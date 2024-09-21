@@ -21,7 +21,7 @@ impl GuiKeyboard {
         let (rect, _) = ui.allocate_exact_size(ui.available_size(), Sense::click());
         let mut mesh = Mesh::default();
         let key_density =
-            ((rect.width() / key_view.visible_range.len() as f32) / 15.0).clamp(1.0, 5.0);
+            crate::utils::calculate_border_width(rect.width(), key_view.visible_range.len() as f32);
         let onepx = ui.painter().round_to_pixel(key_density);
 
         let md_height = rect.height() * 0.048;

@@ -38,13 +38,16 @@ pub struct NoteVertex {
     pub start_length: [f32; 2],
     #[format(R32_UINT)]
     pub key_color: u32,
+    #[format(R32_UINT)]
+    pub border_width: u32,
 }
 
 impl NoteVertex {
-    pub fn new(start: f32, len: f32, key: u8, color: u32) -> Self {
+    pub fn new(start: f32, len: f32, key: u8, color: u32, border_width: u32) -> Self {
         Self {
             start_length: [start, len],
             key_color: key as u32 | (color << 8),
+            border_width,
         }
     }
 }
@@ -408,13 +411,16 @@ mod vs {
 #version 450
 layout(location = 0) in vec2 start_length;
 layout(location = 1) in uint key_color;
+layout(location = 2) in uint border_width;
 
 layout(location = 0) out vec2 v_start_length;
 layout(location = 1) out uint v_key_color;
+layout(location = 2) out uint v_border_width;
 
 void main() {
     v_start_length = start_length;
     v_key_color = key_color;
+    v_border_width = border_width;
 }"
     }
 }

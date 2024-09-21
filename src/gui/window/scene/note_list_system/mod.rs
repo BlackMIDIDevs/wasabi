@@ -8,6 +8,7 @@ use vulkano::image::ImageViewAbstract;
 use crate::{
     gui::{window::keyboard_layout::KeyboardView, GuiRenderer},
     midi::{DisplacedMIDINote, MIDIColor, MIDIFile, MIDINoteColumnView, MIDINoteViews},
+    utils,
 };
 
 use self::notes_render_pass::{NotePassStatus, NoteRenderPass, NoteVertex};
@@ -58,6 +59,7 @@ impl NoteRenderer {
             key: u8,
             remaining: usize,
             color: Option<MIDIColor>,
+            border_width: f32,
         }
 
         let mut total_notes = 0;
@@ -65,6 +67,11 @@ impl NoteRenderer {
         let columns: Vec<_> = (0..256).map(|i| note_views.get_column(i)).collect();
 
         let mut columns_view_info = Vec::new();
+
+        let border_width = utils::calculate_border_width(
+            final_image.dimensions().width() as f32,
+            key_view.visible_range.len() as f32,
+        );
 
         // Add black keys first
         for (i, column) in columns.iter().enumerate() {
@@ -77,6 +84,7 @@ impl NoteRenderer {
                     key: i as u8,
                     remaining: length,
                     color: None,
+                    border_width,
                 });
                 total_notes += length;
             }
@@ -93,6 +101,7 @@ impl NoteRenderer {
                     key: i as u8,
                     remaining: length,
                     color: None,
+                    border_width,
                 });
                 total_notes += length;
             }
@@ -144,6 +153,7 @@ impl NoteRenderer {
                                         note.len,
                                         column.key,
                                         note.color.as_u32(),
+                                        column.border_width as u32,
                                     );
 
                                     if note.start <= 0.0

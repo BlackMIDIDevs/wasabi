@@ -9,6 +9,7 @@ mod renderer;
 mod scenes;
 mod settings;
 mod state;
+mod utils;
 
 use egui_winit_vulkano::{Gui, GuiConfig};
 use gui::{window::GuiWasabiWindow, GuiRenderer, GuiState};
