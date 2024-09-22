@@ -20,9 +20,9 @@ impl GuiKeyboard {
     ) {
         let (rect, _) = ui.allocate_exact_size(ui.available_size(), Sense::click());
         let mut mesh = Mesh::default();
-        let key_density =
+        let note_border =
             crate::utils::calculate_border_width(rect.width(), key_view.visible_range.len() as f32);
-        let onepx = ui.painter().round_to_pixel(key_density);
+        let key_border = ui.painter().round_to_pixel(note_border / 2.0);
 
         let md_height = rect.height() * 0.048;
         let bar = rect.height() * 0.06;
@@ -77,11 +77,11 @@ impl GuiKeyboard {
 
                     add_rect_triangles(&mut mesh);
                     mesh.colored_vertex(
-                        Pos2::new(map_x(key.left), bottom - key_density * 2.0),
+                        Pos2::new(map_x(key.left), bottom - key_border * 2.0),
                         darkened2,
                     );
                     mesh.colored_vertex(
-                        Pos2::new(map_x(key.right), bottom - key_density * 2.0),
+                        Pos2::new(map_x(key.right), bottom - key_border * 2.0),
                         darkened2,
                     );
                     mesh.colored_vertex(Pos2::new(map_x(key.left), bottom), darkened);
@@ -152,18 +152,18 @@ impl GuiKeyboard {
                         Color32::from_rgb(70, 70, 70),
                     );
                     mesh.colored_vertex(
-                        Pos2::new(map_x(key.left), bottom - md_height + key_density * 2.0),
+                        Pos2::new(map_x(key.left), bottom - md_height + key_border * 2.0),
                         Color32::from_rgb(140, 140, 140),
                     );
                     mesh.colored_vertex(
-                        Pos2::new(map_x(key.right), bottom - md_height + key_density * 2.0),
+                        Pos2::new(map_x(key.right), bottom - md_height + key_border * 2.0),
                         Color32::from_rgb(140, 140, 140),
                     );
                 }
                 // White key borders
                 let color4 = Color32::from_rgb(40, 40, 40);
                 let top_left4 = Pos2::new(map_x(key.right), top);
-                let bottom_right4 = Pos2::new(map_x(key.right) - onepx, bottom);
+                let bottom_right4 = Pos2::new(map_x(key.right) - key_border, bottom);
                 let rect4 = Rect::from_min_max(top_left4, bottom_right4);
                 mesh.add_colored_rect(rect4, color4);
             }
@@ -227,11 +227,11 @@ impl GuiKeyboard {
 
                     add_rect_triangles(&mut mesh);
                     mesh.colored_vertex(
-                        Pos2::new(map_x(key.left) + key_density, black_bottom - md_height),
+                        Pos2::new(map_x(key.left) + key_border, black_bottom - md_height),
                         color,
                     );
                     mesh.colored_vertex(
-                        Pos2::new(map_x(key.right) - key_density, black_bottom - md_height),
+                        Pos2::new(map_x(key.right) - key_border, black_bottom - md_height),
                         color,
                     );
                     mesh.colored_vertex(Pos2::new(map_x(key.left), black_bottom), darkened);
@@ -240,30 +240,24 @@ impl GuiKeyboard {
                     add_rect_triangles(&mut mesh);
                     mesh.colored_vertex(Pos2::new(map_x(key.left), top), lightened);
                     mesh.colored_vertex(
-                        Pos2::new(map_x(key.left) + 2.0 * key_density, top - black_key_overlap),
+                        Pos2::new(map_x(key.left) + 2.0 * key_border, top - black_key_overlap),
                         darkened,
                     );
                     mesh.colored_vertex(Pos2::new(map_x(key.left), black_bottom), lightened);
                     mesh.colored_vertex(
-                        Pos2::new(
-                            map_x(key.left) + 2.0 * key_density,
-                            black_bottom - md_height,
-                        ),
+                        Pos2::new(map_x(key.left) + 2.0 * key_border, black_bottom - md_height),
                         darkened,
                     );
 
                     add_rect_triangles(&mut mesh);
                     mesh.colored_vertex(
-                        Pos2::new(
-                            map_x(key.right) - 2.0 * key_density,
-                            top - black_key_overlap,
-                        ),
+                        Pos2::new(map_x(key.right) - 2.0 * key_border, top - black_key_overlap),
                         lightened,
                     );
                     mesh.colored_vertex(Pos2::new(map_x(key.right), top), darkened);
                     mesh.colored_vertex(
                         Pos2::new(
-                            map_x(key.right) - 2.0 * key_density,
+                            map_x(key.right) - 2.0 * key_border,
                             black_bottom - md_height,
                         ),
                         lightened,
@@ -272,26 +266,20 @@ impl GuiKeyboard {
 
                     add_rect_triangles(&mut mesh);
                     mesh.colored_vertex(
-                        Pos2::new(map_x(key.left) + 2.0 * key_density, top - black_key_overlap),
+                        Pos2::new(map_x(key.left) + 2.0 * key_border, top - black_key_overlap),
                         color,
                     );
                     mesh.colored_vertex(
-                        Pos2::new(
-                            map_x(key.right) - 2.0 * key_density,
-                            top - black_key_overlap,
-                        ),
+                        Pos2::new(map_x(key.right) - 2.0 * key_border, top - black_key_overlap),
                         color,
                     );
                     mesh.colored_vertex(
-                        Pos2::new(
-                            map_x(key.left) + 2.0 * key_density,
-                            black_bottom - md_height,
-                        ),
+                        Pos2::new(map_x(key.left) + 2.0 * key_border, black_bottom - md_height),
                         darkened,
                     );
                     mesh.colored_vertex(
                         Pos2::new(
-                            map_x(key.right) - 2.0 * key_density,
+                            map_x(key.right) - 2.0 * key_border,
                             black_bottom - md_height,
                         ),
                         darkened,
@@ -300,11 +288,11 @@ impl GuiKeyboard {
                     // Not pressed
                     add_rect_triangles(&mut mesh);
                     mesh.colored_vertex(
-                        Pos2::new(map_x(key.left) + key_density, black_bottom - md_height),
+                        Pos2::new(map_x(key.left) + key_border, black_bottom - md_height),
                         Color32::from_rgb(105, 105, 105),
                     );
                     mesh.colored_vertex(
-                        Pos2::new(map_x(key.right) - key_density, black_bottom - md_height),
+                        Pos2::new(map_x(key.right) - key_border, black_bottom - md_height),
                         Color32::from_rgb(105, 105, 105),
                     );
                     mesh.colored_vertex(
@@ -322,7 +310,7 @@ impl GuiKeyboard {
                         Color32::from_rgb(20, 20, 20),
                     );
                     mesh.colored_vertex(
-                        Pos2::new(map_x(key.left) + 2.0 * key_density, top - black_key_overlap),
+                        Pos2::new(map_x(key.left) + 2.0 * key_border, top - black_key_overlap),
                         Color32::from_rgb(105, 105, 105),
                     );
                     mesh.colored_vertex(
@@ -330,19 +318,13 @@ impl GuiKeyboard {
                         Color32::from_rgb(20, 20, 20),
                     );
                     mesh.colored_vertex(
-                        Pos2::new(
-                            map_x(key.left) + 2.0 * key_density,
-                            black_bottom - md_height,
-                        ),
+                        Pos2::new(map_x(key.left) + 2.0 * key_border, black_bottom - md_height),
                         Color32::from_rgb(105, 105, 105),
                     );
 
                     add_rect_triangles(&mut mesh);
                     mesh.colored_vertex(
-                        Pos2::new(
-                            map_x(key.right) - 2.0 * key_density,
-                            top - black_key_overlap,
-                        ),
+                        Pos2::new(map_x(key.right) - 2.0 * key_border, top - black_key_overlap),
                         Color32::from_rgb(105, 105, 105),
                     );
                     mesh.colored_vertex(
@@ -351,7 +333,7 @@ impl GuiKeyboard {
                     );
                     mesh.colored_vertex(
                         Pos2::new(
-                            map_x(key.right) - 2.0 * key_density,
+                            map_x(key.right) - 2.0 * key_border,
                             black_bottom - md_height,
                         ),
                         Color32::from_rgb(105, 105, 105),
@@ -363,26 +345,20 @@ impl GuiKeyboard {
 
                     add_rect_triangles(&mut mesh);
                     mesh.colored_vertex(
-                        Pos2::new(map_x(key.left) + 2.0 * key_density, top - black_key_overlap),
+                        Pos2::new(map_x(key.left) + 2.0 * key_border, top - black_key_overlap),
                         Color32::from_rgb(20, 20, 20),
                     );
                     mesh.colored_vertex(
-                        Pos2::new(
-                            map_x(key.right) - 2.0 * key_density,
-                            top - black_key_overlap,
-                        ),
+                        Pos2::new(map_x(key.right) - 2.0 * key_border, top - black_key_overlap),
                         Color32::from_rgb(20, 20, 20),
                     );
                     mesh.colored_vertex(
-                        Pos2::new(
-                            map_x(key.left) + 2.0 * key_density,
-                            black_bottom - md_height,
-                        ),
+                        Pos2::new(map_x(key.left) + 2.0 * key_border, black_bottom - md_height),
                         Color32::from_rgb(40, 40, 40),
                     );
                     mesh.colored_vertex(
                         Pos2::new(
-                            map_x(key.right) - 2.0 * key_density,
+                            map_x(key.right) - 2.0 * key_border,
                             black_bottom - md_height,
                         ),
                         Color32::from_rgb(40, 40, 40),
