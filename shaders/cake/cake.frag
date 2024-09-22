@@ -6,6 +6,7 @@ layout(location = 2) in vec2 left_right;
 layout(location = 3) flat in int ticks_height;
 layout(location = 4) flat in int ticks_start;
 layout(location = 5) flat in int buffer_index;
+layout(location = 6) flat in int border_width;
 
 layout(location = 0) out vec4 fsout_Color;
 
@@ -21,7 +22,7 @@ layout(set = 0, binding = 0) readonly buffer BufferArray
     ivec4 BinTree[];
 } buffers[256];
 
-const float border_width = 2;
+const float pi = 3.1415926535897;
 
 ivec4 getNoteAt(int time) {
     int nextIndex = buffers[buffer_index].BinTree[0].x;
@@ -71,13 +72,7 @@ void main()
 
     // Adjust color
 
-    float gradient = cos(v_uv.x + 1);
-    vec3 color_grad = vec3(gradient, gradient, gradient) * color;
-
-    vec3 desaturated = 1 - (1 - color) * (1 - gradient);
-
-    color *= desaturated;
-    color += color_grad;
+    color *= (1.0 + cos(pi * 0.5 * v_uv.x)) * 0.5;
 
     // Check borders
 
@@ -96,8 +91,10 @@ void main()
     float min_dist = min(min_x_dist, min_y_dist);
 
     if(min_dist < border_width) {
-        color = frag_color * 0.034;
+        color = frag_color * 0.2;
     }
 
+    // Square for SRGB
+    color *= color;
     fsout_Color = vec4(color, 1);
 }

@@ -21,6 +21,7 @@ use crate::{
         cake::tree_threader::{NoteEvent, ThreadedTreeSerializers},
         open_file_and_signature,
         shared::{audio::CompressedAudio, timer::TimeKeeper},
+        MIDIColor,
     },
 };
 
@@ -47,7 +48,7 @@ impl CakeMIDIFile {
     pub fn load_from_file(
         path: &str,
         player: Arc<RwLock<SimpleTemporaryPlayer>>,
-        _random_colors: bool,
+        random_colors: bool,
     ) -> Self {
         let ticks_per_second = 10000;
 
@@ -62,6 +63,13 @@ impl CakeMIDIFile {
             |>scale_event_time(1.0 / ppq as f64)
             |>unwrap_items()
         );
+
+        let track_count = midi.track_count();
+        let colors = if random_colors {
+            MIDIColor::new_random_vec_for_tracks(track_count)
+        } else {
+            MIDIColor::new_vec_for_tracks(track_count)
+        };
 
         type Ev = Delta<f64, Track<EventBatch<Event>>>;
         let (key_snd, key_rcv) = crossbeam_channel::bounded::<Arc<Ev>>(1000);
@@ -87,21 +95,27 @@ impl CakeMIDIFile {
                     let track = event.track;
                     match event.as_event() {
                         Event::NoteOn(e) => {
+                            let channel_track = channel_track(e.channel, track);
+
                             trees.push_event(
                                 e.key as usize,
                                 NoteEvent::On {
                                     time: int_time,
-                                    channel_track: channel_track(e.channel, track),
+                                    channel_track,
+                                    color: colors[channel_track as usize].as_u32() as i32,
                                 },
                             );
                             note_count += 1;
                         }
                         Event::NoteOff(e) => {
+                            let channel_track = channel_track(e.channel, track);
+
                             trees.push_event(
                                 e.key as usize,
                                 NoteEvent::Off {
                                     time: int_time,
-                                    channel_track: channel_track(e.channel, track),
+                                    channel_track,
+                                    color: colors[channel_track as usize].as_u32() as i32,
                                 },
                             );
                         }

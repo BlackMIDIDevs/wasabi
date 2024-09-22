@@ -17,6 +17,7 @@ enum TreeFrame {
 struct NoteMarker {
     start: i32,
     track_channel: i32,
+    color: i32,
     written_pos: Option<i32>,
 }
 
@@ -66,11 +67,8 @@ impl TreeSerializer {
                 Some(pos) => -pos,
                 None => {
                     let written_pos = self.written_values.len() as i32;
-                    self.written_values.push(IntVector4::new_note(
-                        marker.start,
-                        0,
-                        marker.track_channel,
-                    ));
+                    self.written_values
+                        .push(IntVector4::new_note(marker.start, 0, marker.color));
                     marker.written_pos = Some(written_pos);
                     -written_pos
                 }
@@ -113,7 +111,7 @@ impl TreeSerializer {
 
     /// Processes a note start. If the time is greater than the last tree time, the tree is
     /// updated to the new time. Then, the note is pushed to the note stack.
-    pub fn start_note(&mut self, time: i32, track_channel: i32) {
+    pub fn start_note(&mut self, time: i32, track_channel: i32, color: i32) {
         if time > self.last_tree_time {
             self.process_change(time);
         }
@@ -125,6 +123,7 @@ impl TreeSerializer {
             NoteMarker {
                 start: time,
                 track_channel,
+                color,
                 written_pos: None,
             },
         );

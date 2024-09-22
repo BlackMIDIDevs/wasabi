@@ -62,6 +62,8 @@ struct CakeNoteColumn {
     end: i32,
     #[format(R32_SINT)]
     buffer_index: i32,
+    #[format(R32_SINT)]
+    border_width: i32,
 }
 
 impl BufferSet {
@@ -244,6 +246,11 @@ impl CakeRenderer {
             screen_height: img_dims[1] as i32,
         };
 
+        let border_width = crate::utils::calculate_border_width(
+            final_image.image().dimensions().width() as f32,
+            key_view.visible_range.len() as f32,
+        ) as i32;
+
         let mut buffer_instances = self.buffers_init.write().unwrap();
         // Black keys first
         let mut written_instances = 0;
@@ -252,6 +259,7 @@ impl CakeRenderer {
             if key.black {
                 buffer_instances[written_instances] = CakeNoteColumn {
                     buffer_index: i as i32,
+                    border_width,
                     start: buffer.start,
                     end: buffer.end,
                     left: key.left,
@@ -266,6 +274,7 @@ impl CakeRenderer {
             if !key.black {
                 buffer_instances[written_instances] = CakeNoteColumn {
                     buffer_index: i as i32,
+                    border_width,
                     start: buffer.start,
                     end: buffer.end,
                     left: key.left,
