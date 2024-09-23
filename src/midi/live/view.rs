@@ -32,8 +32,8 @@ impl LiveNoteViewData {
             parser,
             columns,
             view_range: MIDIViewRange {
-                start: 0.0,
-                end: 0.0,
+                start: f64::NEG_INFINITY,
+                end: f64::NEG_INFINITY,
             },
             default_track_colors: if random_colors {
                 MIDIColor::new_random_vec_for_tracks(track_count)

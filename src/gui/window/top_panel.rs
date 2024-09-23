@@ -1,6 +1,6 @@
 use egui::{Context, Frame};
 
-use std::time::Duration;
+use time::Duration;
 
 use crate::{
     gui::window::GuiWasabiWindow, midi::MIDIFileBase, settings::WasabiSettings, state::WasabiState,
@@ -71,14 +71,15 @@ pub fn draw_panel(
                 || ui.add(egui::Slider::new(&mut 0.0, 0.0..=1.0).show_value(false));
             if let Some(midi_file) = win.midi_file.as_mut() {
                 if let Some(length) = midi_file.midi_length() {
-                    let mut time = midi_file.timer().get_time().as_secs_f64();
+                    let mut time = midi_file.timer().get_time().as_seconds_f64();
                     let time_prev = time;
 
-                    ui.add(egui::Slider::new(&mut time, 0.0..=length).show_value(false));
+                    let rollin = crate::midi::ROLLIN.as_seconds_f64();
+                    ui.add(egui::Slider::new(&mut time, -rollin..=length).show_value(false));
                     if (time_prev != time)
                         && (midi_file.allows_seeking_backward() || time_prev < time)
                     {
-                        midi_file.timer_mut().seek(Duration::from_secs_f64(time));
+                        midi_file.timer_mut().seek(Duration::seconds_f64(time));
                     }
                 } else {
                     empty_slider();

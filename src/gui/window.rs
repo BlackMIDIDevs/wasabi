@@ -11,8 +11,8 @@ mod xsynth_settings;
 use std::{
     path::PathBuf,
     sync::{Arc, RwLock},
-    time::Duration,
 };
+use time::Duration;
 
 use egui::{style::Margin, Frame, Visuals};
 
@@ -130,7 +130,7 @@ impl GuiWasabiWindow {
             .show_separator_line(false)
             .show(&ctx, |ui| {
                 if let Some(midi_file) = self.midi_file.as_mut() {
-                    let one_sec = Duration::from_secs(1);
+                    let one_sec = Duration::seconds(1);
                     let time = midi_file.timer().get_time();
 
                     ui.input(|events| {
@@ -144,7 +144,7 @@ impl GuiWasabiWindow {
                                         egui::Key::ArrowLeft => {
                                             if midi_file.allows_seeking_backward() {
                                                 midi_file.timer_mut().seek(if time <= one_sec {
-                                                    Duration::from_secs(0)
+                                                    Duration::seconds(0)
                                                 } else {
                                                     time - one_sec
                                                 })

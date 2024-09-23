@@ -1,8 +1,8 @@
 use std::{
     sync::{atomic::Ordering, Arc, RwLock},
     thread::{self, JoinHandle},
-    time::Duration,
 };
+use time::Duration;
 
 use atomic_float::AtomicF64;
 use crossbeam_channel::Receiver;
@@ -79,7 +79,7 @@ impl LiveMidiParser {
                 }
 
                 let playback_time = (time - 10.0).max(0.0); // 10 seconds offset
-                let waited = parser_timer.wait_until(Duration::from_secs_f64(playback_time));
+                let waited = parser_timer.wait_until(Duration::seconds_f64(playback_time));
                 if let WaitResult::Killed = waited {
                     break;
                 }

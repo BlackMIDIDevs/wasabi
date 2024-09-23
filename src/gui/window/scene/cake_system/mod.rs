@@ -235,7 +235,7 @@ impl CakeRenderer {
             }
         }
 
-        let midi_time = midi_file.current_time().as_secs_f64();
+        let midi_time = midi_file.current_time().as_seconds_f64();
         let screen_start = (midi_time * midi_file.ticks_per_second() as f64) as i32;
         let screen_end = ((midi_time + view_range) * midi_file.ticks_per_second() as f64) as i32;
 
@@ -372,8 +372,8 @@ impl CakeRenderer {
             .key_blocks()
             .iter()
             .map(|block| {
-                let passed = block.get_notes_passed_at(screen_end as u32)
-                    - block.get_notes_passed_at(screen_start as u32);
+                let passed =
+                    block.get_notes_passed_at(screen_end) - block.get_notes_passed_at(screen_start);
 
                 if block.get_note_at(screen_start as u32).is_some() {
                     passed as u64 + 1

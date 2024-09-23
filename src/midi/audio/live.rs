@@ -1,8 +1,8 @@
 use std::{
     sync::{Arc, RwLock},
     thread::{self, JoinHandle},
-    time::Duration,
 };
+use time::Duration;
 
 use crossbeam_channel::Receiver;
 
@@ -57,7 +57,7 @@ impl LiveAudioPlayer {
                     match self.timer.wait_until_unpause() {
                         UnpauseWaitResult::Unpaused => push_cc(&event),
                         UnpauseWaitResult::UnpausedAndSeeked(time) => {
-                            if time.as_secs_f64() - event.time > max_fall_time {
+                            if time.as_seconds_f64() - event.time > max_fall_time {
                                 seek_catching_up = true;
                             }
                             continue;
@@ -67,7 +67,7 @@ impl LiveAudioPlayer {
                 }
 
                 if seek_catching_up {
-                    let time = self.timer.get_time().as_secs_f64();
+                    let time = self.timer.get_time().as_seconds_f64();
                     if time - event.time > max_fall_time {
                         push_cc(&event);
                         continue;
@@ -76,7 +76,7 @@ impl LiveAudioPlayer {
                     }
                 }
 
-                let time = Duration::from_secs_f64(event.time);
+                let time = Duration::seconds_f64(event.time);
                 match self.timer.wait_until(time) {
                     WaitResult::Ok => {}
                     WaitResult::Paused => {
@@ -84,7 +84,7 @@ impl LiveAudioPlayer {
                     }
                     WaitResult::Seeked(time) => {
                         reset();
-                        if time.as_secs_f64() - event.time > max_fall_time {
+                        if time.as_seconds_f64() - event.time > max_fall_time {
                             seek_catching_up = true;
                         }
                         continue;
