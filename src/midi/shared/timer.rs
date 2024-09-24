@@ -3,7 +3,7 @@
 use std::time::Instant;
 use time::Duration;
 
-pub const ROLLIN: Duration = Duration::seconds(2);
+pub const START_DELAY: Duration = Duration::seconds(2);
 
 struct NotifySignal {
     new_state: TimerState,
@@ -27,8 +27,8 @@ impl TimerState {
             TimerState::Running {
                 continue_time,
                 time_offset,
-            } => continue_time.elapsed() + *time_offset - ROLLIN,
-            TimerState::Paused { time_offset } => *time_offset - ROLLIN,
+            } => continue_time.elapsed() + *time_offset - START_DELAY,
+            TimerState::Paused { time_offset } => *time_offset - START_DELAY,
         }
     }
 
@@ -47,7 +47,7 @@ impl TimeKeeper {
     pub fn new() -> Self {
         Self {
             current_state: TimerState::Paused {
-                time_offset: ROLLIN,
+                time_offset: START_DELAY,
             },
             listeners: Vec::new(),
         }
@@ -123,7 +123,7 @@ impl TimeKeeper {
     }
 
     pub fn seek(&mut self, time: Duration) {
-        let time = time + ROLLIN;
+        let time = time + START_DELAY;
         if self.current_state.is_paused() {
             self.current_state = TimerState::Paused { time_offset: time };
         } else {

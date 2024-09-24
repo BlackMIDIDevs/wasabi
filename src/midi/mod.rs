@@ -17,7 +17,7 @@ use rand::Rng;
 pub use cake::{blocks::CakeBlock, intvec4::IntVector4, CakeMIDIFile, CakeSignature};
 pub use live::LiveLoadMIDIFile;
 pub use ram::InRamMIDIFile;
-pub use shared::timer::ROLLIN;
+pub use shared::timer::START_DELAY;
 
 use self::shared::timer::TimeKeeper;
 

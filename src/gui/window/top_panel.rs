@@ -74,8 +74,8 @@ pub fn draw_panel(
                     let mut time = midi_file.timer().get_time().as_seconds_f64();
                     let time_prev = time;
 
-                    let rollin = crate::midi::ROLLIN.as_seconds_f64();
-                    ui.add(egui::Slider::new(&mut time, -rollin..=length).show_value(false));
+                    let start_delay = crate::midi::START_DELAY.as_seconds_f64();
+                    ui.add(egui::Slider::new(&mut time, -start_delay..=length).show_value(false));
                     if (time_prev != time)
                         && (midi_file.allows_seeking_backward() || time_prev < time)
                     {
