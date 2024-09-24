@@ -1,8 +1,8 @@
 use std::{
     sync::{Arc, RwLock},
     thread,
-    time::Duration,
 };
+use time::Duration;
 
 use midi_toolkit::{
     events::{Event, MIDIEventEnum},
@@ -225,8 +225,8 @@ impl MIDIFileBase for CakeMIDIFile {
     }
 
     fn stats(&self) -> MIDIFileStats {
-        let time = self.timer.get_time().as_secs_f64();
-        let time_int = (time * self.ticks_per_second as f64) as u32;
+        let time = self.timer.get_time().as_seconds_f64();
+        let time_int = (time * self.ticks_per_second as f64) as i32;
 
         let passed_notes = self
             .key_blocks()

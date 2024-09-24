@@ -45,14 +45,14 @@ impl CakeBlock {
             })
         }
     }
-    pub fn get_notes_passed_at(&self, time: u32) -> u32 {
+    pub fn get_notes_passed_at(&self, time: i32) -> u32 {
         let mut last_notes_passed;
         let mut next_index = self.tree[0].length_marker_len();
 
         loop {
             let node = self.tree[next_index];
 
-            let offset = if time < node.leaf_cutoff() as u32 {
+            let offset = if time < node.leaf_cutoff() {
                 node.leaf_left()
             } else {
                 node.leaf_right()

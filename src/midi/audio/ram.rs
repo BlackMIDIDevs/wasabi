@@ -1,8 +1,8 @@
 use std::{
     sync::{Arc, RwLock},
     thread::{self, JoinHandle},
-    time::Duration,
 };
+use time::Duration;
 
 use crate::{
     audio_playback::SimpleTemporaryPlayer,
@@ -45,11 +45,11 @@ impl InRamAudioPlayer {
                 reset();
                 match self.timer.wait_until_unpause() {
                     UnpauseWaitResult::Unpaused => {
-                        self.seek_to_time(self.timer.get_time().as_secs_f64());
+                        self.seek_to_time(self.timer.get_time().as_seconds_f64());
                         continue;
                     }
                     UnpauseWaitResult::UnpausedAndSeeked(time) => {
-                        self.seek_to_time(time.as_secs_f64());
+                        self.seek_to_time(time.as_seconds_f64());
                         continue;
                     }
                     UnpauseWaitResult::Killed => break,
@@ -59,7 +59,7 @@ impl InRamAudioPlayer {
             if self.index >= self.events.len() {
                 match self.timer.wait_until_seeked() {
                     SeekWaitResult::UnpausedAndSeeked(time) => {
-                        self.seek_to_time(time.as_secs_f64());
+                        self.seek_to_time(time.as_seconds_f64());
                         continue;
                     }
                     SeekWaitResult::Killed => break,
@@ -68,7 +68,7 @@ impl InRamAudioPlayer {
 
             let event = &self.events[self.index];
 
-            let time = Duration::from_secs_f64(event.time);
+            let time = Duration::seconds_f64(event.time);
             match self.timer.wait_until(time) {
                 WaitResult::Ok => {}
                 WaitResult::Paused => {
@@ -76,7 +76,7 @@ impl InRamAudioPlayer {
                 }
                 WaitResult::Seeked(time) => {
                     reset();
-                    self.seek_to_time(time.as_secs_f64());
+                    self.seek_to_time(time.as_seconds_f64());
                     continue;
                 }
                 WaitResult::Killed => {
@@ -93,6 +93,10 @@ impl InRamAudioPlayer {
     }
 
     fn find_time_index(&self, time: f64) -> usize {
+        if time < 0.0 {
+            return 0;
+        }
+
         let events = &self.events;
 
         // Binary search to find the right time segment
