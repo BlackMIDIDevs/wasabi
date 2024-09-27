@@ -47,7 +47,7 @@ impl TimeKeeper {
     pub fn new() -> Self {
         Self {
             current_state: TimerState::Paused {
-                time_offset: START_DELAY,
+                time_offset: -START_DELAY,
             },
             listeners: Vec::new(),
         }
@@ -91,7 +91,7 @@ impl TimeKeeper {
     }
 
     pub fn toggle_pause(&mut self) {
-        let now = self.get_time();
+        let now = self.get_time() + START_DELAY;
         match self.current_state {
             TimerState::Paused { .. } => {
                 self.current_state = TimerState::Running {
@@ -108,16 +108,16 @@ impl TimeKeeper {
     }
 
     pub fn pause(&mut self) {
-        let now = self.get_time();
+        let now = self.get_time() + START_DELAY;
         self.current_state = TimerState::Paused { time_offset: now };
         self.notify_listeners(false);
     }
 
     pub fn play(&mut self) {
-        let now = self.get_time();
+        let now = self.get_time() + START_DELAY;
         self.current_state = TimerState::Running {
             continue_time: Instant::now(),
-            time_offset: now,
+            time_offset: now + START_DELAY,
         };
         self.notify_listeners(false);
     }
