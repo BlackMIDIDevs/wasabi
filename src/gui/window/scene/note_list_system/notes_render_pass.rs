@@ -5,23 +5,30 @@ use vulkano::{
     buffer::{Buffer, BufferCreateInfo, BufferUsage, Subbuffer},
     command_buffer::{
         allocator::StandardCommandBufferAllocator, AutoCommandBufferBuilder, CommandBufferUsage,
-        RenderPassBeginInfo, SubpassContents,
+        RenderPassBeginInfo, SubpassBeginInfo, SubpassContents,
     },
     descriptor_set::{
         allocator::StandardDescriptorSetAllocator, PersistentDescriptorSet, WriteDescriptorSet,
     },
     device::{Device, Queue},
     format::Format,
-    image::{view::ImageView, AttachmentImage, ImageAccess, ImageViewAbstract},
-    memory::allocator::{AllocationCreateInfo, MemoryUsage, StandardMemoryAllocator},
+    image::{view::ImageView, Image, ImageCreateInfo, ImageUsage},
+    memory::allocator::{AllocationCreateInfo, MemoryTypeFilter, StandardMemoryAllocator},
     pipeline::{
         graphics::{
+            color_blend::{ColorBlendAttachmentState, ColorBlendState},
             depth_stencil::DepthStencilState,
             input_assembly::{InputAssemblyState, PrimitiveTopology},
-            vertex_input::Vertex,
+            multisample::MultisampleState,
+            rasterization::RasterizationState,
+            subpass::PipelineSubpassType,
+            vertex_input::{Vertex, VertexDefinition},
             viewport::{Viewport, ViewportState},
+            GraphicsPipelineCreateInfo,
         },
-        GraphicsPipeline, Pipeline, PipelineBindPoint,
+        layout::PipelineDescriptorSetLayoutCreateInfo,
+        GraphicsPipeline, Pipeline, PipelineBindPoint, PipelineLayout,
+        PipelineShaderStageCreateInfo,
     },
     render_pass::{Framebuffer, FramebufferCreateInfo, RenderPass, Subpass},
     sync::{self, future::FenceSignalFuture, GpuFuture},
@@ -58,16 +65,16 @@ struct BufferSet {
 }
 
 fn get_buffer(device: &Arc<Device>) -> (Subbuffer<[NoteVertex]>, Subbuffer<[NoteVertex]>) {
-    let allocator = StandardMemoryAllocator::new_default(device.clone());
+    let allocator = Arc::new(StandardMemoryAllocator::new_default(device.clone()));
 
     Buffer::new_slice(
-        &allocator,
+        allocator.clone(),
         BufferCreateInfo {
             usage: BufferUsage::VERTEX_BUFFER,
             ..Default::default()
         },
         AllocationCreateInfo {
-            usage: MemoryUsage::Upload,
+            memory_type_filter: MemoryTypeFilter::PREFER_HOST,
             ..Default::default()
         },
         NOTE_BUFFER_SIZE * 2,
@@ -113,31 +120,33 @@ pub struct NoteRenderPass {
     render_pass_clear: Arc<RenderPass>,
     render_pass_draw_over: Arc<RenderPass>,
     key_locations: Subbuffer<[[KeyPosition; 256]]>,
-    depth_buffer: Arc<ImageView<AttachmentImage>>,
-    allocator: StandardMemoryAllocator,
+    depth_buffer: Arc<ImageView>,
+    allocator: Arc<StandardMemoryAllocator>,
     cb_allocator: StandardCommandBufferAllocator,
     sd_allocator: StandardDescriptorSetAllocator,
 }
 
 impl NoteRenderPass {
     pub fn new(renderer: &GuiRenderer) -> NoteRenderPass {
-        let allocator = StandardMemoryAllocator::new_default(renderer.device.clone());
+        let allocator = Arc::new(StandardMemoryAllocator::new_default(
+            renderer.device.clone(),
+        ));
 
         let gfx_queue = renderer.queue.clone();
 
         let render_pass_clear = vulkano::ordered_passes_renderpass!(gfx_queue.device().clone(),
             attachments: {
                 final_color: {
-                    load: Clear,
-                    store: Store,
                     format: renderer.format,
                     samples: 1,
+                    load_op: Clear,
+                    store_op: Store,
                 },
                 depth: {
-                    load: Clear,
-                    store: Store,
                     format: Format::D16_UNORM,
                     samples: 1,
+                    load_op: Clear,
+                    store_op: Store,
                 }
             },
             passes: [
@@ -153,16 +162,16 @@ impl NoteRenderPass {
         let render_pass_draw_over = vulkano::ordered_passes_renderpass!(gfx_queue.device().clone(),
             attachments: {
                 final_color: {
-                    load: DontCare,
-                    store: Store,
                     format: renderer.format,
                     samples: 1,
+                    load_op: DontCare,
+                    store_op: Store,
                 },
                 depth: {
-                    load: DontCare,
-                    store: Store,
                     format: Format::D16_UNORM,
                     samples: 1,
+                    load_op: DontCare,
+                    store_op: Store,
                 }
             },
             passes: [
@@ -176,48 +185,102 @@ impl NoteRenderPass {
         .unwrap();
 
         let depth_buffer = ImageView::new_default(
-            AttachmentImage::transient_input_attachment(&allocator, [1, 1], Format::D16_UNORM)
-                .unwrap(),
+            Image::new(
+                allocator.clone(),
+                ImageCreateInfo {
+                    extent: [1, 1, 1],
+                    format: Format::D16_UNORM,
+                    usage: ImageUsage::SAMPLED,
+                    ..Default::default()
+                },
+                Default::default(),
+            )
+            .unwrap(),
         )
         .unwrap();
 
         let key_locations = Buffer::from_iter(
-            &allocator,
+            allocator.clone(),
             BufferCreateInfo {
-                usage: BufferUsage::UNIFORM_BUFFER,
+                usage: BufferUsage::STORAGE_BUFFER
+                    | BufferUsage::TRANSFER_DST
+                    | BufferUsage::VERTEX_BUFFER,
                 ..Default::default()
             },
             AllocationCreateInfo {
-                usage: MemoryUsage::Upload,
+                memory_type_filter: MemoryTypeFilter::PREFER_HOST,
                 ..Default::default()
             },
             [[Default::default(); 256]],
         )
         .unwrap();
 
-        let vs = vs::load(gfx_queue.device().clone()).expect("failed to create shader module");
-        let fs = fs::load(gfx_queue.device().clone()).expect("failed to create shader module");
-        let gs = gs::load(gfx_queue.device().clone()).expect("failed to create shader module");
-
-        let pipeline_base = GraphicsPipeline::start()
-            .input_assembly_state(InputAssemblyState::new().topology(PrimitiveTopology::PointList))
-            .vertex_input_state(NoteVertex::per_vertex())
-            .vertex_shader(vs.entry_point("main").unwrap(), ())
-            .geometry_shader(gs.entry_point("main").unwrap(), ())
-            .fragment_shader(fs.entry_point("main").unwrap(), ())
-            .viewport_state(ViewportState::viewport_dynamic_scissor_irrelevant())
-            .depth_stencil_state(DepthStencilState::simple_depth_test());
-
-        let pipeline_clear = pipeline_base
-            .clone()
-            .render_pass(Subpass::from(render_pass_clear.clone(), 0).unwrap())
-            .build(gfx_queue.device().clone())
+        let vs = vs::load(gfx_queue.device().clone())
+            .expect("failed to create shader module")
+            .entry_point("main")
+            .unwrap();
+        let fs = fs::load(gfx_queue.device().clone())
+            .expect("failed to create shader module")
+            .entry_point("main")
+            .unwrap();
+        let gs = gs::load(gfx_queue.device().clone())
+            .expect("failed to create shader module")
+            .entry_point("main")
             .unwrap();
 
-        let pipeline_draw_over = pipeline_base
-            .render_pass(Subpass::from(render_pass_draw_over.clone(), 0).unwrap())
-            .build(gfx_queue.device().clone())
+        let vertex_input_state = NoteVertex::per_vertex()
+            .definition(&vs.info().input_interface)
             .unwrap();
+        let stages = [
+            PipelineShaderStageCreateInfo::new(vs),
+            PipelineShaderStageCreateInfo::new(fs),
+            PipelineShaderStageCreateInfo::new(gs),
+        ];
+        let layout = PipelineLayout::new(
+            renderer.device.clone(),
+            PipelineDescriptorSetLayoutCreateInfo::from_stages(&stages)
+                .into_pipeline_layout_create_info(renderer.device.clone())
+                .unwrap(),
+        )
+        .unwrap();
+        let subpass = Subpass::from(render_pass_clear.clone(), 0).unwrap();
+
+        let mut create_info = GraphicsPipelineCreateInfo {
+            stages: stages.into_iter().collect(),
+            vertex_input_state: Some(vertex_input_state),
+            input_assembly_state: Some(InputAssemblyState {
+                topology: PrimitiveTopology::PointList,
+                ..Default::default()
+            }),
+            viewport_state: Some(ViewportState {
+                viewports: [Viewport {
+                    offset: [0.0, 0.0],
+                    extent: [1280.0, 720.0],
+                    depth_range: 0.0..=1.0,
+                }]
+                .into_iter()
+                .collect(),
+                ..Default::default()
+            }),
+            rasterization_state: Some(RasterizationState::default()),
+            multisample_state: Some(MultisampleState::default()),
+            color_blend_state: Some(ColorBlendState::with_attachment_states(
+                subpass.num_color_attachments(),
+                ColorBlendAttachmentState::default(),
+            )),
+            depth_stencil_state: Some(DepthStencilState::default()),
+            subpass: Some(subpass.into()),
+            ..GraphicsPipelineCreateInfo::layout(layout)
+        };
+
+        let pipeline_clear =
+            GraphicsPipeline::new(renderer.device.clone(), None, create_info.clone()).unwrap();
+
+        create_info.subpass = Some(PipelineSubpassType::BeginRenderPass(
+            Subpass::from(render_pass_draw_over.clone(), 0).unwrap(),
+        ));
+        let pipeline_draw_over =
+            GraphicsPipeline::new(renderer.device.clone(), None, create_info).unwrap();
 
         NoteRenderPass {
             gfx_queue,
@@ -233,24 +296,32 @@ impl NoteRenderPass {
                 renderer.device.clone(),
                 Default::default(),
             ),
-            sd_allocator: StandardDescriptorSetAllocator::new(renderer.device.clone()),
+            sd_allocator: StandardDescriptorSetAllocator::new(
+                renderer.device.clone(),
+                Default::default(),
+            ),
         }
     }
 
     pub fn draw(
         &mut self,
-        final_image: Arc<dyn ImageViewAbstract + 'static>,
+        final_image: Arc<ImageView>,
         key_view: &KeyboardView,
         view_range: f32,
         mut fill_buffer: impl FnMut(&Subbuffer<[NoteVertex]>) -> NotePassStatus,
     ) {
-        let img_dims = final_image.image().dimensions().width_height();
-        if self.depth_buffer.image().dimensions().width_height() != img_dims {
+        let img_dims = final_image.image().extent();
+        if self.depth_buffer.image().extent() != img_dims {
             self.depth_buffer = ImageView::new_default(
-                AttachmentImage::transient_input_attachment(
-                    &self.allocator,
-                    img_dims,
-                    Format::D16_UNORM,
+                Image::new(
+                    self.allocator.clone(),
+                    ImageCreateInfo {
+                        extent: [img_dims[0], img_dims[1], 1],
+                        format: Format::D16_UNORM,
+                        usage: ImageUsage::SAMPLED,
+                        ..Default::default()
+                    },
+                    Default::default(),
                 )
                 .unwrap(),
             )
@@ -321,12 +392,17 @@ impl NoteRenderPass {
             let pipeline_layout = pipeline.layout();
 
             let desc_layout = pipeline_layout.set_layouts().first().unwrap();
+            let write_descriptor_set = WriteDescriptorSet::buffer(0, self.key_locations.clone());
             let set = PersistentDescriptorSet::new(
                 &self.sd_allocator,
                 desc_layout.clone(),
-                [WriteDescriptorSet::buffer(0, self.key_locations.clone())],
+                [write_descriptor_set],
+                [],
             )
             .unwrap();
+
+            let mut subpassbegininfo = SubpassBeginInfo::default();
+            subpassbegininfo.contents = SubpassContents::Inline;
 
             command_buffer_builder
                 .begin_render_pass(
@@ -334,7 +410,7 @@ impl NoteRenderPass {
                         clear_values: clears,
                         ..RenderPassBeginInfo::framebuffer(framebuffer)
                     },
-                    SubpassContents::Inline,
+                    subpassbegininfo,
                 )
                 .unwrap();
 
@@ -346,26 +422,34 @@ impl NoteRenderPass {
 
             command_buffer_builder
                 .bind_pipeline_graphics(pipeline.clone())
+                .unwrap()
                 .set_viewport(
                     0,
-                    [Viewport {
-                        origin: [0.0, 0.0],
-                        dimensions: [img_dims[0] as f32, img_dims[1] as f32],
-                        depth_range: 0.0..1.0,
-                    }],
+                    vec![Viewport {
+                        offset: [0.0, 0.0],
+                        extent: [img_dims[0] as f32, img_dims[1] as f32],
+                        depth_range: 0.0..=1.0,
+                    }]
+                    .into(),
                 )
+                .unwrap()
                 .push_constants(pipeline_layout.clone().clone(), 0, push_constants)
+                .unwrap()
                 .bind_descriptor_sets(
                     PipelineBindPoint::Graphics,
                     pipeline_layout.clone(),
                     0,
                     set.clone(),
                 )
+                .unwrap()
                 .bind_vertex_buffers(0, buffer.clone())
+                .unwrap()
                 .draw(items_to_render, 1, 0, 0)
                 .unwrap();
 
-            command_buffer_builder.end_render_pass().unwrap();
+            command_buffer_builder
+                .end_render_pass(Default::default())
+                .unwrap();
             let command_buffer = command_buffer_builder.build().unwrap();
 
             if let Some(prev_future) = prev_future.take() {

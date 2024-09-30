@@ -1,16 +1,17 @@
 use std::sync::Arc;
 
+use egui_winit::winit::{dpi::PhysicalSize, window::Window};
 use vulkano::{
     device::{physical::PhysicalDevice, Device, Queue},
     format::Format,
-    image::{view::ImageView, ImageUsage, SwapchainImage},
+    image::{view::ImageView, ImageUsage},
     swapchain::{
-        AcquireError, PresentMode, Surface, Swapchain, SwapchainAcquireFuture, SwapchainCreateInfo,
-        SwapchainCreationError, SwapchainPresentInfo,
+        PresentMode, Surface, Swapchain, SwapchainAcquireFuture, SwapchainCreateInfo,
+        SwapchainPresentInfo,
     },
-    sync::{self, FlushError, GpuFuture},
+    sync::{self, GpuFuture},
+    Validated, VulkanError,
 };
-use winit::{dpi::PhysicalSize, window::Window};
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct ImagesState {
@@ -26,7 +27,7 @@ pub struct SwapchainState {
 pub struct ManagedSwapchain {
     state: SwapchainState,
     swap_chain: Arc<Swapchain>,
-    image_views: Vec<Arc<ImageView<SwapchainImage>>>,
+    image_views: Vec<Arc<ImageView>>,
     previous_frame_end: Option<Box<dyn GpuFuture>>,
     device: Arc<Device>,
     recreate_on_next_frame: bool,
@@ -49,8 +50,9 @@ impl ManagedSwapchain {
             .unwrap();
         let image_format = formats
             .iter()
-            .find(|v| v.0 == Format::B8G8R8A8_SRGB)
-            .map(|v| v.0);
+            .find(|v| v.0 == Format::B8G8R8A8_UNORM)
+            .map(|v| v.0)
+            .unwrap_or(Format::B8G8R8A8_UNORM);
         let image_extent = window.inner_size().into();
 
         let (swapchain, images) = Swapchain::new(
@@ -110,7 +112,7 @@ impl ManagedSwapchain {
             ..self.swap_chain.create_info()
         }) {
             Ok(r) => r,
-            Err(SwapchainCreationError::ImageExtentNotSupported { .. }) => return,
+            Err(Validated::Error { .. }) => return,
             Err(e) => panic!("Failed to recreate swapchain: {e:?}"),
         };
         self.swap_chain = new_swapchain;
@@ -144,11 +146,15 @@ impl ManagedSwapchain {
             let (image_num, suboptimal, acquire_future) = match next {
                 Ok(r) => r,
                 // TODO: Handle more errors, e.g. DeviceLost, by re-creating the entire graphics chain
-                Err(AcquireError::OutOfDate) => {
-                    self.recreate();
-                    continue;
+                Err(Validated::Error(e)) => {
+                    if e == VulkanError::OutOfDate {
+                        self.recreate();
+                        continue;
+                    } else {
+                        panic!("Failed to acquire next image: {e:?}");
+                    }
                 }
-                Err(e) => panic!("Failed to acquire next image: {e:?}"),
+                Err(e) => panic!("Unknown error: {e:?}"),
             };
 
             if suboptimal {
@@ -172,7 +178,7 @@ pub struct SwapchainFrame<'a> {
     presented: bool,
 
     pub image_num: u32,
-    pub image: Arc<ImageView<SwapchainImage>>,
+    pub image: Arc<ImageView>,
 
     managed_swap_chain: &'a mut ManagedSwapchain,
 }
@@ -200,12 +206,17 @@ impl<'a> SwapchainFrame<'a> {
                 }
                 sc.previous_frame_end = Some(future.boxed());
             }
-            Err(FlushError::OutOfDate) => {
-                sc.recreate_on_next_frame = true;
-                sc.previous_frame_end = Some(sync::now(sc.device.clone()).boxed());
+            Err(Validated::Error(e)) => {
+                if e == VulkanError::OutOfDate {
+                    sc.recreate_on_next_frame = true;
+                    sc.previous_frame_end = Some(sync::now(sc.device.clone()).boxed());
+                } else {
+                    println!("Failed to flush future: {e:?}");
+                    sc.previous_frame_end = Some(sync::now(sc.device.clone()).boxed());
+                }
             }
             Err(e) => {
-                println!("Failed to flush future: {e:?}");
+                println!("Unknown error: {e:?}");
                 sc.previous_frame_end = Some(sync::now(sc.device.clone()).boxed());
             }
         }

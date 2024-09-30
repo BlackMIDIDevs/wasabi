@@ -3,7 +3,7 @@ mod notes_render_pass;
 use std::{cell::UnsafeCell, sync::Arc};
 
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
-use vulkano::image::ImageViewAbstract;
+use vulkano::image::view::ImageView;
 
 use crate::{
     gui::{window::keyboard_layout::KeyboardView, GuiRenderer},
@@ -47,7 +47,7 @@ impl NoteRenderer {
     pub fn draw(
         &mut self,
         key_view: &KeyboardView,
-        final_image: Arc<dyn ImageViewAbstract + 'static>,
+        final_image: Arc<ImageView>,
         midi_file: &mut impl MIDIFile,
         view_range: f64,
     ) -> RenderResultData {
@@ -69,7 +69,7 @@ impl NoteRenderer {
         let mut columns_view_info = Vec::new();
 
         let border_width = utils::calculate_border_width(
-            final_image.dimensions().width() as f32,
+            final_image.image().extent()[0] as f32,
             key_view.visible_range.len() as f32,
         );
 

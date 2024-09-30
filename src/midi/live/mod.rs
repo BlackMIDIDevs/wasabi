@@ -5,7 +5,7 @@ use std::{
 
 use midi_toolkit::{io::MIDIFile as TKMIDIFile, sequence::event::get_channels_array_statistics};
 
-use crate::audio_playback::SimpleTemporaryPlayer;
+use crate::{audio_playback::WasabiAudioPlayer, settings::WasabiSettings};
 
 use self::{
     parse::LiveMidiParser,
@@ -13,8 +13,8 @@ use self::{
 };
 
 use super::{
-    open_file_and_signature, shared::timer::TimeKeeper, MIDIFile, MIDIFileBase, MIDIFileStats,
-    MIDIFileUniqueSignature, MIDIViewRange,
+    open_file_and_signature, shared::timer::TimeKeeper, MIDIColor, MIDIFile, MIDIFileBase,
+    MIDIFileStats, MIDIFileUniqueSignature, MIDIViewRange,
 };
 
 pub mod block;
@@ -37,8 +37,8 @@ pub struct LiveLoadMIDIFile {
 impl LiveLoadMIDIFile {
     pub fn load_from_file(
         path: &str,
-        player: Arc<RwLock<SimpleTemporaryPlayer>>,
-        random_colors: bool,
+        player: Arc<RwLock<WasabiAudioPlayer>>,
+        settings: &WasabiSettings,
     ) -> Self {
         let (file, signature) = open_file_and_signature(path);
 
@@ -62,8 +62,10 @@ impl LiveLoadMIDIFile {
 
         let mut timer = TimeKeeper::new();
 
-        let parer = LiveMidiParser::init(&midi, player, &mut timer);
-        let file = LiveNoteViewData::new(parer, midi.track_count(), random_colors);
+        let colors = MIDIColor::new_vec_from_settings(midi.track_count(), settings);
+
+        let parser = LiveMidiParser::init(&midi, player, &mut timer);
+        let file = LiveNoteViewData::new(parser, colors);
 
         LiveLoadMIDIFile {
             view_data: file,

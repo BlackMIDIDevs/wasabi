@@ -15,7 +15,7 @@ use midi_toolkit::{
 };
 
 use crate::{
-    audio_playback::SimpleTemporaryPlayer,
+    audio_playback::WasabiAudioPlayer,
     midi::{
         audio::ram::InRamAudioPlayer,
         cake::tree_threader::{NoteEvent, ThreadedTreeSerializers},
@@ -23,6 +23,7 @@ use crate::{
         shared::{audio::CompressedAudio, timer::TimeKeeper},
         MIDIColor,
     },
+    settings::WasabiSettings,
 };
 
 use self::blocks::CakeBlock;
@@ -47,8 +48,8 @@ pub struct CakeMIDIFile {
 impl CakeMIDIFile {
     pub fn load_from_file(
         path: &str,
-        player: Arc<RwLock<SimpleTemporaryPlayer>>,
-        random_colors: bool,
+        player: Arc<RwLock<WasabiAudioPlayer>>,
+        settings: &WasabiSettings,
     ) -> Self {
         let ticks_per_second = 10000;
 
@@ -64,12 +65,7 @@ impl CakeMIDIFile {
             |>unwrap_items()
         );
 
-        let track_count = midi.track_count();
-        let colors = if random_colors {
-            MIDIColor::new_random_vec_for_tracks(track_count)
-        } else {
-            MIDIColor::new_vec_for_tracks(track_count)
-        };
+        let colors = MIDIColor::new_vec_from_settings(midi.track_count(), settings);
 
         type Ev = Delta<f64, Track<EventBatch<Event>>>;
         let (key_snd, key_rcv) = crossbeam_channel::bounded::<Arc<Ev>>(1000);

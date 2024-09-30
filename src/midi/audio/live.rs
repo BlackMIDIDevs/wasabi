@@ -7,7 +7,7 @@ use time::Duration;
 use crossbeam_channel::Receiver;
 
 use crate::{
-    audio_playback::SimpleTemporaryPlayer,
+    audio_playback::WasabiAudioPlayer,
     midi::shared::{
         audio::CompressedAudio,
         timer::{TimeListener, UnpauseWaitResult, WaitResult},
@@ -17,14 +17,14 @@ use crate::{
 pub struct LiveAudioPlayer {
     events: Receiver<CompressedAudio>,
     timer: TimeListener,
-    player: Arc<RwLock<SimpleTemporaryPlayer>>,
+    player: Arc<RwLock<WasabiAudioPlayer>>,
 }
 
 impl LiveAudioPlayer {
     pub fn new(
         events: Receiver<CompressedAudio>,
         timer: TimeListener,
-        player: Arc<RwLock<SimpleTemporaryPlayer>>,
+        player: Arc<RwLock<WasabiAudioPlayer>>,
     ) -> Self {
         LiveAudioPlayer {
             events,

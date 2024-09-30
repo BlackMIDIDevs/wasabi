@@ -1,20 +1,20 @@
 use std::{
-    ops::{Deref, DerefMut, RangeInclusive},
-    path::Path,
+    ops::{Deref, DerefMut},
     sync::Arc,
 };
 
-use crate::WasabiSettings;
+use crate::settings::WasabiSoundfont;
 
 use xsynth_core::{
-    channel::{ChannelConfigEvent, ChannelEvent, ChannelInitOptions},
-    soundfont::{EnvelopeOptions, SampleSoundfont, SoundfontBase, SoundfontInitOptions},
+    channel::{ChannelConfigEvent, ChannelEvent},
+    soundfont::{SampleSoundfont, SoundfontBase},
     AudioStreamParams,
 };
 use xsynth_realtime::{
-    RealtimeEventSender, RealtimeSynth, RealtimeSynthStatsReader, SynthEvent, ThreadCount,
-    XSynthRealtimeConfig,
+    RealtimeEventSender, RealtimeSynth, RealtimeSynthStatsReader, SynthEvent, XSynthRealtimeConfig,
 };
+
+use super::*;
 
 #[repr(transparent)]
 struct FuckYouImSend<T>(T);
@@ -38,30 +38,13 @@ impl<T> DerefMut for FuckYouImSend<T> {
 
 pub struct XSynthPlayer {
     sender: RealtimeEventSender,
-    pub stats: RealtimeSynthStatsReader,
+    stats: RealtimeSynthStatsReader,
     stream_params: AudioStreamParams,
     _synth: FuckYouImSend<RealtimeSynth>,
 }
 
 impl XSynthPlayer {
-    pub fn new(
-        buffer: f64,
-        use_threadpool: bool,
-        ignore_range: RangeInclusive<u8>,
-        options: ChannelInitOptions,
-    ) -> Self {
-        let config = XSynthRealtimeConfig {
-            render_window_ms: buffer,
-            channel_init_options: options,
-            ignore_range,
-            multithreading: if use_threadpool {
-                ThreadCount::Auto
-            } else {
-                ThreadCount::None
-            },
-            ..Default::default()
-        };
-
+    pub fn new(config: XSynthRealtimeConfig) -> Self {
         let synth = FuckYouImSend(RealtimeSynth::open_with_default_output(config));
         let sender = synth.get_senders();
         let stream_params = synth.stream_params();
@@ -74,50 +57,51 @@ impl XSynthPlayer {
             _synth: synth,
         }
     }
+}
 
-    pub fn get_voice_count(&self) -> u64 {
+impl MidiAudioPlayer for XSynthPlayer {
+    fn voice_count(&self) -> u64 {
         self.stats.voice_count()
     }
 
-    pub fn push_event(&mut self, data: u32) {
+    fn push_event(&mut self, data: u32) {
         self.sender.send_event_u32(data);
     }
 
-    pub fn reset(&mut self) {
+    fn reset(&mut self) {
         self.sender.reset_synth();
     }
 
-    pub fn set_layer_count(&mut self, layers: Option<usize>) {
+    fn configure(&mut self, settings: &SynthSettings) {
+        let layers = if settings.xsynth.limit_layers {
+            Some(settings.xsynth.layers)
+        } else {
+            None
+        };
+
         self.sender
             .send_event(SynthEvent::AllChannels(ChannelEvent::Config(
                 ChannelConfigEvent::SetLayerCount(layers),
             )));
     }
 
-    pub fn set_soundfont(&mut self, path: &str, options: SoundfontInitOptions) {
-        if !path.is_empty() && Path::new(path).exists() {
-            let samplesf = SampleSoundfont::new(path, self.stream_params, options);
-            if let Ok(sf) = samplesf {
-                let soundfont: Arc<dyn SoundfontBase> = Arc::new(sf);
-                self.sender
-                    .send_event(SynthEvent::AllChannels(ChannelEvent::Config(
-                        ChannelConfigEvent::SetSoundfonts(vec![soundfont]),
-                    )));
+    fn set_soundfonts(&mut self, soundfonts: &Vec<WasabiSoundfont>) {
+        // TODO: Load in thread
+        let mut out: Vec<Arc<dyn SoundfontBase>> = Vec::new();
+
+        for sf in soundfonts {
+            if sf.enabled {
+                if let Ok(sf) =
+                    SampleSoundfont::new(sf.path.clone(), self.stream_params, sf.options)
+                {
+                    out.push(Arc::new(sf));
+                }
             }
         }
-    }
-}
 
-pub fn convert_to_sf_init(settings: &WasabiSettings) -> SoundfontInitOptions {
-    SoundfontInitOptions {
-        vol_envelope_options: EnvelopeOptions::default(),
-        use_effects: settings.synth.use_effects,
-        ..Default::default()
-    }
-}
-
-pub fn convert_to_channel_init(settings: &WasabiSettings) -> ChannelInitOptions {
-    ChannelInitOptions {
-        fade_out_killing: settings.synth.fade_out_kill,
+        self.sender
+            .send_event(SynthEvent::AllChannels(ChannelEvent::Config(
+                ChannelConfigEvent::SetSoundfonts(out),
+            )));
     }
 }

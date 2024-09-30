@@ -1,123 +1,54 @@
-use kdmapi::{KDMAPIStream, KDMAPI};
-use std::ops::RangeInclusive;
-use xsynth_core::{channel::ChannelInitOptions, soundfont::SoundfontInitOptions};
-pub mod xsynth;
+use crate::settings::{SynthSettings, WasabiSoundfont};
 
-#[derive(Clone)]
-pub enum AudioPlayerType {
-    XSynth {
-        buffer: f64,
-        use_threadpool: bool,
-        ignore_range: RangeInclusive<u8>,
-        options: ChannelInitOptions,
-    },
-    Kdmapi,
+mod xsynth;
+pub use xsynth::*;
+mod kdmapi;
+pub use kdmapi::*;
+mod midiout;
+pub use midiout::*;
+mod empty;
+pub use empty::*;
+
+pub trait MidiAudioPlayer: Send + Sync {
+    fn voice_count(&self) -> u64;
+    fn push_event(&mut self, data: u32);
+    fn configure(&mut self, settings: &SynthSettings);
+    fn set_soundfonts(&mut self, soundfonts: &Vec<WasabiSoundfont>);
+    fn reset(&mut self);
 }
 
-pub struct SimpleTemporaryPlayer {
-    player_type: AudioPlayerType,
-    xsynth: Option<xsynth::XSynthPlayer>,
-    kdmapi: Option<KDMAPIStream>,
+pub struct WasabiAudioPlayer {
+    player: Box<dyn MidiAudioPlayer>,
 }
 
-impl SimpleTemporaryPlayer {
-    pub fn new(player_type: AudioPlayerType) -> Self {
-        let (xsynth, kdmapi) = match player_type.clone() {
-            AudioPlayerType::XSynth {
-                buffer,
-                use_threadpool,
-                ignore_range,
-                options,
-            } => {
-                let xsynth =
-                    xsynth::XSynthPlayer::new(buffer, use_threadpool, ignore_range, options);
-                (Some(xsynth), None)
-            }
-            AudioPlayerType::Kdmapi => {
-                let kdmapi = KDMAPI.open_stream();
-                (None, Some(kdmapi))
-            }
-        };
-        Self {
-            player_type,
-            xsynth,
-            kdmapi,
-        }
+impl WasabiAudioPlayer {
+    pub fn new(player: Box<dyn MidiAudioPlayer>) -> Self {
+        Self { player: player }
     }
 
-    pub fn switch_player(&mut self, player_type: AudioPlayerType) {
-        self.reset();
-        self.xsynth = None;
-        self.kdmapi = None;
-        let new_player = Self::new(player_type);
-
-        self.player_type = new_player.player_type;
-        self.xsynth = new_player.xsynth;
-        self.kdmapi = new_player.kdmapi;
+    pub fn switch(&mut self, new_player: Box<dyn MidiAudioPlayer>) {
+        self.player = new_player;
     }
 
-    pub fn get_voice_count(&self) -> u64 {
-        match self.player_type {
-            AudioPlayerType::XSynth { .. } => {
-                if let Some(xsynth) = &self.xsynth {
-                    xsynth.get_voice_count()
-                } else {
-                    0
-                }
-            }
-            AudioPlayerType::Kdmapi => 0,
-        }
+    pub fn voice_count(&self) -> u64 {
+        self.player.voice_count()
     }
 
     pub fn push_events(&mut self, data: impl Iterator<Item = u32>) {
-        for e in data {
-            self.push_event(e);
+        for ev in data {
+            self.player.push_event(ev);
         }
     }
 
-    pub fn push_event(&mut self, data: u32) {
-        match self.player_type {
-            AudioPlayerType::XSynth { .. } => {
-                if let Some(xsynth) = self.xsynth.as_mut() {
-                    xsynth.push_event(data);
-                }
-            }
-            AudioPlayerType::Kdmapi => {
-                if let Some(kdmapi) = self.kdmapi.as_mut() {
-                    kdmapi.send_direct_data(data);
-                }
-            }
-        }
+    pub fn configure(&mut self, settings: &SynthSettings) {
+        self.player.configure(settings);
+    }
+
+    pub fn set_soundfonts(&mut self, soundfonts: &Vec<WasabiSoundfont>) {
+        self.player.set_soundfonts(soundfonts);
     }
 
     pub fn reset(&mut self) {
-        match self.player_type {
-            AudioPlayerType::XSynth { .. } => {
-                if let Some(xsynth) = self.xsynth.as_mut() {
-                    xsynth.reset();
-                }
-            }
-            AudioPlayerType::Kdmapi => {
-                if let Some(kdmapi) = self.kdmapi.as_mut() {
-                    kdmapi.reset();
-                }
-            }
-        }
-    }
-
-    pub fn set_layer_count(&mut self, layers: Option<usize>) {
-        if let AudioPlayerType::XSynth { .. } = self.player_type {
-            if let Some(xsynth) = self.xsynth.as_mut() {
-                xsynth.set_layer_count(layers);
-            }
-        }
-    }
-
-    pub fn set_soundfont(&mut self, path: &str, options: SoundfontInitOptions) {
-        if let AudioPlayerType::XSynth { .. } = self.player_type {
-            if let Some(xsynth) = self.xsynth.as_mut() {
-                xsynth.set_soundfont(path, options);
-            }
-        }
+        self.player.reset();
     }
 }

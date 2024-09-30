@@ -8,7 +8,7 @@ mod ram;
 mod audio;
 
 mod shared;
-use std::{fs::File, time::UNIX_EPOCH};
+use std::{fs::File, path::PathBuf, time::UNIX_EPOCH};
 
 use enum_dispatch::enum_dispatch;
 use palette::{convert::FromColorUnclamped, Hsv, Srgb};
@@ -18,6 +18,8 @@ pub use cake::{blocks::CakeBlock, intvec4::IntVector4, CakeMIDIFile, CakeSignatu
 pub use live::LiveLoadMIDIFile;
 pub use ram::InRamMIDIFile;
 pub use shared::timer::START_DELAY;
+
+use crate::settings::{Colors, WasabiSettings};
 
 use self::shared::timer::TimeKeeper;
 
@@ -91,7 +93,7 @@ impl MIDIColor {
         )
     }
 
-    pub fn new_vec_for_tracks(tracks: usize) -> Vec<Self> {
+    pub fn new_vec(tracks: usize) -> Vec<Self> {
         let count = tracks * 16;
 
         let mut vec = Vec::with_capacity(count);
@@ -105,7 +107,7 @@ impl MIDIColor {
         vec
     }
 
-    pub fn new_random_vec_for_tracks(tracks: usize) -> Vec<Self> {
+    pub fn new_random_vec(tracks: usize) -> Vec<Self> {
         let count = tracks * 16;
 
         let mut vec = Vec::with_capacity(count);
@@ -117,6 +119,25 @@ impl MIDIColor {
         }
 
         vec
+    }
+
+    pub fn new_vec_from_palette(tracks: usize, path: impl Into<PathBuf>) -> Vec<Self> {
+        let path: PathBuf = path.into();
+        if path.exists() {
+            return Vec::new();
+        }
+
+        Self::new_vec(tracks)
+    }
+
+    pub fn new_vec_from_settings(tracks: usize, settings: &WasabiSettings) -> Vec<Self> {
+        match settings.midi.colors {
+            Colors::Rainbow => MIDIColor::new_vec(tracks),
+            Colors::Random => MIDIColor::new_random_vec(tracks),
+            Colors::Palette => {
+                MIDIColor::new_vec_from_palette(tracks, settings.midi.palette_path.clone())
+            }
+        }
     }
 
     pub fn as_u32(&self) -> u32 {

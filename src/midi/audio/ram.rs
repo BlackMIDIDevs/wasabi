@@ -5,7 +5,7 @@ use std::{
 use time::Duration;
 
 use crate::{
-    audio_playback::SimpleTemporaryPlayer,
+    audio_playback::WasabiAudioPlayer,
     midi::shared::{
         audio::CompressedAudio,
         timer::{SeekWaitResult, TimeListener, UnpauseWaitResult, WaitResult},
@@ -15,7 +15,7 @@ use crate::{
 pub struct InRamAudioPlayer {
     events: Vec<CompressedAudio>,
     timer: TimeListener,
-    player: Arc<RwLock<SimpleTemporaryPlayer>>,
+    player: Arc<RwLock<WasabiAudioPlayer>>,
     index: usize,
 }
 
@@ -23,7 +23,7 @@ impl InRamAudioPlayer {
     pub fn new(
         events: Vec<CompressedAudio>,
         timer: TimeListener,
-        player: Arc<RwLock<SimpleTemporaryPlayer>>,
+        player: Arc<RwLock<WasabiAudioPlayer>>,
     ) -> Self {
         InRamAudioPlayer {
             events,

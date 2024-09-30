@@ -9,9 +9,10 @@ impl Fps {
         Self(VecDeque::new())
     }
 
-    pub fn update(&mut self) {
+    pub fn update(&mut self, _limit: Option<usize>) {
         self.0.push_back(Instant::now());
         while let Some(front) = self.0.front() {
+            // TODO: FPS limit
             if front.elapsed().as_secs_f64() > FPS_WINDOW {
                 self.0.pop_front();
             } else {

@@ -2,6 +2,7 @@ pub mod swapchain;
 
 use std::sync::Arc;
 
+use raw_window_handle::RawDisplayHandle;
 use vulkano::{
     device::{
         physical::PhysicalDeviceType, Device, DeviceCreateInfo, DeviceExtensions, Features, Queue,
@@ -14,16 +15,12 @@ use vulkano::{
     Version, VulkanLibrary,
 };
 
-use vulkano_win::create_surface_from_winit;
-#[cfg(target_os = "linux")]
-use winit::platform::wayland::EventLoopWindowTargetExtWayland;
-#[cfg(target_os = "linux")]
-use winit::platform::wayland::WindowExtWayland;
+use raw_window_handle::HasDisplayHandle;
 use winit::{
     dpi::PhysicalSize,
     event_loop::EventLoop,
-    monitor::VideoMode,
-    window::{Fullscreen, Icon, Window, WindowBuilder},
+    monitor::VideoModeHandle,
+    window::{Fullscreen, Icon, Window, WindowAttributes},
 };
 
 use self::swapchain::{ManagedSwapchain, SwapchainFrame};
@@ -40,13 +37,13 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new(event_loop: &EventLoop<()>, name: &str, fullscreen: bool, mode: VideoMode) -> Self {
+    pub fn new(event_loop: &EventLoop<()>, name: &str) -> Self {
         // Why
         let library = VulkanLibrary::new().unwrap();
 
         // Add instance extensions based on needs
         let instance_extensions = InstanceExtensions {
-            ..vulkano_win::required_extensions(&library)
+            ..Surface::required_extensions(event_loop).unwrap()
         };
 
         // Create instance
@@ -61,30 +58,17 @@ impl Renderer {
         .expect("Failed to create instance");
 
         // Create rendering surface along with window
-        let window = WindowBuilder::new()
+        let win_attr = WindowAttributes::default()
             .with_window_icon(Some(Icon::from_rgba(ICON.to_vec(), 16, 16).unwrap()))
-            .with_fullscreen({
-                if fullscreen {
-                    #[cfg(target_os = "linux")]
-                    let fullscreen = if event_loop.is_wayland() {
-                        Some(Fullscreen::Borderless(None))
-                    } else {
-                        Some(Fullscreen::Exclusive(mode))
-                    };
-                    #[cfg(not(target_os = "linux"))]
-                    let fullscreen = Some(Fullscreen::Exclusive(mode));
-                    fullscreen
-                } else {
-                    None
-                }
-            })
             .with_inner_size(crate::WINDOW_SIZE)
-            .with_title(name)
-            .build(event_loop)
+            .with_title(name);
+        let window = event_loop
+            .create_window(win_attr)
             .expect("Failed to create vulkan surface & window");
+
         let window = Arc::new(window);
 
-        let surface = create_surface_from_winit(window.clone(), instance.clone())
+        let surface = Surface::from_window(instance.clone(), window.clone())
             .expect("Failed to create surface");
 
         // Get most performant physical device (device with most memory)
@@ -149,7 +133,10 @@ impl Renderer {
             physical_device,
             device.clone(),
             #[cfg(target_os = "linux")]
-            if event_loop.is_wayland() {
+            if matches!(
+                event_loop.display_handle().unwrap().as_raw(),
+                RawDisplayHandle::Wayland(..)
+            ) {
                 println!("Present Mode: {:?}", crate::WAYLAND_PRESENT_MODE);
                 crate::WAYLAND_PRESENT_MODE
             } else {
@@ -196,17 +183,16 @@ impl Renderer {
         self.swap_chain.resize(size);
     }
 
-    pub fn set_fullscreen(&self, mode: VideoMode) {
+    pub fn set_fullscreen(&self, mode: VideoModeHandle) {
         if self.window.fullscreen().is_none() {
-            #[cfg(target_os = "linux")]
-            let fullscreen = if self.window.wayland_display().is_some() {
+            let fullscreen = if matches!(
+                self.window.display_handle().unwrap().as_raw(),
+                RawDisplayHandle::Wayland(..)
+            ) {
                 Some(Fullscreen::Borderless(None))
             } else {
                 Some(Fullscreen::Exclusive(mode))
             };
-            #[cfg(not(target_os = "linux"))]
-            let fullscreen = Some(Fullscreen::Exclusive(mode));
-
             self.window.set_fullscreen(fullscreen);
         } else {
             self.window.set_fullscreen(None);

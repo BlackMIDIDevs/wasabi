@@ -16,13 +16,15 @@ use midi_toolkit::{
 use rustc_hash::FxHashMap;
 
 use crate::{
-    audio_playback::SimpleTemporaryPlayer,
+    audio_playback::WasabiAudioPlayer,
     midi::{
         audio::ram::InRamAudioPlayer,
         open_file_and_signature,
         ram::{column::InRamNoteColumn, view::InRamNoteViewData},
         shared::{audio::CompressedAudio, timer::TimeKeeper, track_channel::TrackAndChannel},
+        MIDIColor,
     },
+    settings::WasabiSettings,
 };
 
 use super::{block::InRamNoteBlock, InRamMIDIFile};
@@ -98,8 +100,8 @@ impl Key {
 impl InRamMIDIFile {
     pub fn load_from_file(
         path: &str,
-        player: Arc<RwLock<SimpleTemporaryPlayer>>,
-        random_colors: bool,
+        player: Arc<RwLock<WasabiAudioPlayer>>,
+        settings: &WasabiSettings,
     ) -> Self {
         let (file, signature) = open_file_and_signature(path);
         let midi = TKMIDIFile::open_from_stream(file, None).unwrap();
@@ -192,8 +194,10 @@ impl InRamMIDIFile {
             .map(|key| InRamNoteColumn::new(key.column))
             .collect();
 
+        let colors = MIDIColor::new_vec_from_settings(midi.track_count(), settings);
+
         InRamMIDIFile {
-            view_data: InRamNoteViewData::new(columns, midi.track_count(), random_colors),
+            view_data: InRamNoteViewData::new(columns, colors),
             timer,
             length,
             note_count,

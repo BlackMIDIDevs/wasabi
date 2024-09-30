@@ -1,7 +1,7 @@
 mod cake_system;
 mod note_list_system;
 
-use egui::Ui;
+use egui::{Image, Ui};
 
 use crate::{
     midi::{MIDIColor, MIDIFileUnion},
@@ -97,7 +97,8 @@ impl GuiRenderScene {
                 .draw(key_view, frame, file, view_range),
         };
 
-        ui.image(scene_image.id, [size[0] as f32, size[1] as f32]);
+        let img = Image::new((scene_image.id, [size[0] as f32, size[1] as f32].into()));
+        ui.add(img);
 
         result
     }
