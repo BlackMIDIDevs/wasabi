@@ -185,7 +185,7 @@ impl InRamMIDIFile {
         let (keys, note_count) = key_join_handle.join().unwrap();
         let audio = audio_join_handle.join().unwrap();
 
-        let mut timer = TimeKeeper::new();
+        let mut timer = TimeKeeper::new(settings.midi.start_delay);
 
         InRamAudioPlayer::new(audio, timer.get_listener(), player).spawn_playback();
 

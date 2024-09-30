@@ -17,7 +17,6 @@ use rand::Rng;
 pub use cake::{blocks::CakeBlock, intvec4::IntVector4, CakeMIDIFile, CakeSignature};
 pub use live::LiveLoadMIDIFile;
 pub use ram::InRamMIDIFile;
-pub use shared::timer::START_DELAY;
 
 use crate::settings::{Colors, WasabiSettings};
 
@@ -124,6 +123,7 @@ impl MIDIColor {
     pub fn new_vec_from_palette(tracks: usize, path: impl Into<PathBuf>) -> Vec<Self> {
         let path: PathBuf = path.into();
         if path.exists() {
+            // TODO
             return Vec::new();
         }
 

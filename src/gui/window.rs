@@ -10,15 +10,16 @@ mod settings;
 mod shortcuts;
 
 use std::path::Path;
+use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 use std::thread;
-use std::{path::PathBuf, time::Duration};
 
 use crossbeam_channel::{Receiver, Sender};
 use egui::FontFamily::{Monospace, Proportional};
 use egui::FontId;
 use egui::Frame;
 use settings::SettingsWindow;
+use time::Duration;
 
 use crate::audio_playback::{EmptyPlayer, MidiDevicePlayer};
 use crate::{
@@ -198,7 +199,7 @@ impl GuiWasabiWindow {
 
         // Render the panel
         let height_prev = ctx.available_rect().height();
-        self.show_playback_panel(&ctx, state);
+        self.show_playback_panel(&ctx, settings, state);
 
         // Calculate available space left for keyboard and notes
         // We must render notes before keyboard because the notes
@@ -230,7 +231,7 @@ impl GuiWasabiWindow {
             .show_separator_line(false)
             .show(&ctx, |ui| {
                 if let Some(midi_file) = self.midi_file.as_mut() {
-                    let skip_dur = Duration::from_secs_f64(settings.gui.skip_control);
+                    let skip_dur = Duration::seconds_f64(settings.gui.skip_control);
                     let time = midi_file.timer().get_time();
 
                     // Set playback keyboard shortcuts
@@ -252,7 +253,7 @@ impl GuiWasabiWindow {
                                             if midi_file.allows_seeking_backward() {
                                                 midi_file.timer_mut().seek(if time <= skip_dur {
                                                     // FIXME: Start deplay
-                                                    Duration::from_secs(0)
+                                                    Duration::seconds(0)
                                                 } else {
                                                     time - skip_dur
                                                 })

@@ -88,6 +88,7 @@ impl Default for SceneSettings {
 #[serde(default)]
 pub struct MidiSettings {
     pub parsing: MidiParsing,
+    pub start_delay: f64,
     pub colors: Colors,
     pub palette_path: PathBuf,
 }
@@ -96,6 +97,7 @@ impl Default for MidiSettings {
     fn default() -> Self {
         Self {
             parsing: MidiParsing::Cake,
+            start_delay: 2.0,
             colors: Colors::Rainbow,
             palette_path: PathBuf::new(),
         }

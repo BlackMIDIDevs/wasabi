@@ -55,9 +55,17 @@ impl SettingsWindow {
                         );
                     });
                 ui.end_row();
+
+                ui.label("Start Delay (s):");
+                ui.add(
+                    egui::DragValue::new(&mut settings.midi.start_delay)
+                        .speed(1.0)
+                        .range(0.0..=100.0),
+                );
+                ui.end_row();
             });
         ui.vertical_centered(|ui| {
-            ui.small("Changes to this setting will be applied when a new MIDI is loaded.");
+            ui.small("Changes to the above settings will be applied when a new MIDI is loaded.");
         });
 
         ui.horizontal(|ui| ui.add_space(width + 40.0));

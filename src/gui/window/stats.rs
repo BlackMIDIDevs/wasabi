@@ -82,7 +82,7 @@ pub fn draw_stats(
         .collapsible(false)
         .title_bar(false)
         .scroll([false, false])
-        .enabled(true)
+        .enabled(false)
         .frame(stats_frame)
         .fixed_pos(pos)
         .fixed_size(egui::Vec2::new(200.0, 128.0))
@@ -93,10 +93,6 @@ pub fn draw_stats(
             if let Some(midi_file) = win.midi_file.as_mut() {
                 stats.time_total = midi_file.midi_length().unwrap_or(0.0);
                 let time = midi_file.timer().get_time().as_seconds_f64();
-
-                length_millis = (stats.time_total * 10.0) as u64 % 10;
-                length_sec = stats.time_total as u64 % 60;
-                length_min = stats.time_total as u64 / 60;
 
                 if time > stats.time_total {
                     stats.time_passed = stats.time_total;

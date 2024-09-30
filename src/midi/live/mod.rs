@@ -60,7 +60,7 @@ impl LiveLoadMIDIFile {
             }
         });
 
-        let mut timer = TimeKeeper::new();
+        let mut timer = TimeKeeper::new(settings.midi.start_delay);
 
         let colors = MIDIColor::new_vec_from_settings(midi.track_count(), settings);
 
