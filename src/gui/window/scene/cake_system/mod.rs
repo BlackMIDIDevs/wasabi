@@ -90,7 +90,7 @@ impl BufferSet {
                 ..Default::default()
             },
             AllocationCreateInfo {
-                memory_type_filter: MemoryTypeFilter::PREFER_HOST,
+                memory_type_filter: MemoryTypeFilter::HOST_SEQUENTIAL_WRITE,
                 ..Default::default()
             },
             block.tree.iter().copied(),
@@ -163,7 +163,7 @@ impl CakeRenderer {
                 ImageCreateInfo {
                     extent: [1, 1, 1],
                     format: Format::D16_UNORM,
-                    usage: ImageUsage::SAMPLED,
+                    usage: ImageUsage::SAMPLED | ImageUsage::DEPTH_STENCIL_ATTACHMENT,
                     ..Default::default()
                 },
                 Default::default(),
@@ -238,13 +238,11 @@ impl CakeRenderer {
         let buffers = Buffer::new_slice(
             allocator.clone(),
             BufferCreateInfo {
-                usage: BufferUsage::STORAGE_BUFFER
-                    | BufferUsage::TRANSFER_DST
-                    | BufferUsage::VERTEX_BUFFER,
+                usage: BufferUsage::VERTEX_BUFFER,
                 ..Default::default()
             },
             AllocationCreateInfo {
-                memory_type_filter: MemoryTypeFilter::PREFER_DEVICE,
+                memory_type_filter: MemoryTypeFilter::HOST_SEQUENTIAL_WRITE,
                 ..Default::default()
             },
             BUFFER_ARRAY_LEN,
@@ -283,7 +281,7 @@ impl CakeRenderer {
             let mut create_info: ImageCreateInfo = Default::default();
             create_info.extent = [img_dims[0], img_dims[1], 1];
             create_info.format = Format::D16_UNORM;
-            create_info.usage = ImageUsage::SAMPLED;
+            create_info.usage = ImageUsage::SAMPLED | ImageUsage::DEPTH_STENCIL_ATTACHMENT;
 
             self.depth_buffer = ImageView::new_default(
                 Image::new(self.allocator.clone(), create_info, Default::default()).unwrap(),
@@ -403,16 +401,6 @@ impl CakeRenderer {
 
         command_buffer_builder
             .bind_pipeline_graphics(pipeline.clone())
-            .unwrap()
-            .set_viewport(
-                0,
-                vec![Viewport {
-                    offset: [0.0, 0.0],
-                    extent: [img_dims[0] as f32, img_dims[1] as f32],
-                    depth_range: 0.0..=1.0,
-                }]
-                .into(),
-            )
             .unwrap()
             .push_constants(pipeline_layout.clone(), 0, push_constants)
             .unwrap()

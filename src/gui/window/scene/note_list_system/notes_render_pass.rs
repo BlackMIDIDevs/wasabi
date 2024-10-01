@@ -74,7 +74,7 @@ fn get_buffer(device: &Arc<Device>) -> (Subbuffer<[NoteVertex]>, Subbuffer<[Note
             ..Default::default()
         },
         AllocationCreateInfo {
-            memory_type_filter: MemoryTypeFilter::PREFER_HOST,
+            memory_type_filter: MemoryTypeFilter::HOST_RANDOM_ACCESS,
             ..Default::default()
         },
         NOTE_BUFFER_SIZE * 2,
@@ -190,7 +190,7 @@ impl NoteRenderPass {
                 ImageCreateInfo {
                     extent: [1, 1, 1],
                     format: Format::D16_UNORM,
-                    usage: ImageUsage::SAMPLED,
+                    usage: ImageUsage::SAMPLED | ImageUsage::DEPTH_STENCIL_ATTACHMENT,
                     ..Default::default()
                 },
                 Default::default(),
@@ -202,13 +202,11 @@ impl NoteRenderPass {
         let key_locations = Buffer::from_iter(
             allocator.clone(),
             BufferCreateInfo {
-                usage: BufferUsage::STORAGE_BUFFER
-                    | BufferUsage::TRANSFER_DST
-                    | BufferUsage::VERTEX_BUFFER,
+                usage: BufferUsage::UNIFORM_BUFFER,
                 ..Default::default()
             },
             AllocationCreateInfo {
-                memory_type_filter: MemoryTypeFilter::PREFER_HOST,
+                memory_type_filter: MemoryTypeFilter::HOST_SEQUENTIAL_WRITE,
                 ..Default::default()
             },
             [[Default::default(); 256]],
@@ -318,7 +316,7 @@ impl NoteRenderPass {
                     ImageCreateInfo {
                         extent: [img_dims[0], img_dims[1], 1],
                         format: Format::D16_UNORM,
-                        usage: ImageUsage::SAMPLED,
+                        usage: ImageUsage::SAMPLED | ImageUsage::DEPTH_STENCIL_ATTACHMENT,
                         ..Default::default()
                     },
                     Default::default(),
@@ -422,16 +420,6 @@ impl NoteRenderPass {
 
             command_buffer_builder
                 .bind_pipeline_graphics(pipeline.clone())
-                .unwrap()
-                .set_viewport(
-                    0,
-                    vec![Viewport {
-                        offset: [0.0, 0.0],
-                        extent: [img_dims[0] as f32, img_dims[1] as f32],
-                        depth_range: 0.0..=1.0,
-                    }]
-                    .into(),
-                )
                 .unwrap()
                 .push_constants(pipeline_layout.clone().clone(), 0, push_constants)
                 .unwrap()

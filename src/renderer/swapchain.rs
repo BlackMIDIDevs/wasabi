@@ -230,7 +230,7 @@ impl<'a> SwapchainFrame<'a> {
 impl<'a> std::ops::Drop for SwapchainFrame<'a> {
     fn drop(&mut self) {
         if !self.presented {
-            panic!("SwapchainFrame not presented.")
+            eprintln!("SwapchainFrame dropped before it was presented.")
         }
     }
 }

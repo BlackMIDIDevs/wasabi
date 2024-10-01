@@ -43,7 +43,7 @@ impl SceneSwapchain {
             let mut create_info: ImageCreateInfo = Default::default();
             create_info.format = image_state.format;
             create_info.extent = [size[0], size[1], 1];
-            create_info.usage = ImageUsage::SAMPLED;
+            create_info.usage = ImageUsage::SAMPLED | ImageUsage::COLOR_ATTACHMENT;
 
             // Create new images
             for _ in 0..image_state.count {
