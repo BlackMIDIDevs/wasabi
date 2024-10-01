@@ -23,11 +23,11 @@ use vulkano::{
             rasterization::RasterizationState,
             subpass::PipelineSubpassType,
             vertex_input::{Vertex, VertexDefinition},
-            viewport::{Viewport, ViewportState},
+            viewport::Viewport,
             GraphicsPipelineCreateInfo,
         },
         layout::PipelineDescriptorSetLayoutCreateInfo,
-        GraphicsPipeline, Pipeline, PipelineBindPoint, PipelineLayout,
+        DynamicState, GraphicsPipeline, Pipeline, PipelineBindPoint, PipelineLayout,
         PipelineShaderStageCreateInfo,
     },
     render_pass::{Framebuffer, FramebufferCreateInfo, RenderPass, Subpass},
@@ -250,16 +250,8 @@ impl NoteRenderPass {
                 topology: PrimitiveTopology::PointList,
                 ..Default::default()
             }),
-            viewport_state: Some(ViewportState {
-                viewports: [Viewport {
-                    offset: [0.0, 0.0],
-                    extent: [1280.0, 720.0],
-                    depth_range: 0.0..=1.0,
-                }]
-                .into_iter()
-                .collect(),
-                ..Default::default()
-            }),
+            viewport_state: Some(Default::default()),
+            dynamic_state: [DynamicState::Viewport].into_iter().collect(),
             rasterization_state: Some(RasterizationState::default()),
             multisample_state: Some(MultisampleState::default()),
             color_blend_state: Some(ColorBlendState::with_attachment_states(
@@ -420,6 +412,16 @@ impl NoteRenderPass {
 
             command_buffer_builder
                 .bind_pipeline_graphics(pipeline.clone())
+                .unwrap()
+                .set_viewport(
+                    0,
+                    vec![Viewport {
+                        offset: [0.0, 0.0],
+                        extent: [img_dims[0] as f32, img_dims[1] as f32],
+                        depth_range: 0.0..=1.0,
+                    }]
+                    .into(),
+                )
                 .unwrap()
                 .push_constants(pipeline_layout.clone().clone(), 0, push_constants)
                 .unwrap()
