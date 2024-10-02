@@ -49,7 +49,7 @@ impl CakeMIDIFile {
     pub fn load_from_file(
         path: &str,
         player: Arc<RwLock<WasabiAudioPlayer>>,
-        settings: &WasabiSettings,
+        settings: &mut WasabiSettings,
     ) -> Self {
         let ticks_per_second = 10000;
 

@@ -38,7 +38,7 @@ impl LiveLoadMIDIFile {
     pub fn load_from_file(
         path: &str,
         player: Arc<RwLock<WasabiAudioPlayer>>,
-        settings: &WasabiSettings,
+        settings: &mut WasabiSettings,
     ) -> Self {
         let (file, signature) = open_file_and_signature(path);
 

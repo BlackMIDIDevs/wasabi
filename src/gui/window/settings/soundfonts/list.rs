@@ -130,7 +130,6 @@ impl EguiSFList {
         &mut self,
         ui: &mut egui::Ui,
         settings: &mut WasabiSettings,
-        width: f32,
         synth: Arc<RwLock<WasabiAudioPlayer>>,
     ) {
         let events = ui.input(|i| i.events.clone());
@@ -269,7 +268,7 @@ impl EguiSFList {
                     }
                     if ui
                         .button(
-                            WidgetText::from(" \u{1F503} ")
+                            WidgetText::from(" \u{2705} ")
                                 .text_style(egui::TextStyle::Name("monospace big".into())),
                         )
                         .on_hover_text("Apply SoundFont List")
@@ -315,9 +314,8 @@ impl EguiSFList {
                 ))
                 .resizable(true)
                 .column(Column::exact(20.0).resizable(false))
-                .column(Column::initial(width - 200.0).at_least(50.0).clip(true))
-                .columns(Column::auto().at_least(40.0).clip(true), 2)
-                .column(Column::auto().at_least(40.0).clip(true).resizable(false))
+                .column(Column::remainder().at_least(50.0).clip(true))
+                .columns(Column::auto().at_least(40.0).clip(true).resizable(false), 3)
                 .header(20.0, |mut header| {
                     header.col(|_ui| {});
                     header.col(|ui| {
@@ -334,7 +332,7 @@ impl EguiSFList {
                     });
                 })
                 .body(|mut body| {
-                    let row_height = super::super::CATEG_SPACE * 3.0;
+                    let row_height = super::super::SPACING[1] * 3.0;
                     for item in self.list.iter_mut() {
                         body.row(row_height, |mut row| {
                             row.col(|ui| {

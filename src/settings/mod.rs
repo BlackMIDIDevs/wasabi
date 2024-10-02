@@ -52,7 +52,7 @@ impl Default for StatisticsSettings {
         Self {
             border: true,
             floating: true,
-            opacity: 0.5,
+            opacity: 0.8,
             order: Statistics::iter().map(|i| (*i, true)).collect(),
         }
     }

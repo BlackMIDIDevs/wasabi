@@ -4549,6 +4549,7 @@ dependencies = [
  "enum_dispatch",
  "gen-iter",
  "ico",
+ "image",
  "kdmapi",
  "midi-toolkit-rs",
  "midir",

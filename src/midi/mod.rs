@@ -8,9 +8,10 @@ mod ram;
 mod audio;
 
 mod shared;
-use std::{fs::File, path::PathBuf, time::UNIX_EPOCH};
+use std::{fs::File, time::UNIX_EPOCH};
 
 use enum_dispatch::enum_dispatch;
+use image::{DynamicImage, GenericImageView, ImageReader};
 use palette::{convert::FromColorUnclamped, Hsv, Srgb};
 use rand::Rng;
 
@@ -120,22 +121,36 @@ impl MIDIColor {
         vec
     }
 
-    pub fn new_vec_from_palette(tracks: usize, path: impl Into<PathBuf>) -> Vec<Self> {
-        let path: PathBuf = path.into();
-        if path.exists() {
-            // TODO
-            return Vec::new();
-        }
-
-        Self::new_vec(tracks)
+    pub fn new_vec_from_palette(tracks: usize, image: DynamicImage) -> Vec<Self> {
+        image
+            .to_rgb8()
+            .pixels()
+            .into_iter()
+            .map(|p| Self::new(p.0[0], p.0[1], p.0[2]))
+            .cycle()
+            .take(tracks * 16)
+            .collect()
     }
 
-    pub fn new_vec_from_settings(tracks: usize, settings: &WasabiSettings) -> Vec<Self> {
+    pub fn new_vec_from_settings(tracks: usize, settings: &mut WasabiSettings) -> Vec<Self> {
         match settings.midi.colors {
             Colors::Rainbow => MIDIColor::new_vec(tracks),
             Colors::Random => MIDIColor::new_random_vec(tracks),
             Colors::Palette => {
-                MIDIColor::new_vec_from_palette(tracks, settings.midi.palette_path.clone())
+                let path = settings.midi.palette_path.clone();
+                if path.exists() {
+                    if let Ok(image) = ImageReader::open(path) {
+                        if let Ok(image) = image.with_guessed_format() {
+                            if let Ok(image) = image.decode() {
+                                if image.dimensions().0 == 16 {
+                                    return MIDIColor::new_vec_from_palette(tracks, image);
+                                }
+                            }
+                        }
+                    }
+                }
+                settings.midi.colors = Colors::Rainbow;
+                MIDIColor::new_vec(tracks)
             }
         }
     }

@@ -28,7 +28,7 @@ impl SettingsWindow {
                     .resizable(true)
                     .column(Column::exact(width).resizable(false))
                     .body(|mut body| {
-                        let row_height = super::super::CATEG_SPACE * 3.0;
+                        let row_height = super::super::SPACING[1] * 3.0;
 
                         let mut temp = self.midi_devices.clone();
                         for i in temp.iter_mut() {

@@ -11,6 +11,10 @@ impl SettingsWindow {
         settings: &mut WasabiSettings,
         width: f32,
     ) {
+        ui.vertical_centered(|ui| {
+            ui.small("Changes to the settings below will be applied when a new MIDI is loaded.");
+        });
+
         ui.heading("Settings");
         egui::Grid::new("midi_settings_grid")
             .num_columns(2)
@@ -64,13 +68,21 @@ impl SettingsWindow {
                 );
                 ui.end_row();
             });
-        ui.vertical_centered(|ui| {
-            ui.small("Changes to the above settings will be applied when a new MIDI is loaded.");
-        });
 
         ui.horizontal(|ui| ui.add_space(width + 40.0));
         ui.add_space(super::CATEG_SPACE);
-        ui.heading("Color Palette");
+        ui.horizontal(|ui| {
+            ui.heading("Color Palette");
+            ui.monospace("\u{2139}").on_hover_text(
+                "\
+                Each palette should be an image (PNG, JPEG, etc.)\n\
+                with a 16 pixel width (one column for each MIDI\n\
+                channel) and any height (one row for each track).\n\
+                If the MIDI has more tracks than what is available\n\
+                in the palette, the colours will loop.\
+                ",
+            );
+        });
         egui::Frame::default()
             .rounding(egui::Rounding::same(8.0))
             .stroke(ui.style().visuals.widgets.noninteractive.bg_stroke)
@@ -83,7 +95,7 @@ impl SettingsWindow {
                     .resizable(true)
                     .column(Column::exact(width).resizable(false))
                     .body(|mut body| {
-                        let row_height = super::CATEG_SPACE * 3.0;
+                        let row_height = super::SPACING[1] * 3.0;
                         body.row(row_height, |mut row| {
                             row.col(|ui| {
                                 if ui
@@ -147,7 +159,7 @@ impl SettingsWindow {
         ui.add_space(4.0);
         ui.horizontal(|ui| {
             if ui.button("Refresh List").clicked() {
-                self.load_palettes();
+                self.load_palettes(settings);
             }
             if ui.button("Open Palettes Directory").clicked() {
                 open::that(WasabiSettings::get_palettes_dir()).unwrap_or_default();

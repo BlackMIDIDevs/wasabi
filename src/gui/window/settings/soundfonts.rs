@@ -14,9 +14,8 @@ impl SettingsWindow {
         &mut self,
         ui: &mut egui::Ui,
         settings: &mut WasabiSettings,
-        width: f32,
         synth: Arc<RwLock<WasabiAudioPlayer>>,
     ) {
-        self.sf_list.show(ui, settings, width, synth);
+        self.sf_list.show(ui, settings, synth);
     }
 }

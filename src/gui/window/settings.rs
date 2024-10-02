@@ -7,7 +7,7 @@ use soundfonts::EguiSFList;
 
 use crate::{
     audio_playback::WasabiAudioPlayer,
-    settings::WasabiSettings,
+    settings::{Colors, Synth, WasabiSettings},
     state::{SettingsTab, WasabiState},
 };
 
@@ -16,7 +16,7 @@ mod soundfonts;
 mod synth;
 mod visual;
 
-const CATEG_SPACE: f32 = 12.0;
+const CATEG_SPACE: f32 = 26.0;
 const SPACING: [f32; 2] = [40.0, 12.0];
 
 #[derive(Clone)]
@@ -60,16 +60,15 @@ impl SettingsWindow {
     ) {
         let frame =
             egui::Frame::inner_margin(egui::Frame::window(ctx.style().as_ref()), super::WIN_MARGIN);
+        let win = ctx.available_rect();
 
         egui::Window::new("Settings")
             .resizable(true)
             .collapsible(false)
             .title_bar(true)
-            .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
-            .movable(false)
             .enabled(true)
             .frame(frame)
-            .default_size([600.0, 400.0])
+            .default_size([win.width() * 0.5, win.height() * 0.5])
             .min_size([500.0, 200.0])
             .open(&mut state.show_settings)
             .show(ctx, |ui| {
@@ -98,10 +97,17 @@ impl SettingsWindow {
                                 SettingsTab::Synth,
                                 "\u{1f3b9} Synth",
                             );
-                            ui.selectable_value(
-                                &mut state.settings_tab,
-                                SettingsTab::SoundFonts,
-                                "\u{1f50a} SoundFonts",
+                            ui.add_enabled_ui(
+                                settings.synth.synth == Synth::XSynth
+                                    || (settings.synth.synth == Synth::Kdmapi
+                                        && !settings.synth.kdmapi.use_om_sflist),
+                                |ui| {
+                                    ui.selectable_value(
+                                        &mut state.settings_tab,
+                                        SettingsTab::SoundFonts,
+                                        "\u{1f50a} SoundFonts",
+                                    )
+                                },
                             );
                         });
                         ui.add_space(4.0);
@@ -128,7 +134,7 @@ impl SettingsWindow {
                                 self.show_synth_settings(ui, settings, width, synth)
                             }
                             SettingsTab::SoundFonts => {
-                                self.show_soundfont_settings(ui, settings, width, synth)
+                                self.show_soundfont_settings(ui, settings, synth)
                             }
                         }
                     })
@@ -136,7 +142,7 @@ impl SettingsWindow {
             });
     }
 
-    pub fn load_palettes(&mut self) {
+    pub fn load_palettes(&mut self, settings: &mut WasabiSettings) {
         self.palettes.clear();
 
         let files = std::fs::read_dir(WasabiSettings::get_palettes_dir()).unwrap();
@@ -144,13 +150,17 @@ impl SettingsWindow {
         for file in files.filter_map(|i| i.ok()) {
             if let Ok(ftype) = file.file_type() {
                 if ftype.is_file() {
-                    self.palettes.push(FilePalette {
-                        path: file.path(),
-                        selected: false,
-                    });
+                    let path = file.path();
+                    let selected = settings.midi.palette_path == path
+                        && settings.midi.colors == Colors::Palette;
+
+                    self.palettes.push(FilePalette { path, selected });
                 }
             }
         }
+
+        // Test if the selected is valid
+        let _ = crate::midi::MIDIColor::new_vec_from_settings(1, settings);
     }
 
     pub fn load_midi_devices(&mut self, settings: &mut WasabiSettings) {

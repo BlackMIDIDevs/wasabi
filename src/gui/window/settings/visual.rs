@@ -133,7 +133,7 @@ impl SettingsWindow {
                     .column(Column::exact(width - 100.0).resizable(false))
                     .column(Column::exact(60.0).resizable(false))
                     .body(|mut body| {
-                        let row_height = super::CATEG_SPACE * 3.0;
+                        let row_height = super::SPACING[1] * 3.0;
                         let mut temp = settings.scene.statistics.order.clone();
                         for (i, item) in settings.scene.statistics.order.iter_mut().enumerate() {
                             body.row(row_height, |mut row| {
