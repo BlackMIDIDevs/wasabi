@@ -43,7 +43,16 @@ impl MidiDevicePlayer {
 
 impl MidiAudioPlayer for MidiDevicePlayer {
     fn reset(&mut self) {
-        // TODO: With CC maybe?
+        // Send "All sounds off" and "Reset controllers" to all channels
+        for ch in 0..16 {
+            let code: u32 = 0xB << 4 | ch;
+            for cc in [120, 121] {
+                let z = 0 << 8;
+                let cc = cc << 8 | z;
+                let cc = cc | code;
+                self.push_event(cc);
+            }
+        }
     }
 
     fn push_event(&mut self, data: u32) {

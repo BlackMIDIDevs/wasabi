@@ -52,7 +52,7 @@ impl GuiWasabiWindow {
         let synth = Arc::new(RwLock::new(WasabiAudioPlayer::new(synth)));
 
         let mut settings_win = SettingsWindow::new(settings);
-        settings_win.load_palettes();
+        settings_win.load_palettes(settings);
         settings_win.load_midi_devices(settings);
 
         let midi_picker = crossbeam_channel::unbounded();
