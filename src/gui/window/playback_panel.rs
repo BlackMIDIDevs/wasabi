@@ -36,6 +36,7 @@ impl GuiWasabiWindow {
                 state.panel_pinned || mouse_over_panel || is_popup_open,
                 |ui| {
                     ui.horizontal(|ui| {
+                        // Open MIDI button
                         let folder_img =
                             egui::Image::new(egui::include_image!("../../../assets/folder.svg"))
                                 .fit_to_exact_size(button_size)
@@ -50,6 +51,7 @@ impl GuiWasabiWindow {
                             self.open_midi_dialog(state);
                         }
 
+                        // Unload button
                         let stop_img =
                             egui::Image::new(egui::include_image!("../../../assets/stop.svg"))
                                 .fit_to_exact_size(button_size)
@@ -67,13 +69,13 @@ impl GuiWasabiWindow {
                             }
                         }
 
+                        // Play/Pause button
                         let playing = if let Some(midi) = self.midi_file.as_ref() {
                             !midi.timer().is_paused()
                         } else {
                             false
                         };
 
-                        // FIXME
                         if playing {
                             let pause_img =
                                 egui::Image::new(egui::include_image!("../../../assets/pause.svg"))
@@ -112,13 +114,16 @@ impl GuiWasabiWindow {
                         ui.separator();
                         ui.add_space(SPACE);
 
-                        let mut time_passed = 0.0;
-                        let mut time_total = 0.0;
-
-                        if let Some(midi) = self.midi_file.as_ref() {
-                            time_total = midi.midi_length().unwrap_or(0.0);
-                            time_passed = midi.timer().get_time().as_seconds_f64();
-                        }
+                        // Progress bar
+                        let (time_passed, time_total) = if let Some(midi) = self.midi_file.as_ref()
+                        {
+                            (
+                                midi.timer().get_time().as_seconds_f64(),
+                                midi.midi_length().unwrap_or(0.0),
+                            )
+                        } else {
+                            (0.0, 0.0)
+                        };
 
                         let mut timeid = ui
                             .style()
@@ -134,16 +139,18 @@ impl GuiWasabiWindow {
                             egui::Color32::WHITE,
                         );
 
-                        let length_text = convert_seconds_to_time_string(time_total);
-                        let length_galley = ui.painter().layout_no_wrap(
-                            length_text.clone(),
+                        let remaining = time_total - time_passed.max(0.0);
+                        let remaining_text = convert_seconds_to_time_string(remaining);
+                        let remaining_galley = ui.painter().layout_no_wrap(
+                            remaining_text.clone(),
                             timeid.clone(),
                             egui::Color32::WHITE,
                         );
 
+                        // Calculate space for options and pin buttons
                         ui.spacing_mut().slider_width = ui.available_width()
                             - time_galley.size().x
-                            - length_galley.size().x
+                            - remaining_galley.size().x
                             - ui.spacing().item_spacing.x * 8.0
                             - button_size.x * 2.0
                             - ui.spacing().button_padding.x * 2.0
@@ -175,12 +182,13 @@ impl GuiWasabiWindow {
                         } else {
                             empty_slider();
                         }
-                        ui.label(egui::RichText::new(length_text).font(timeid.clone()));
+                        ui.label(egui::RichText::new(remaining_text).font(timeid.clone()));
 
                         ui.add_space(SPACE);
                         ui.separator();
                         ui.add_space(SPACE);
 
+                        // Options button
                         let options_img =
                             egui::Image::new(egui::include_image!("../../../assets/options.svg"))
                                 .fit_to_exact_size(button_size)
@@ -212,14 +220,15 @@ impl GuiWasabiWindow {
                             },
                         );
 
-                        let arrow_img =
+                        // Pin button
+                        let pin_img =
                             egui::Image::new(egui::include_image!("../../../assets/pin.svg"))
                                 .fit_to_exact_size(button_size)
                                 .tint(icon_color)
                                 .rounding(button_rounding);
 
                         if ui
-                            .add(egui::ImageButton::new(arrow_img).selected(state.panel_pinned))
+                            .add(egui::ImageButton::new(pin_img).selected(state.panel_pinned))
                             .on_hover_text("Pin Panel")
                             .clicked()
                         {

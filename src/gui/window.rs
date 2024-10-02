@@ -251,12 +251,11 @@ impl GuiWasabiWindow {
                                         }
                                         egui::Key::ArrowLeft => {
                                             if midi_file.allows_seeking_backward() {
-                                                midi_file.timer_mut().seek(if time <= skip_dur {
-                                                    // FIXME: Start deplay
-                                                    Duration::seconds(0)
-                                                } else {
-                                                    time - skip_dur
-                                                })
+                                                midi_file.timer_mut().seek((time - skip_dur).max(
+                                                    Duration::seconds_f64(
+                                                        -settings.midi.start_delay,
+                                                    ),
+                                                ))
                                             }
                                         }
                                         egui::Key::ArrowUp => {
@@ -278,6 +277,16 @@ impl GuiWasabiWindow {
                             }
                         }
                     });
+
+                    // If song is finished, pause
+                    {
+                        let length = midi_file.midi_length().unwrap_or(0.0);
+                        let current = midi_file.timer().get_time().as_seconds_f64();
+                        if current > length {
+                            midi_file.timer_mut().seek(Duration::seconds_f64(length));
+                            midi_file.timer_mut().pause();
+                        }
+                    }
 
                     let result = self.render_scene.draw(
                         gui_state,
