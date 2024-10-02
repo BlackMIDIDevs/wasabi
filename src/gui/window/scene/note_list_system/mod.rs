@@ -2,7 +2,7 @@ mod notes_render_pass;
 
 use std::{cell::UnsafeCell, sync::Arc};
 
-use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
 use vulkano::image::view::ImageView;
 
 use crate::{
@@ -73,9 +73,9 @@ impl NoteRenderer {
             key_view.visible_range.len() as f32,
         );
 
-        // Add black keys first
+        // White keys
         for (i, column) in columns.iter().enumerate() {
-            if key_view.key(i).black {
+            if !key_view.key(i).black {
                 let iter = column.iterate_displaced_notes();
                 let length = iter.len();
                 columns_view_info.push(ColumnViewInfo {
@@ -90,9 +90,9 @@ impl NoteRenderer {
             }
         }
 
-        // Then white keys after
+        // Black keys
         for (i, column) in columns.iter().enumerate() {
-            if !key_view.key(i).black {
+            if key_view.key(i).black {
                 let iter = column.iterate_displaced_notes();
                 let length = iter.len();
                 columns_view_info.push(ColumnViewInfo {
@@ -122,56 +122,58 @@ impl NoteRenderer {
                 // A system to write multiple note columns into 1 large allocated array in parallel
                 let written_notes = self.thrad_pool.install(|| {
                     // For each note column, write it into the buffer
-                    let written_notes_per_key = columns_view_info.par_iter_mut().map(|column| {
-                        if column.remaining == 0 {
-                            return 0;
-                        }
+                    let written_notes_per_key =
+                        columns_view_info.par_iter_mut().rev().map(|column| {
+                            if column.remaining == 0 {
+                                return 0;
+                            }
 
-                        let offset = (column.offset as i64 - notes_pushed as i64).max(0) as usize;
+                            let offset =
+                                (column.offset as i64 - notes_pushed as i64).max(0) as usize;
 
-                        if offset >= buffer_length {
-                            return 0;
-                        }
+                            if offset >= buffer_length {
+                                return 0;
+                            }
 
-                        let remaining_buffer_space = buffer_length - offset;
-                        let iter_length = column.remaining;
+                            let remaining_buffer_space = buffer_length - offset;
+                            let iter_length = column.remaining;
 
-                        let allowed_to_write = if iter_length > remaining_buffer_space {
-                            remaining_buffer_space
-                        } else {
-                            iter_length
-                        };
+                            let allowed_to_write = if iter_length > remaining_buffer_space {
+                                remaining_buffer_space
+                            } else {
+                                iter_length
+                            };
 
-                        unsafe {
-                            let buffer = buffer_writer.get_mut();
+                            unsafe {
+                                let buffer = buffer_writer.get_mut();
 
-                            for i in 0..allowed_to_write {
-                                let next_note = column.iter.next();
-                                if let Some(note) = next_note {
-                                    buffer[i + offset] = NoteVertex::new(
-                                        note.start,
-                                        note.len,
-                                        column.key,
-                                        note.color.as_u32(),
-                                        column.border_width as u32,
-                                    );
+                                for i in 0..allowed_to_write {
+                                    let next_note = column.iter.next();
+                                    if let Some(note) = next_note {
+                                        buffer[allowed_to_write - 1 - i + offset] = NoteVertex::new(
+                                            note.start,
+                                            note.len,
+                                            column.key,
+                                            note.color.as_u32(),
+                                            column.border_width as u32,
+                                        );
 
-                                    if note.start <= 0.0
-                                        && column.color.is_none()
-                                        && note.start + note.len > 0.0
-                                    {
-                                        column.color = Some(note.color);
+                                        if note.start <= 0.0
+                                            && column.color.is_none()
+                                            && note.start + note.len > 0.0
+                                        {
+                                            column.color = Some(note.color);
+                                        }
+                                    } else {
+                                        panic!("Invalid iterator length");
                                     }
-                                } else {
-                                    panic!("Invalid iterator length");
                                 }
                             }
-                        }
 
-                        column.remaining -= allowed_to_write;
+                            column.remaining -= allowed_to_write;
 
-                        allowed_to_write
-                    });
+                            allowed_to_write
+                        });
 
                     written_notes_per_key.sum::<usize>()
                 });
