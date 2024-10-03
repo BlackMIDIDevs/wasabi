@@ -65,7 +65,7 @@ pub fn main() {
         format: renderer.format(),
     };
 
-    let mut gui_state = GuiWasabiWindow::new(&mut gui_render_data, &mut settings);
+    let mut gui_state = GuiWasabiWindow::new(&mut gui_render_data, &mut settings, &wasabi_state);
 
     event_loop
         .run(move |event, target| {
@@ -88,7 +88,7 @@ pub fn main() {
                             target.exit();
                         }
                         WindowEvent::DroppedFile(path) => {
-                            gui_state.load_midi(&mut settings, path);
+                            gui_state.load_midi(path, &mut settings, &wasabi_state);
                         }
                         WindowEvent::RedrawRequested => {
                             renderer.render(|frame, future| {

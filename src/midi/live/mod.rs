@@ -1,11 +1,12 @@
 use std::{
+    path::PathBuf,
     sync::{Arc, RwLock},
     thread,
 };
 
 use midi_toolkit::{io::MIDIFile as TKMIDIFile, sequence::event::get_channels_array_statistics};
 
-use crate::{audio_playback::WasabiAudioPlayer, settings::WasabiSettings};
+use crate::{audio_playback::WasabiAudioPlayer, settings::MidiSettings};
 
 use self::{
     parse::LiveMidiParser,
@@ -36,9 +37,9 @@ pub struct LiveLoadMIDIFile {
 
 impl LiveLoadMIDIFile {
     pub fn load_from_file(
-        path: &str,
+        path: impl Into<PathBuf>,
         player: Arc<RwLock<WasabiAudioPlayer>>,
-        settings: &mut WasabiSettings,
+        settings: &MidiSettings,
     ) -> Self {
         let (file, signature) = open_file_and_signature(path);
 
@@ -60,7 +61,7 @@ impl LiveLoadMIDIFile {
             }
         });
 
-        let mut timer = TimeKeeper::new(settings.midi.start_delay);
+        let mut timer = TimeKeeper::new(settings.start_delay);
 
         let colors = MIDIColor::new_vec_from_settings(midi.track_count(), settings);
 

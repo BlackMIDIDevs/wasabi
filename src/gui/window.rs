@@ -5,6 +5,7 @@ mod scene;
 mod stats;
 
 mod about;
+mod loading;
 mod playback_panel;
 mod settings;
 mod shortcuts;
@@ -18,6 +19,7 @@ use crossbeam_channel::{Receiver, Sender};
 use egui::FontFamily::{Monospace, Proportional};
 use egui::FontId;
 use egui::Frame;
+pub use loading::LoadingStatus;
 use settings::SettingsWindow;
 use time::Duration;
 
@@ -32,7 +34,6 @@ use crate::{
 };
 
 const WIN_MARGIN: egui::Margin = egui::Margin::same(12.0);
-const SPACE: f32 = 12.0;
 
 pub struct GuiWasabiWindow {
     render_scene: GuiRenderScene,
@@ -44,18 +45,21 @@ pub struct GuiWasabiWindow {
 
     settings_win: SettingsWindow,
     midi_picker: (Sender<PathBuf>, Receiver<PathBuf>),
+    midi_loader: (Sender<MIDIFileUnion>, Receiver<MIDIFileUnion>),
 }
 
 impl GuiWasabiWindow {
-    pub fn new(renderer: &mut GuiRenderer, settings: &mut WasabiSettings) -> GuiWasabiWindow {
-        let synth = Self::create_synth(settings);
+    pub fn new(
+        renderer: &mut GuiRenderer,
+        settings: &mut WasabiSettings,
+        state: &WasabiState,
+    ) -> GuiWasabiWindow {
+        let synth = Self::create_synth(settings, state.loading_status.clone());
         let synth = Arc::new(RwLock::new(WasabiAudioPlayer::new(synth)));
 
         let mut settings_win = SettingsWindow::new(settings);
         settings_win.load_palettes(settings);
         settings_win.load_midi_devices(settings);
-
-        let midi_picker = crossbeam_channel::unbounded();
 
         GuiWasabiWindow {
             render_scene: GuiRenderScene::new(renderer),
@@ -66,7 +70,8 @@ impl GuiWasabiWindow {
             fps: fps::Fps::new(),
 
             settings_win,
-            midi_picker,
+            midi_picker: crossbeam_channel::bounded(1),
+            midi_loader: crossbeam_channel::bounded(1),
         }
     }
 
@@ -152,10 +157,31 @@ impl GuiWasabiWindow {
             if !recv.is_empty() {
                 for midi in recv {
                     state.last_location = midi.clone();
-                    self.load_midi(settings, midi);
+                    self.load_midi(midi, settings, state);
                     break;
                 }
             }
+        }
+
+        {
+            let recv = self.midi_loader.1.clone();
+            if !recv.is_empty() {
+                for mut midi in recv {
+                    midi.timer_mut().play();
+                    self.midi_file = Some(midi);
+                    break;
+                }
+            }
+        }
+
+        if state.loading_status.is_loading() {
+            if let Some(midi) = self.midi_file.as_mut() {
+                midi.timer_mut().pause();
+            }
+            state.loading_status.show(&ctx);
+            state.show_about = false;
+            state.show_settings = false;
+            state.show_shortcuts = false;
         }
 
         // Other windows
@@ -283,7 +309,6 @@ impl GuiWasabiWindow {
                         let length = midi_file.midi_length().unwrap_or(0.0);
                         let current = midi_file.timer().get_time().as_seconds_f64();
                         if current > length {
-                            midi_file.timer_mut().seek(Duration::seconds_f64(length));
                             midi_file.timer_mut().pause();
                         }
                     }
@@ -347,48 +372,62 @@ impl GuiWasabiWindow {
         });
     }
 
-    pub fn load_midi(&mut self, settings: &mut WasabiSettings, midi_path: PathBuf) {
-        // TODO: Load in thread
+    pub fn load_midi(
+        &mut self,
+        midi_path: PathBuf,
+        settings: &mut WasabiSettings,
+        state: &WasabiState,
+    ) {
         if let Some(midi_file) = self.midi_file.as_mut() {
             midi_file.timer_mut().pause();
         }
         self.synth.write().unwrap().reset();
         self.midi_file = None;
 
-        if let Some(midi_path) = midi_path.to_str() {
-            match settings.midi.parsing {
-                MidiParsing::Ram => {
-                    let mut midi_file = MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
-                        midi_path,
-                        self.synth.clone(),
-                        settings,
-                    ));
-                    midi_file.timer_mut().play();
-                    self.midi_file = Some(midi_file);
-                }
-                MidiParsing::Live => {
-                    let mut midi_file = MIDIFileUnion::Live(LiveLoadMIDIFile::load_from_file(
-                        midi_path,
-                        self.synth.clone(),
-                        settings,
-                    ));
-                    midi_file.timer_mut().play();
-                    self.midi_file = Some(midi_file);
-                }
-                MidiParsing::Cake => {
-                    let mut midi_file = MIDIFileUnion::Cake(CakeMIDIFile::load_from_file(
-                        midi_path,
-                        self.synth.clone(),
-                        settings,
-                    ));
-                    midi_file.timer_mut().play();
-                    self.midi_file = Some(midi_file);
+        let filename = midi_path.file_name().unwrap_or_default().to_os_string();
+
+        state
+            .loading_status
+            .create("Loading MIDI...".into(), format!("Parsing {:?}", filename));
+
+        let synth = self.synth.clone();
+        let settings = settings.midi.clone();
+        let sender = self.midi_loader.0.clone();
+        let loading_status = state.loading_status.clone();
+
+        thread::spawn(move || {
+            if let Some(midi_path) = midi_path.to_str() {
+                match settings.parsing {
+                    MidiParsing::Ram => {
+                        let midi_file = MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
+                            midi_path, synth, &settings,
+                        ));
+                        sender.send(midi_file).unwrap();
+                        loading_status.clear();
+                    }
+                    MidiParsing::Live => {
+                        let midi_file = MIDIFileUnion::Live(LiveLoadMIDIFile::load_from_file(
+                            midi_path, synth, &settings,
+                        ));
+                        sender.send(midi_file).unwrap();
+                        loading_status.clear();
+                    }
+                    MidiParsing::Cake => {
+                        let midi_file = MIDIFileUnion::Cake(CakeMIDIFile::load_from_file(
+                            midi_path, synth, &settings,
+                        ));
+                        sender.send(midi_file).unwrap();
+                        loading_status.clear();
+                    }
                 }
             }
-        }
+        });
     }
 
-    pub fn create_synth(settings: &WasabiSettings) -> Box<dyn MidiAudioPlayer> {
+    pub fn create_synth(
+        settings: &WasabiSettings,
+        loading_status: Arc<LoadingStatus>,
+    ) -> Box<dyn MidiAudioPlayer> {
         let mut synth: Box<dyn MidiAudioPlayer> = match settings.synth.synth {
             Synth::XSynth => Box::new(XSynthPlayer::new(settings.synth.xsynth.config.clone())),
             Synth::Kdmapi => Box::new(KdmapiPlayer::new()),
@@ -401,7 +440,7 @@ impl GuiWasabiWindow {
             }
             Synth::None => Box::new(EmptyPlayer::new()),
         };
-        synth.set_soundfonts(&settings.synth.soundfonts);
+        synth.set_soundfonts(&settings.synth.soundfonts, loading_status);
         synth.configure(&settings.synth);
 
         synth

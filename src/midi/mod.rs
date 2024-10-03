@@ -8,7 +8,7 @@ mod ram;
 mod audio;
 
 mod shared;
-use std::{fs::File, time::UNIX_EPOCH};
+use std::{fs::File, path::PathBuf, time::UNIX_EPOCH};
 
 use enum_dispatch::enum_dispatch;
 use image::{DynamicImage, GenericImageView, ImageReader};
@@ -19,7 +19,7 @@ pub use cake::{blocks::CakeBlock, intvec4::IntVector4, CakeMIDIFile, CakeSignatu
 pub use live::LiveLoadMIDIFile;
 pub use ram::InRamMIDIFile;
 
-use crate::settings::{Colors, WasabiSettings};
+use crate::settings::{Colors, MidiSettings};
 
 use self::shared::timer::TimeKeeper;
 
@@ -48,13 +48,14 @@ impl MIDIViewRange {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MIDIFileUniqueSignature {
-    pub filepath: String,
+    pub filepath: PathBuf,
     pub length_in_bytes: u64,
     pub last_modified: u128,
 }
 
-fn open_file_and_signature(path: &str) -> (File, MIDIFileUniqueSignature) {
-    let file = std::fs::File::open(path).unwrap();
+fn open_file_and_signature(path: impl Into<PathBuf>) -> (File, MIDIFileUniqueSignature) {
+    let path = path.into();
+    let file = std::fs::File::open(&path).unwrap();
     let file_length = file.metadata().unwrap().len();
     let file_last_modified = file
         .metadata()
@@ -66,7 +67,7 @@ fn open_file_and_signature(path: &str) -> (File, MIDIFileUniqueSignature) {
         .as_micros();
 
     let signature = MIDIFileUniqueSignature {
-        filepath: path.to_string(),
+        filepath: path,
         length_in_bytes: file_length,
         last_modified: file_last_modified,
     };
@@ -132,12 +133,12 @@ impl MIDIColor {
             .collect()
     }
 
-    pub fn new_vec_from_settings(tracks: usize, settings: &mut WasabiSettings) -> Vec<Self> {
-        match settings.midi.colors {
+    pub fn new_vec_from_settings(tracks: usize, settings: &MidiSettings) -> Vec<Self> {
+        match settings.colors {
             Colors::Rainbow => MIDIColor::new_vec(tracks),
             Colors::Random => MIDIColor::new_random_vec(tracks),
             Colors::Palette => {
-                let path = settings.midi.palette_path.clone();
+                let path = settings.palette_path.clone();
                 if path.exists() {
                     if let Ok(image) = ImageReader::open(path) {
                         if let Ok(image) = image.with_guessed_format() {
@@ -149,7 +150,8 @@ impl MIDIColor {
                         }
                     }
                 }
-                settings.midi.colors = Colors::Rainbow;
+                // TODO: palette error
+                //settings.midi.colors = Colors::Rainbow;
                 MIDIColor::new_vec(tracks)
             }
         }

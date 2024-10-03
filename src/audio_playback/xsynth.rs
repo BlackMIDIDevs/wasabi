@@ -1,6 +1,7 @@
 use std::{
     ops::{Deref, DerefMut},
     sync::Arc,
+    thread,
 };
 
 use crate::settings::WasabiSoundfont;
@@ -85,23 +86,42 @@ impl MidiAudioPlayer for XSynthPlayer {
             )));
     }
 
-    fn set_soundfonts(&mut self, soundfonts: &Vec<WasabiSoundfont>) {
-        // TODO: Load in thread
-        let mut out: Vec<Arc<dyn SoundfontBase>> = Vec::new();
+    fn set_soundfonts(
+        &mut self,
+        soundfonts: &Vec<WasabiSoundfont>,
+        loading_status: Arc<LoadingStatus>,
+    ) {
+        let mut sender = self.sender.clone();
+        let soundfonts = soundfonts.clone();
+        let stream_params = self.stream_params.clone();
 
-        for sf in soundfonts {
-            if sf.enabled {
-                if let Ok(sf) =
-                    SampleSoundfont::new(sf.path.clone(), self.stream_params, sf.options)
-                {
-                    out.push(Arc::new(sf));
+        loading_status.create("Loading SoundFonts...".into(), Default::default());
+
+        thread::spawn(move || {
+            sender.send_event(SynthEvent::AllChannels(ChannelEvent::Config(
+                ChannelConfigEvent::SetSoundfonts(Vec::new()),
+            )));
+
+            let mut out: Vec<Arc<dyn SoundfontBase>> = Vec::new();
+
+            for sf in soundfonts {
+                if sf.enabled {
+                    let path = sf.path.clone();
+                    loading_status.update_message(format!(
+                        "Loading {:?}",
+                        path.file_name().unwrap_or_default()
+                    ));
+
+                    if let Ok(sf) = SampleSoundfont::new(path, stream_params, sf.options) {
+                        out.push(Arc::new(sf));
+                    }
                 }
             }
-        }
 
-        self.sender
-            .send_event(SynthEvent::AllChannels(ChannelEvent::Config(
+            sender.send_event(SynthEvent::AllChannels(ChannelEvent::Config(
                 ChannelConfigEvent::SetSoundfonts(out),
             )));
+            loading_status.clear();
+        });
     }
 }

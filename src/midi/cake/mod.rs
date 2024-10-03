@@ -1,4 +1,5 @@
 use std::{
+    path::PathBuf,
     sync::{Arc, RwLock},
     thread,
 };
@@ -23,7 +24,7 @@ use crate::{
         shared::{audio::CompressedAudio, timer::TimeKeeper},
         MIDIColor,
     },
-    settings::WasabiSettings,
+    settings::MidiSettings,
 };
 
 use self::blocks::CakeBlock;
@@ -47,9 +48,9 @@ pub struct CakeMIDIFile {
 
 impl CakeMIDIFile {
     pub fn load_from_file(
-        path: &str,
+        path: impl Into<PathBuf>,
         player: Arc<RwLock<WasabiAudioPlayer>>,
-        settings: &mut WasabiSettings,
+        settings: &MidiSettings,
     ) -> Self {
         let ticks_per_second = 10000;
 
@@ -155,7 +156,7 @@ impl CakeMIDIFile {
         let (keys, note_count) = key_join_handle.join().unwrap();
         let audio = audio_join_handle.join().unwrap();
 
-        let mut timer = TimeKeeper::new(settings.midi.start_delay);
+        let mut timer = TimeKeeper::new(settings.start_delay);
 
         InRamAudioPlayer::new(audio, timer.get_listener(), player).spawn_playback();
 

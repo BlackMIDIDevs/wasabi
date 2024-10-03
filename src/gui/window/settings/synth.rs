@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use crate::{
     audio_playback::WasabiAudioPlayer,
-    gui::window::GuiWasabiWindow,
+    gui::window::{GuiWasabiWindow, LoadingStatus},
     settings::{Synth, WasabiSettings},
 };
 
@@ -19,6 +19,7 @@ impl SettingsWindow {
         settings: &mut WasabiSettings,
         width: f32,
         synth: Arc<RwLock<WasabiAudioPlayer>>,
+        loading_status: Arc<LoadingStatus>,
     ) {
         egui::Grid::new("synth_settings_grid")
             .num_columns(2)
@@ -62,16 +63,17 @@ impl SettingsWindow {
                         .on_hover_text("Reload Synth")
                         .clicked()
                     {
-                        synth
-                            .write()
-                            .unwrap()
-                            .switch(GuiWasabiWindow::create_synth(settings));
+                        synth.write().unwrap().switch(GuiWasabiWindow::create_synth(
+                            settings,
+                            loading_status.clone(),
+                        ));
                     }
                 });
                 ui.end_row();
 
                 if settings.synth.synth != synth_prev {
-                    let new_player = GuiWasabiWindow::create_synth(settings);
+                    let new_player =
+                        GuiWasabiWindow::create_synth(settings, loading_status.clone());
                     synth.write().unwrap().switch(new_player);
                 }
             });
@@ -87,7 +89,9 @@ impl SettingsWindow {
         match settings.synth.synth {
             Synth::XSynth => self.show_xsynth_settings(ui, settings, width, synth),
             Synth::Kdmapi => self.show_kdmapi_settings(ui, settings, width),
-            Synth::MidiDevice => self.show_mididevice_settings(ui, settings, width, synth),
+            Synth::MidiDevice => {
+                self.show_mididevice_settings(ui, settings, width, synth, loading_status)
+            }
             Synth::None => {
                 ui.label("No Settings");
             }

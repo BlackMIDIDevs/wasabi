@@ -119,7 +119,7 @@ impl TimeKeeper {
         let now = self.get_time() + self.start_delay;
         self.current_state = TimerState::Running {
             continue_time: Instant::now(),
-            time_offset: now + self.start_delay,
+            time_offset: now,
         };
         self.notify_listeners(false);
     }

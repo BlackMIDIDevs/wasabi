@@ -1,4 +1,9 @@
-use crate::settings::{SynthSettings, WasabiSoundfont};
+use std::sync::Arc;
+
+use crate::{
+    gui::window::LoadingStatus,
+    settings::{SynthSettings, WasabiSoundfont},
+};
 
 mod xsynth;
 pub use xsynth::*;
@@ -13,7 +18,11 @@ pub trait MidiAudioPlayer: Send + Sync {
     fn voice_count(&self) -> u64;
     fn push_event(&mut self, data: u32);
     fn configure(&mut self, settings: &SynthSettings);
-    fn set_soundfonts(&mut self, soundfonts: &Vec<WasabiSoundfont>);
+    fn set_soundfonts(
+        &mut self,
+        soundfonts: &Vec<WasabiSoundfont>,
+        loading_status: Arc<LoadingStatus>,
+    );
     fn reset(&mut self);
 }
 
@@ -44,8 +53,12 @@ impl WasabiAudioPlayer {
         self.player.configure(settings);
     }
 
-    pub fn set_soundfonts(&mut self, soundfonts: &Vec<WasabiSoundfont>) {
-        self.player.set_soundfonts(soundfonts);
+    pub fn set_soundfonts(
+        &mut self,
+        soundfonts: &Vec<WasabiSoundfont>,
+        loading_status: Arc<LoadingStatus>,
+    ) {
+        self.player.set_soundfonts(soundfonts, loading_status);
     }
 
     pub fn reset(&mut self) {

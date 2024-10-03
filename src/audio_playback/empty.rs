@@ -19,5 +19,10 @@ impl MidiAudioPlayer for EmptyPlayer {
 
     fn configure(&mut self, _settings: &SynthSettings) {}
 
-    fn set_soundfonts(&mut self, _soundfonts: &Vec<WasabiSoundfont>) {}
+    fn set_soundfonts(
+        &mut self,
+        _soundfonts: &Vec<WasabiSoundfont>,
+        _loading_status: Arc<LoadingStatus>,
+    ) {
+    }
 }

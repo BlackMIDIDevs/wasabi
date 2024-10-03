@@ -1,4 +1,6 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::Arc};
+
+use crate::gui::window::LoadingStatus;
 
 #[derive(Default, PartialEq)]
 pub enum SettingsTab {
@@ -15,6 +17,7 @@ pub struct WasabiState {
     pub panel_pinned: bool,
     pub panel_popup_id: egui::Id,
     pub stats_visible: bool,
+    pub loading_status: Arc<LoadingStatus>,
 
     pub show_settings: bool,
     pub show_shortcuts: bool,
@@ -33,6 +36,7 @@ impl Default for WasabiState {
             panel_pinned: true,
             panel_popup_id: egui::Id::new("options_popup"),
             stats_visible: true,
+            loading_status: Arc::new(LoadingStatus::new()),
 
             show_settings: false,
             show_shortcuts: false,

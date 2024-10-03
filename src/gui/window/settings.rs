@@ -68,7 +68,7 @@ impl SettingsWindow {
             .title_bar(true)
             .enabled(true)
             .frame(frame)
-            .default_size([win.width() * 0.5, win.height() * 0.5])
+            .default_size([win.width() * 0.7, win.height() * 0.7])
             .min_size([500.0, 200.0])
             .open(&mut state.show_settings)
             .show(ctx, |ui| {
@@ -130,12 +130,19 @@ impl SettingsWindow {
                         match state.settings_tab {
                             SettingsTab::Visual => self.show_visual_settings(ui, settings, width),
                             SettingsTab::Midi => self.show_midi_settings(ui, settings, width),
-                            SettingsTab::Synth => {
-                                self.show_synth_settings(ui, settings, width, synth)
-                            }
-                            SettingsTab::SoundFonts => {
-                                self.show_soundfont_settings(ui, settings, synth)
-                            }
+                            SettingsTab::Synth => self.show_synth_settings(
+                                ui,
+                                settings,
+                                width,
+                                synth,
+                                state.loading_status.clone(),
+                            ),
+                            SettingsTab::SoundFonts => self.show_soundfont_settings(
+                                ui,
+                                settings,
+                                synth,
+                                state.loading_status.clone(),
+                            ),
                         }
                     })
                 });
@@ -159,8 +166,8 @@ impl SettingsWindow {
             }
         }
 
-        // Test if the selected is valid
-        let _ = crate::midi::MIDIColor::new_vec_from_settings(1, settings);
+        // TODO: Test if the selected is valid
+        //let _ = crate::midi::MIDIColor::new_vec_from_settings(1, &settings.midi);
     }
 
     pub fn load_midi_devices(&mut self, settings: &mut WasabiSettings) {

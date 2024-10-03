@@ -1,12 +1,15 @@
+use super::GuiWasabiWindow;
+
 use time::Duration;
 
 use egui::{popup_below_widget, PopupCloseBehavior};
 
-use super::{GuiWasabiWindow, SPACE, WIN_MARGIN};
 use crate::{
     midi::MIDIFileBase, settings::WasabiSettings, state::WasabiState,
     utils::convert_seconds_to_time_string,
 };
+
+const SPACE: f32 = super::WIN_MARGIN.left;
 
 impl GuiWasabiWindow {
     pub fn show_playback_panel(
@@ -27,7 +30,7 @@ impl GuiWasabiWindow {
 
         let is_popup_open = ctx.memory(|mem| mem.is_popup_open(state.panel_popup_id));
 
-        let frame = egui::Frame::side_top_panel(&ctx.style()).inner_margin(WIN_MARGIN);
+        let frame = egui::Frame::side_top_panel(&ctx.style()).inner_margin(super::WIN_MARGIN);
         egui::TopBottomPanel::top("panel")
             .frame(frame)
             .show_separator_line(false)
@@ -35,6 +38,10 @@ impl GuiWasabiWindow {
                 ctx,
                 state.panel_pinned || mouse_over_panel || is_popup_open,
                 |ui| {
+                    if state.loading_status.is_loading() {
+                        ui.disable();
+                    }
+
                     ui.horizontal(|ui| {
                         // Open MIDI button
                         let folder_img =

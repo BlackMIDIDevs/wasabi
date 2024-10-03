@@ -1,5 +1,6 @@
 use std::{
     collections::VecDeque,
+    path::PathBuf,
     sync::{Arc, RwLock},
     thread,
 };
@@ -24,7 +25,7 @@ use crate::{
         shared::{audio::CompressedAudio, timer::TimeKeeper, track_channel::TrackAndChannel},
         MIDIColor,
     },
-    settings::WasabiSettings,
+    settings::MidiSettings,
 };
 
 use super::{block::InRamNoteBlock, InRamMIDIFile};
@@ -99,9 +100,9 @@ impl Key {
 
 impl InRamMIDIFile {
     pub fn load_from_file(
-        path: &str,
+        path: impl Into<PathBuf>,
         player: Arc<RwLock<WasabiAudioPlayer>>,
-        settings: &mut WasabiSettings,
+        settings: &MidiSettings,
     ) -> Self {
         let (file, signature) = open_file_and_signature(path);
         let midi = TKMIDIFile::open_from_stream(file, None).unwrap();
@@ -185,7 +186,7 @@ impl InRamMIDIFile {
         let (keys, note_count) = key_join_handle.join().unwrap();
         let audio = audio_join_handle.join().unwrap();
 
-        let mut timer = TimeKeeper::new(settings.midi.start_delay);
+        let mut timer = TimeKeeper::new(settings.start_delay);
 
         InRamAudioPlayer::new(audio, timer.get_listener(), player).spawn_playback();
 

@@ -3,7 +3,9 @@ use std::sync::{Arc, RwLock};
 use egui_extras::{Column, TableBuilder};
 
 use crate::{
-    audio_playback::WasabiAudioPlayer, gui::window::GuiWasabiWindow, settings::WasabiSettings,
+    audio_playback::WasabiAudioPlayer,
+    gui::window::{GuiWasabiWindow, LoadingStatus},
+    settings::WasabiSettings,
 };
 
 use super::SettingsWindow;
@@ -15,6 +17,7 @@ impl SettingsWindow {
         settings: &mut WasabiSettings,
         width: f32,
         synth: Arc<RwLock<WasabiAudioPlayer>>,
+        loading_status: Arc<LoadingStatus>,
     ) {
         egui::Frame::default()
             .rounding(egui::Rounding::same(8.0))
@@ -54,7 +57,7 @@ impl SettingsWindow {
                             synth
                                 .write()
                                 .unwrap()
-                                .switch(GuiWasabiWindow::create_synth(settings));
+                                .switch(GuiWasabiWindow::create_synth(settings, loading_status));
                         }
                     });
             });

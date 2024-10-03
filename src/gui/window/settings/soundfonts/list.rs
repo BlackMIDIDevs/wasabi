@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     audio_playback::WasabiAudioPlayer,
+    gui::window::loading::LoadingStatus,
     settings::{WasabiSettings, WasabiSoundfont},
 };
 
@@ -131,6 +132,7 @@ impl EguiSFList {
         ui: &mut egui::Ui,
         settings: &mut WasabiSettings,
         synth: Arc<RwLock<WasabiAudioPlayer>>,
+        loading_status: Arc<LoadingStatus>,
     ) {
         let events = ui.input(|i| i.events.clone());
         for event in &events {
@@ -179,32 +181,6 @@ impl EguiSFList {
             }
         }
 
-        // if !ui.input(|i| i.raw.dropped_files.is_empty()) {
-        //     let dropped_files = ui.input(|i| {
-        //         i.raw
-        //             .dropped_files
-        //             .clone()
-        //             .iter()
-        //             .map(|file| file.path.as_ref().unwrap().clone())
-        //             .collect::<Vec<PathBuf>>()
-        //     });
-
-        //     for file in dropped_files {
-        //         if let Err(error) = self.add_item(file.clone()) {
-        //             let title = if let Some(filen) = file.file_name() {
-        //                 // Not a safe unwrap but things must be very wrong for it to panic so idc
-        //                 format!(
-        //                     "There was an error adding \"{}\" to the list.",
-        //                     filen.to_str().unwrap()
-        //                 )
-        //             } else {
-        //                 "There was an error adding the selected soundfont to the list.".to_string()
-        //             };
-        //              // TODO: errors
-        //         }
-        //     }
-        // }
-
         self.sf_cfg_win = self
             .sf_cfg_win
             .clone()
@@ -233,6 +209,7 @@ impl EguiSFList {
                         .clicked()
                     {
                         let sender = self.sf_picker.0.clone();
+                        // TODO: Fix
                         //let last_location = state.last_location.clone();
 
                         thread::spawn(move || {
@@ -277,7 +254,7 @@ impl EguiSFList {
                         synth
                             .write()
                             .unwrap()
-                            .set_soundfonts(&settings.synth.soundfonts);
+                            .set_soundfonts(&settings.synth.soundfonts, loading_status);
                     }
                 });
                 ui.small("Loading order is top to bottom. Supported formats: SFZ, SF2");
