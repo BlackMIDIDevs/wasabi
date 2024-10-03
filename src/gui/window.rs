@@ -24,6 +24,7 @@ use settings::SettingsWindow;
 use time::Duration;
 
 use crate::audio_playback::{EmptyPlayer, MidiDevicePlayer};
+use crate::utils::NOTE_SPEED_RANGE;
 use crate::{
     audio_playback::{KdmapiPlayer, MidiAudioPlayer, WasabiAudioPlayer, XSynthPlayer},
     gui::window::{keyboard::GuiKeyboard, scene::GuiRenderScene},
@@ -286,14 +287,18 @@ impl GuiWasabiWindow {
                                         }
                                         egui::Key::ArrowUp => {
                                             if modifiers.ctrl {
-                                                settings.scene.note_speed +=
-                                                    settings.gui.speed_control;
+                                                settings.scene.note_speed =
+                                                    (settings.scene.note_speed
+                                                        + settings.gui.speed_control)
+                                                        .min(*NOTE_SPEED_RANGE.start());
                                             }
                                         }
                                         egui::Key::ArrowDown => {
                                             if modifiers.ctrl {
-                                                settings.scene.note_speed -=
-                                                    settings.gui.speed_control;
+                                                settings.scene.note_speed =
+                                                    (settings.scene.note_speed
+                                                        - settings.gui.speed_control)
+                                                        .max(*NOTE_SPEED_RANGE.end());
                                             }
                                         }
                                         egui::Key::Space => midi_file.timer_mut().toggle_pause(),

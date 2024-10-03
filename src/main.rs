@@ -1,6 +1,7 @@
 #![feature(type_alias_impl_trait)]
 #![feature(coroutines)]
 #![feature(impl_trait_in_assoc_type)]
+#![feature(new_range_api)]
 
 mod audio_playback;
 mod gui;

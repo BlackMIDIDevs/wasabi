@@ -1,7 +1,7 @@
 use egui::WidgetText;
 use egui_extras::{Column, TableBuilder};
 
-use crate::settings::WasabiSettings;
+use crate::{settings::WasabiSettings, utils::NOTE_SPEED_RANGE};
 
 use super::SettingsWindow;
 
@@ -86,7 +86,7 @@ impl SettingsWindow {
                 ui.label("Note Speed: ");
                 ui.spacing_mut().slider_width = width / 2.0 - 100.0;
                 ui.add(
-                    egui::Slider::new(&mut settings.scene.note_speed, 20.0..=0.0001)
+                    egui::Slider::new(&mut settings.scene.note_speed, NOTE_SPEED_RANGE)
                         .logarithmic(true),
                 );
                 ui.end_row();
