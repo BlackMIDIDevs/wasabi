@@ -1,8 +1,4 @@
-use std::{
-    path::PathBuf,
-    sync::{Arc, RwLock},
-    thread,
-};
+use std::{path::PathBuf, sync::Arc, thread};
 
 use crossbeam_channel::{Receiver, Sender};
 use egui::WidgetText;
@@ -131,7 +127,7 @@ impl EguiSFList {
         &mut self,
         ui: &mut egui::Ui,
         settings: &mut WasabiSettings,
-        synth: Arc<RwLock<WasabiAudioPlayer>>,
+        synth: Arc<WasabiAudioPlayer>,
         loading_status: Arc<LoadingStatus>,
     ) {
         let events = ui.input(|i| i.events.clone());
@@ -251,11 +247,9 @@ impl EguiSFList {
                         .on_hover_text("Apply SoundFont List")
                         .clicked()
                     {
-                        synth
-                            .write()
-                            .unwrap()
-                            .set_soundfonts(&settings.synth.soundfonts, loading_status);
+                        synth.set_soundfonts(&settings.synth.soundfonts, loading_status);
                     }
+                    // TODO: Rearrange list
                 });
                 ui.small("Loading order is top to bottom. Supported formats: SFZ, SF2");
             });

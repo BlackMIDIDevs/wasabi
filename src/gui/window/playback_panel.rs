@@ -30,6 +30,7 @@ impl GuiWasabiWindow {
 
         let is_popup_open = ctx.memory(|mem| mem.is_popup_open(state.panel_popup_id));
 
+        // TODO: convert to window
         let frame = egui::Frame::side_top_panel(&ctx.style()).inner_margin(super::WIN_MARGIN);
         egui::TopBottomPanel::top("panel")
             .frame(frame)
@@ -72,7 +73,7 @@ impl GuiWasabiWindow {
                         {
                             if let Some(midi) = self.midi_file.take().as_mut() {
                                 midi.timer_mut().pause();
-                                self.synth.write().unwrap().reset();
+                                self.synth.reset();
                             }
                         }
 

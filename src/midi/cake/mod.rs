@@ -1,8 +1,4 @@
-use std::{
-    path::PathBuf,
-    sync::{Arc, RwLock},
-    thread,
-};
+use std::{path::PathBuf, sync::Arc, thread};
 use time::Duration;
 
 use midi_toolkit::{
@@ -49,7 +45,7 @@ pub struct CakeMIDIFile {
 impl CakeMIDIFile {
     pub fn load_from_file(
         path: impl Into<PathBuf>,
-        player: Arc<RwLock<WasabiAudioPlayer>>,
+        player: Arc<WasabiAudioPlayer>,
         settings: &MidiSettings,
     ) -> Self {
         let ticks_per_second = 10000;

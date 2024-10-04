@@ -1,4 +1,4 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use crate::{
     audio_playback::WasabiAudioPlayer,
@@ -18,7 +18,7 @@ impl SettingsWindow {
         ui: &mut egui::Ui,
         settings: &mut WasabiSettings,
         width: f32,
-        synth: Arc<RwLock<WasabiAudioPlayer>>,
+        synth: Arc<WasabiAudioPlayer>,
         loading_status: Arc<LoadingStatus>,
     ) {
         egui::Grid::new("synth_settings_grid")
@@ -63,7 +63,7 @@ impl SettingsWindow {
                         .on_hover_text("Reload Synth")
                         .clicked()
                     {
-                        synth.write().unwrap().switch(GuiWasabiWindow::create_synth(
+                        synth.switch(GuiWasabiWindow::create_synth(
                             settings,
                             loading_status.clone(),
                         ));
@@ -74,7 +74,7 @@ impl SettingsWindow {
                 if settings.synth.synth != synth_prev {
                     let new_player =
                         GuiWasabiWindow::create_synth(settings, loading_status.clone());
-                    synth.write().unwrap().switch(new_player);
+                    synth.switch(new_player);
                 }
             });
 

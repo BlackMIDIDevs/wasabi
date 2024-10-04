@@ -1,4 +1,4 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use crate::{
     audio_playback::WasabiAudioPlayer, gui::window::loading::LoadingStatus,
@@ -17,7 +17,7 @@ impl SettingsWindow {
         &mut self,
         ui: &mut egui::Ui,
         settings: &mut WasabiSettings,
-        synth: Arc<RwLock<WasabiAudioPlayer>>,
+        synth: Arc<WasabiAudioPlayer>,
         loading_status: Arc<LoadingStatus>,
     ) {
         self.sf_list.show(ui, settings, synth, loading_status);

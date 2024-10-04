@@ -1,4 +1,4 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use egui_extras::{Column, TableBuilder};
 
@@ -16,7 +16,7 @@ impl SettingsWindow {
         ui: &mut egui::Ui,
         settings: &mut WasabiSettings,
         width: f32,
-        synth: Arc<RwLock<WasabiAudioPlayer>>,
+        synth: Arc<WasabiAudioPlayer>,
         loading_status: Arc<LoadingStatus>,
     ) {
         egui::Frame::default()
@@ -54,10 +54,7 @@ impl SettingsWindow {
                         }
                         if changed {
                             self.midi_devices = temp;
-                            synth
-                                .write()
-                                .unwrap()
-                                .switch(GuiWasabiWindow::create_synth(settings, loading_status));
+                            synth.switch(GuiWasabiWindow::create_synth(settings, loading_status));
                         }
                     });
             });

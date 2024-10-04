@@ -1,7 +1,4 @@
-use std::{
-    path::PathBuf,
-    sync::{Arc, RwLock},
-};
+use std::{path::PathBuf, sync::Arc};
 
 use soundfonts::EguiSFList;
 
@@ -56,7 +53,7 @@ impl SettingsWindow {
         ctx: &egui::Context,
         settings: &mut WasabiSettings,
         state: &mut WasabiState,
-        synth: Arc<RwLock<WasabiAudioPlayer>>,
+        synth: Arc<WasabiAudioPlayer>,
     ) {
         let frame =
             egui::Frame::inner_margin(egui::Frame::window(ctx.style().as_ref()), super::WIN_MARGIN);

@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use crate::{
     gui::window::LoadingStatus,
@@ -27,41 +27,46 @@ pub trait MidiAudioPlayer: Send + Sync {
 }
 
 pub struct WasabiAudioPlayer {
-    player: Box<dyn MidiAudioPlayer>,
+    player: RwLock<Box<dyn MidiAudioPlayer>>,
 }
 
 impl WasabiAudioPlayer {
     pub fn new(player: Box<dyn MidiAudioPlayer>) -> Self {
-        Self { player: player }
-    }
-
-    pub fn switch(&mut self, new_player: Box<dyn MidiAudioPlayer>) {
-        self.player = new_player;
-    }
-
-    pub fn voice_count(&self) -> u64 {
-        self.player.voice_count()
-    }
-
-    pub fn push_events(&mut self, data: impl Iterator<Item = u32>) {
-        for ev in data {
-            self.player.push_event(ev);
+        Self {
+            player: RwLock::new(player),
         }
     }
 
-    pub fn configure(&mut self, settings: &SynthSettings) {
-        self.player.configure(settings);
+    pub fn switch(&self, new_player: Box<dyn MidiAudioPlayer>) {
+        *self.player.write().unwrap() = new_player;
+    }
+
+    pub fn voice_count(&self) -> u64 {
+        self.player.read().unwrap().voice_count()
+    }
+
+    pub fn push_events(&self, data: impl Iterator<Item = u32>) {
+        for ev in data {
+            self.player.write().unwrap().push_event(ev);
+        }
+    }
+
+    pub fn configure(&self, settings: &SynthSettings) {
+        self.player.write().unwrap().configure(settings);
     }
 
     pub fn set_soundfonts(
-        &mut self,
+        &self,
         soundfonts: &Vec<WasabiSoundfont>,
         loading_status: Arc<LoadingStatus>,
     ) {
-        self.player.set_soundfonts(soundfonts, loading_status);
+        self.player
+            .write()
+            .unwrap()
+            .set_soundfonts(soundfonts, loading_status);
     }
 
-    pub fn reset(&mut self) {
-        self.player.reset();
+    pub fn reset(&self) {
+        self.player.write().unwrap().reset();
     }
 }

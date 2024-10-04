@@ -1,4 +1,4 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use xsynth_realtime::ThreadCount;
 
@@ -12,7 +12,7 @@ impl SettingsWindow {
         ui: &mut egui::Ui,
         settings: &mut WasabiSettings,
         width: f32,
-        synth: Arc<RwLock<WasabiAudioPlayer>>,
+        synth: Arc<WasabiAudioPlayer>,
     ) {
         egui::Grid::new("xsynth_settings_grid")
             .num_columns(2)
@@ -44,7 +44,7 @@ impl SettingsWindow {
                 if settings.synth.xsynth.layers != layer_count_prev
                     || layer_limit_prev != settings.synth.xsynth.limit_layers
                 {
-                    synth.write().unwrap().configure(&settings.synth);
+                    synth.configure(&settings.synth);
                 }
 
                 let buffer_prev = settings.synth.xsynth.config.render_window_ms;
@@ -56,7 +56,7 @@ impl SettingsWindow {
                 );
                 ui.end_row();
                 if settings.synth.xsynth.config.render_window_ms != buffer_prev {
-                    synth.write().unwrap().configure(&settings.synth);
+                    synth.configure(&settings.synth);
                 }
 
                 ui.label("Ignore velocities between:");
@@ -72,7 +72,7 @@ impl SettingsWindow {
                     || hivel != *settings.synth.xsynth.config.ignore_range.end()
                 {
                     settings.synth.xsynth.config.ignore_range = lovel..=hivel;
-                    synth.write().unwrap().configure(&settings.synth);
+                    synth.configure(&settings.synth);
                 }
 
                 ui.label("Fade out voice when killing it*: ");

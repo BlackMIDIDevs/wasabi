@@ -1,9 +1,4 @@
-use std::{
-    collections::VecDeque,
-    path::PathBuf,
-    sync::{Arc, RwLock},
-    thread,
-};
+use std::{collections::VecDeque, path::PathBuf, sync::Arc, thread};
 
 use midi_toolkit::{
     events::{Event, MIDIEventEnum},
@@ -101,7 +96,7 @@ impl Key {
 impl InRamMIDIFile {
     pub fn load_from_file(
         path: impl Into<PathBuf>,
-        player: Arc<RwLock<WasabiAudioPlayer>>,
+        player: Arc<WasabiAudioPlayer>,
         settings: &MidiSettings,
     ) -> Self {
         let (file, signature) = open_file_and_signature(path);

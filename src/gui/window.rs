@@ -12,7 +12,7 @@ mod shortcuts;
 
 use std::path::Path;
 use std::path::PathBuf;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 use std::thread;
 
 use crossbeam_channel::{Receiver, Sender};
@@ -41,7 +41,7 @@ pub struct GuiWasabiWindow {
     keyboard_layout: keyboard_layout::KeyboardLayout,
     keyboard: GuiKeyboard,
     midi_file: Option<MIDIFileUnion>,
-    synth: Arc<RwLock<WasabiAudioPlayer>>,
+    synth: Arc<WasabiAudioPlayer>,
     fps: fps::Fps,
 
     settings_win: SettingsWindow,
@@ -56,7 +56,7 @@ impl GuiWasabiWindow {
         state: &WasabiState,
     ) -> GuiWasabiWindow {
         let synth = Self::create_synth(settings, state.loading_status.clone());
-        let synth = Arc::new(RwLock::new(WasabiAudioPlayer::new(synth)));
+        let synth = Arc::new(WasabiAudioPlayer::new(synth));
 
         let mut settings_win = SettingsWindow::new(settings);
         settings_win.load_palettes(settings);
@@ -348,7 +348,7 @@ impl GuiWasabiWindow {
 
         // Render the stats
         if state.stats_visible {
-            let voice_count = self.synth.read().unwrap().voice_count();
+            let voice_count = self.synth.voice_count();
             stats.set_voice_count(voice_count);
 
             let pad = if settings.scene.statistics.floating {
@@ -386,7 +386,7 @@ impl GuiWasabiWindow {
         if let Some(midi_file) = self.midi_file.as_mut() {
             midi_file.timer_mut().pause();
         }
-        self.synth.write().unwrap().reset();
+        self.synth.reset();
         self.midi_file = None;
 
         let filename = midi_path.file_name().unwrap_or_default().to_os_string();

@@ -38,7 +38,7 @@ pub struct LiveLoadMIDIFile {
 impl LiveLoadMIDIFile {
     pub fn load_from_file(
         path: impl Into<PathBuf>,
-        player: Arc<RwLock<WasabiAudioPlayer>>,
+        player: Arc<WasabiAudioPlayer>,
         settings: &MidiSettings,
     ) -> Self {
         let (file, signature) = open_file_and_signature(path);
