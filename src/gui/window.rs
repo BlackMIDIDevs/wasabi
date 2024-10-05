@@ -232,15 +232,13 @@ impl GuiWasabiWindow {
         });
 
         // Render the panel
-        let height_prev = ctx.available_rect().height();
-        self.show_playback_panel(&ctx, settings, state);
+        let panel_height = self.show_playback_panel(&ctx, settings, state);
 
         // Calculate available space left for keyboard and notes
         // We must render notes before keyboard because the notes
         // renderer tells us the key colors
         let available = ctx.available_rect();
         let height = available.height();
-        let panel_height = height_prev - height;
         let keyboard_height =
             (11.6 / settings.scene.key_range.len() as f32 * available.width()).min(height / 2.0);
         let notes_height = height - keyboard_height;

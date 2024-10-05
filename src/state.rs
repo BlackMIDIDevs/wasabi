@@ -23,6 +23,7 @@ pub struct WasabiState {
     pub loading_status: Arc<LoadingStatus>,
 
     pub panel_pinned: bool,
+    pub panel_id: egui::Id,
     pub panel_popup_id: egui::Id,
     pub stats_visible: bool,
 
@@ -51,6 +52,7 @@ impl WasabiState {
             loading_status,
 
             panel_pinned: true,
+            panel_id: egui::Id::new("playback_panel"),
             panel_popup_id: egui::Id::new("options_popup"),
             stats_visible: true,
 
