@@ -105,7 +105,7 @@ impl MidiAudioPlayer for XSynthPlayer {
 
             let mut out: Vec<Arc<dyn SoundfontBase>> = Vec::new();
 
-            for sf in soundfonts {
+            for sf in soundfonts.iter().rev() {
                 if sf.enabled {
                     loading_status.update_message(format!(
                         "Loading {:?}",

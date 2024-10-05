@@ -119,7 +119,7 @@ impl EguiSFList {
     }
 
     fn as_vec(&self) -> Vec<WasabiSoundfont> {
-        self.list.iter().map(|sf| sf.item.clone()).rev().collect()
+        self.list.iter().map(|sf| sf.item.clone()).collect()
     }
 
     pub fn show(
