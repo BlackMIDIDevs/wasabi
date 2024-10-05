@@ -118,7 +118,7 @@ impl SettingsWindow {
                 ui.end_row();
             });
 
-        ui.add_space(4.0);
+        ui.add_space(8.0);
         egui::Frame::default()
             .rounding(egui::Rounding::same(8.0))
             .stroke(ui.style().visuals.widgets.noninteractive.bg_stroke)
@@ -130,15 +130,18 @@ impl SettingsWindow {
                     ))
                     .resizable(true)
                     .column(Column::exact(40.0).resizable(false))
-                    .column(Column::exact(width - 100.0).resizable(false))
-                    .column(Column::exact(60.0).resizable(false))
+                    .column(Column::exact(width - 150.0).resizable(false))
+                    .column(Column::exact(110.0).resizable(false))
                     .body(|mut body| {
                         let row_height = super::SPACING[1] * 3.0;
                         let mut temp = settings.scene.statistics.order.clone();
                         for (i, item) in settings.scene.statistics.order.iter_mut().enumerate() {
                             body.row(row_height, |mut row| {
                                 row.col(|ui| {
-                                    ui.checkbox(&mut temp[i].1, "");
+                                    ui.horizontal(|ui| {
+                                        ui.add_space(12.0);
+                                        ui.checkbox(&mut temp[i].1, "");
+                                    });
                                 });
                                 row.col(|ui| {
                                     ui.label(item.0.as_str());
@@ -146,7 +149,7 @@ impl SettingsWindow {
                                 row.col(|ui| {
                                     ui.horizontal(|ui| {
                                         if ui
-                                            .button(WidgetText::from("\u{2191}").text_style(
+                                            .button(WidgetText::from(" \u{2191} ").text_style(
                                                 egui::TextStyle::Name("monospace big".into()),
                                             ))
                                             .clicked()
@@ -156,7 +159,7 @@ impl SettingsWindow {
                                         }
 
                                         if ui
-                                            .button(WidgetText::from("\u{2193}").text_style(
+                                            .button(WidgetText::from(" \u{2193} ").text_style(
                                                 egui::TextStyle::Name("monospace big".into()),
                                             ))
                                             .clicked()

@@ -55,7 +55,7 @@ impl EguiSFList {
         self.id_count += 1;
     }
 
-    pub fn add_path(&mut self, path: PathBuf) -> Result<(), WasabiError> {
+    fn add_path(&mut self, path: PathBuf) -> Result<(), WasabiError> {
         if !path.exists() {
             return Err(WasabiError::FilesystemError(io::Error::new(
                 io::ErrorKind::NotFound,
@@ -72,7 +72,7 @@ impl EguiSFList {
         Ok(self.add_item(item))
     }
 
-    pub fn select_all(&mut self) {
+    fn select_all(&mut self) {
         self.list = self
             .list
             .clone()
@@ -84,7 +84,7 @@ impl EguiSFList {
             .collect();
     }
 
-    pub fn remove_selected_items(&mut self) {
+    fn remove_selected_items(&mut self) {
         self.list = self
             .list
             .clone()
@@ -95,13 +95,31 @@ impl EguiSFList {
         self.sf_cfg_win.clear();
     }
 
-    pub fn clear(&mut self) {
+    fn move_selected_down(&mut self) {
+        let cloned = self.list.clone();
+        for (i, item) in cloned.iter().enumerate() {
+            if i != self.list.len() - 1 && item.selected {
+                self.list.swap(i, i + 1);
+            }
+        }
+    }
+
+    fn move_selected_up(&mut self) {
+        let cloned = self.list.clone();
+        for (i, item) in cloned.iter().enumerate() {
+            if i != 0 && item.selected {
+                self.list.swap(i, i - 1);
+            }
+        }
+    }
+
+    fn clear(&mut self) {
         self.list.clear();
         self.sf_cfg_win.clear();
     }
 
-    pub fn as_vec(&self) -> Vec<WasabiSoundfont> {
-        self.list.iter().map(|sf| sf.item.clone()).collect()
+    fn as_vec(&self) -> Vec<WasabiSoundfont> {
+        self.list.iter().map(|sf| sf.item.clone()).rev().collect()
     }
 
     pub fn show(
@@ -169,64 +187,95 @@ impl EguiSFList {
             .resizable(false)
             .show_inside(ui, |ui| {
                 ui.add_space(5.0);
-                ui.horizontal(|ui| {
-                    if ui
-                        .button(
-                            WidgetText::from(" \u{2795} ")
-                                .text_style(egui::TextStyle::Name("monospace big".into())),
-                        )
-                        .on_hover_text("Add SoundFont(s)")
-                        .clicked()
-                    {
-                        let sender = self.sf_picker.0.clone();
-                        let last_sf_location = state.last_sf_location.clone();
+                ui.columns(2, |columns| {
+                    columns[0].horizontal(|ui| {
+                        if ui
+                            .button(
+                                WidgetText::from(" \u{2795} ")
+                                    .text_style(egui::TextStyle::Name("monospace big".into())),
+                            )
+                            .on_hover_text("Add SoundFont(s)")
+                            .clicked()
+                        {
+                            let sender = self.sf_picker.0.clone();
+                            let last_sf_location = state.last_sf_location.clone();
 
-                        thread::spawn(move || {
-                            let midi_path = rfd::FileDialog::new()
-                                .add_filter("Supported SoundFonts", &["sfz", "SFZ", "sf2", "SF2"])
-                                .set_directory(last_sf_location.parent().unwrap_or(Path::new("./")))
-                                .pick_file();
+                            thread::spawn(move || {
+                                let midi_path = rfd::FileDialog::new()
+                                    .add_filter(
+                                        "Supported SoundFonts",
+                                        &["sfz", "SFZ", "sf2", "SF2"],
+                                    )
+                                    .set_directory(
+                                        last_sf_location.parent().unwrap_or(Path::new("./")),
+                                    )
+                                    .pick_file();
 
-                            if let Some(midi_path) = midi_path {
-                                sender.send(midi_path).unwrap_or_default();
-                            }
-                        });
-                    }
-                    if ui
-                        .button(
-                            WidgetText::from(" \u{2796} ")
-                                .text_style(egui::TextStyle::Name("monospace big".into())),
-                        )
-                        .on_hover_text("Remove Selected")
-                        .clicked()
-                    {
-                        self.remove_selected_items();
-                    }
-                    if ui
-                        .button(
-                            WidgetText::from(" \u{2716} ")
-                                .text_style(egui::TextStyle::Name("monospace big".into())),
-                        )
-                        .on_hover_text("Clear List")
-                        .clicked()
-                    {
-                        self.clear();
-                    }
-                    if ui
-                        .button(
-                            WidgetText::from(" \u{2705} ")
-                                .text_style(egui::TextStyle::Name("monospace big".into())),
-                        )
-                        .on_hover_text("Apply SoundFont List")
-                        .clicked()
-                    {
-                        state
-                            .synth
-                            .set_soundfonts(&settings.synth.soundfonts, state);
-                    }
-                    // TODO: Rearrange list
+                                if let Some(midi_path) = midi_path {
+                                    sender.send(midi_path).unwrap_or_default();
+                                }
+                            });
+                        }
+
+                        if ui
+                            .button(
+                                WidgetText::from(" \u{2796} ")
+                                    .text_style(egui::TextStyle::Name("monospace big".into())),
+                            )
+                            .on_hover_text("Remove Selected")
+                            .clicked()
+                        {
+                            self.remove_selected_items();
+                        }
+                        if ui
+                            .button(
+                                WidgetText::from(" \u{2716} ")
+                                    .text_style(egui::TextStyle::Name("monospace big".into())),
+                            )
+                            .on_hover_text("Clear List")
+                            .clicked()
+                        {
+                            self.clear();
+                        }
+
+                        if ui
+                            .button(
+                                WidgetText::from(" \u{2191} ")
+                                    .text_style(egui::TextStyle::Name("monospace big".into())),
+                            )
+                            .on_hover_text("Move Selected Up")
+                            .clicked()
+                        {
+                            self.move_selected_up();
+                        }
+                        if ui
+                            .button(
+                                WidgetText::from(" \u{2193} ")
+                                    .text_style(egui::TextStyle::Name("monospace big".into())),
+                            )
+                            .on_hover_text("Move Selected Down")
+                            .clicked()
+                        {
+                            self.move_selected_down();
+                        }
+                    });
+
+                    columns[1].with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
+                        if ui
+                            .button(
+                                WidgetText::from(" \u{2705} ")
+                                    .text_style(egui::TextStyle::Name("monospace big".into())),
+                            )
+                            .on_hover_text("Apply SoundFont List")
+                            .clicked()
+                        {
+                            state
+                                .synth
+                                .set_soundfonts(&settings.synth.soundfonts, state);
+                        }
+                    });
                 });
-                ui.small("Loading order is top to bottom. Supported formats: SFZ, SF2");
+                ui.small("Loading order is bottom to top. Double click on a soundfont to modify its options. Supported formats: SFZ, SF2");
             });
 
         egui::ScrollArea::both().show(ui, |ui| {
@@ -262,7 +311,6 @@ impl EguiSFList {
                 .column(Column::exact(20.0).resizable(false))
                 .column(Column::remainder().at_least(50.0).clip(true))
                 .columns(Column::auto().at_least(40.0).clip(true).resizable(false), 2)
-                .column(Column::exact(60.0).resizable(false))
                 .header(20.0, |mut header| {
                     header.col(|_ui| {});
                     header.col(|ui| {
