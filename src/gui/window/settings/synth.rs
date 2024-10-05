@@ -1,9 +1,7 @@
-use std::sync::Arc;
-
 use crate::{
     audio_playback::WasabiAudioPlayer,
-    gui::window::{GuiWasabiWindow, LoadingStatus},
     settings::{Synth, WasabiSettings},
+    state::WasabiState,
 };
 
 use super::SettingsWindow;
@@ -17,9 +15,8 @@ impl SettingsWindow {
         &mut self,
         ui: &mut egui::Ui,
         settings: &mut WasabiSettings,
+        state: &WasabiState,
         width: f32,
-        synth: Arc<WasabiAudioPlayer>,
-        loading_status: Arc<LoadingStatus>,
     ) {
         egui::Grid::new("synth_settings_grid")
             .num_columns(2)
@@ -63,18 +60,22 @@ impl SettingsWindow {
                         .on_hover_text("Reload Synth")
                         .clicked()
                     {
-                        synth.switch(GuiWasabiWindow::create_synth(
+                        state.synth.switch(WasabiAudioPlayer::create_synth(
                             settings,
-                            loading_status.clone(),
+                            state.loading_status.clone(),
+                            state.errors.clone(),
                         ));
                     }
                 });
                 ui.end_row();
 
                 if settings.synth.synth != synth_prev {
-                    let new_player =
-                        GuiWasabiWindow::create_synth(settings, loading_status.clone());
-                    synth.switch(new_player);
+                    let new_player = WasabiAudioPlayer::create_synth(
+                        settings,
+                        state.loading_status.clone(),
+                        state.errors.clone(),
+                    );
+                    state.synth.switch(new_player);
                 }
             });
 
@@ -87,11 +88,9 @@ impl SettingsWindow {
         ui.heading("Synth Settings");
 
         match settings.synth.synth {
-            Synth::XSynth => self.show_xsynth_settings(ui, settings, width, synth),
+            Synth::XSynth => self.show_xsynth_settings(ui, settings, state, width),
             Synth::Kdmapi => self.show_kdmapi_settings(ui, settings, width),
-            Synth::MidiDevice => {
-                self.show_mididevice_settings(ui, settings, width, synth, loading_status)
-            }
+            Synth::MidiDevice => self.show_mididevice_settings(ui, settings, state, width),
             Synth::None => {
                 ui.label("No Settings");
             }

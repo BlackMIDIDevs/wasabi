@@ -13,6 +13,7 @@ use midi_toolkit::{
 
 use crate::{
     audio_playback::WasabiAudioPlayer,
+    gui::window::WasabiError,
     midi::{
         audio::ram::InRamAudioPlayer,
         cake::tree_threader::{NoteEvent, ThreadedTreeSerializers},
@@ -47,11 +48,12 @@ impl CakeMIDIFile {
         path: impl Into<PathBuf>,
         player: Arc<WasabiAudioPlayer>,
         settings: &MidiSettings,
-    ) -> Self {
+    ) -> Result<Self, WasabiError> {
         let ticks_per_second = 10000;
 
-        let (file, signature) = open_file_and_signature(path);
-        let midi = TKMIDIFile::open_from_stream(file, None).unwrap();
+        let (file, signature) = open_file_and_signature(path)?;
+        let midi =
+            TKMIDIFile::open_from_stream(file, None).map_err(|e| WasabiError::MidiLoadError(e))?;
 
         let ppq = midi.ppq();
         let merged = pipe!(
@@ -62,7 +64,7 @@ impl CakeMIDIFile {
             |>unwrap_items()
         );
 
-        let colors = MIDIColor::new_vec_from_settings(midi.track_count(), settings);
+        let colors = MIDIColor::new_vec_from_settings(midi.track_count(), settings)?;
 
         type Ev = Delta<f64, Track<EventBatch<Event>>>;
         let (key_snd, key_rcv) = crossbeam_channel::bounded::<Arc<Ev>>(1000);
@@ -156,14 +158,14 @@ impl CakeMIDIFile {
 
         InRamAudioPlayer::new(audio, timer.get_listener(), player).spawn_playback();
 
-        CakeMIDIFile {
+        Ok(CakeMIDIFile {
             blocks: keys,
             timer,
             length,
             note_count,
             ticks_per_second,
             signature,
-        }
+        })
     }
 
     pub fn key_blocks(&self) -> &[CakeBlock] {

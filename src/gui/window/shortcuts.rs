@@ -36,11 +36,11 @@ impl GuiWasabiWindow {
                         ui.end_row();
 
                         ui.label("Slower Note Speed");
-                        ui.label("Ctrl + Up Arrow");
+                        ui.label("Up Arrow");
                         ui.end_row();
 
                         ui.label("Faster Note Speed");
-                        ui.label("Ctrl + Down Arrow");
+                        ui.label("Down Arrow");
                         ui.end_row();
 
                         ui.label("Toggle Fullscreen");
@@ -53,6 +53,14 @@ impl GuiWasabiWindow {
 
                         ui.label("Toggle Statistics");
                         ui.label("Ctrl + G");
+                        ui.end_row();
+
+                        ui.label("Open MIDI");
+                        ui.label("Ctrl + O");
+                        ui.end_row();
+
+                        ui.label("Reset Synthesizer");
+                        ui.label("Insert");
                         ui.end_row();
                     });
             });

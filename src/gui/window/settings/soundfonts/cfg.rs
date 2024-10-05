@@ -1,6 +1,6 @@
 use crate::gui::window::WIN_MARGIN;
 
-use super::{SFFormat, SFListItem};
+use super::SFListItem;
 use egui::{Context, Window};
 use xsynth_core::soundfont::Interpolator;
 
@@ -48,8 +48,7 @@ impl SoundfontConfigWindow {
                         let mut modify = item.item.options.bank.is_some();
 
                         ui.label("Override Instrument: ");
-                        let allow_override = !(item.format == SFFormat::Sfz);
-                        ui.add_enabled(allow_override, egui::Checkbox::without_text(&mut modify));
+                        ui.add(egui::Checkbox::without_text(&mut modify));
                         ui.end_row();
 
                         if modify && item.item.options.bank.is_none() {
@@ -93,10 +92,6 @@ impl SoundfontConfigWindow {
                     .num_columns(2)
                     .min_col_width(col_width)
                     .show(ui, |ui| {
-                        // ui.label("Linear Release Envelope: ");
-                        // ui.checkbox(&mut item.init.linear_release, "");
-                        // ui.end_row();
-
                         let interp = ["Nearest Neighbor", "Linear"];
                         let mut interp_idx = item.item.options.interpolator as usize;
 

@@ -13,6 +13,7 @@ use rustc_hash::FxHashMap;
 
 use crate::{
     audio_playback::WasabiAudioPlayer,
+    gui::window::WasabiError,
     midi::{
         audio::ram::InRamAudioPlayer,
         open_file_and_signature,
@@ -98,9 +99,10 @@ impl InRamMIDIFile {
         path: impl Into<PathBuf>,
         player: Arc<WasabiAudioPlayer>,
         settings: &MidiSettings,
-    ) -> Self {
-        let (file, signature) = open_file_and_signature(path);
-        let midi = TKMIDIFile::open_from_stream(file, None).unwrap();
+    ) -> Result<Self, WasabiError> {
+        let (file, signature) = open_file_and_signature(path)?;
+        let midi =
+            TKMIDIFile::open_from_stream(file, None).map_err(|e| WasabiError::MidiLoadError(e))?;
 
         let ppq = midi.ppq();
         let merged = pipe!(
@@ -190,14 +192,14 @@ impl InRamMIDIFile {
             .map(|key| InRamNoteColumn::new(key.column))
             .collect();
 
-        let colors = MIDIColor::new_vec_from_settings(midi.track_count(), settings);
+        let colors = MIDIColor::new_vec_from_settings(midi.track_count(), settings)?;
 
-        InRamMIDIFile {
+        Ok(InRamMIDIFile {
             view_data: InRamNoteViewData::new(columns, colors),
             timer,
             length,
             note_count,
             signature,
-        }
+        })
     }
 }

@@ -1,12 +1,6 @@
-use std::sync::Arc;
-
 use egui_extras::{Column, TableBuilder};
 
-use crate::{
-    audio_playback::WasabiAudioPlayer,
-    gui::window::{GuiWasabiWindow, LoadingStatus},
-    settings::WasabiSettings,
-};
+use crate::{audio_playback::WasabiAudioPlayer, settings::WasabiSettings, state::WasabiState};
 
 use super::SettingsWindow;
 
@@ -15,9 +9,8 @@ impl SettingsWindow {
         &mut self,
         ui: &mut egui::Ui,
         settings: &mut WasabiSettings,
+        state: &WasabiState,
         width: f32,
-        synth: Arc<WasabiAudioPlayer>,
-        loading_status: Arc<LoadingStatus>,
     ) {
         egui::Frame::default()
             .rounding(egui::Rounding::same(8.0))
@@ -54,13 +47,18 @@ impl SettingsWindow {
                         }
                         if changed {
                             self.midi_devices = temp;
-                            synth.switch(GuiWasabiWindow::create_synth(settings, loading_status));
+                            state.synth.switch(WasabiAudioPlayer::create_synth(
+                                settings,
+                                state.loading_status.clone(),
+                                state.errors.clone(),
+                            ));
                         }
                     });
             });
         ui.add_space(4.0);
         if ui.button("Refresh List").clicked() {
-            self.load_midi_devices(settings);
+            self.load_midi_devices(settings)
+                .unwrap_or_else(|e| state.errors.error(&e));
         }
     }
 }

@@ -4,7 +4,7 @@ use std::{
     thread,
 };
 
-use crate::settings::WasabiSoundfont;
+use crate::{gui::window::WasabiError, settings::WasabiSoundfont};
 
 use xsynth_core::{
     channel::{ChannelConfigEvent, ChannelEvent},
@@ -90,6 +90,7 @@ impl MidiAudioPlayer for XSynthPlayer {
         &mut self,
         soundfonts: &Vec<WasabiSoundfont>,
         loading_status: Arc<LoadingStatus>,
+        errors: Arc<GuiMessageSystem>,
     ) {
         let mut sender = self.sender.clone();
         let soundfonts = soundfonts.clone();
@@ -106,14 +107,14 @@ impl MidiAudioPlayer for XSynthPlayer {
 
             for sf in soundfonts {
                 if sf.enabled {
-                    let path = sf.path.clone();
                     loading_status.update_message(format!(
                         "Loading {:?}",
-                        path.file_name().unwrap_or_default()
+                        sf.path.file_name().unwrap_or_default()
                     ));
 
-                    if let Ok(sf) = SampleSoundfont::new(path, stream_params, sf.options) {
-                        out.push(Arc::new(sf));
+                    match SampleSoundfont::new(&sf.path, stream_params, sf.options) {
+                        Ok(sf) => out.push(Arc::new(sf)),
+                        Err(err) => errors.error(&WasabiError::SoundFontLoadError(err)),
                     }
                 }
             }

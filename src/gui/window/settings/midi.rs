@@ -1,6 +1,9 @@
 use egui_extras::{Column, TableBuilder};
 
-use crate::settings::{Colors, MidiParsing, WasabiSettings};
+use crate::{
+    settings::{Colors, MidiParsing, WasabiSettings},
+    state::WasabiState,
+};
 
 use super::SettingsWindow;
 
@@ -9,6 +12,7 @@ impl SettingsWindow {
         &mut self,
         ui: &mut egui::Ui,
         settings: &mut WasabiSettings,
+        state: &WasabiState,
         width: f32,
     ) {
         ui.vertical_centered(|ui| {
@@ -159,7 +163,8 @@ impl SettingsWindow {
         ui.add_space(4.0);
         ui.horizontal(|ui| {
             if ui.button("Refresh List").clicked() {
-                self.load_palettes(settings);
+                self.load_palettes(settings)
+                    .unwrap_or_else(|e| state.errors.error(&e));
             }
             if ui.button("Open Palettes Directory").clicked() {
                 open::that(WasabiSettings::get_palettes_dir()).unwrap_or_default();

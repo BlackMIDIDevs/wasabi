@@ -57,7 +57,7 @@ pub fn draw_stats(
 
     let mut stats_frame = Frame::default()
         .inner_margin(egui::Margin::same(7.0))
-        .fill(egui::Color32::from_rgba_unmultiplied(7, 7, 7, alpha));
+        .fill(egui::Color32::from_black_alpha(alpha));
 
     if settings.scene.statistics.floating {
         stats_frame = stats_frame.rounding(egui::Rounding::same(round));
@@ -82,7 +82,7 @@ pub fn draw_stats(
         .collapsible(false)
         .title_bar(false)
         .scroll([false, false])
-        .enabled(false)
+        .interactable(false)
         .frame(stats_frame)
         .fixed_pos(pos)
         .fixed_size(egui::Vec2::new(200.0, 128.0))

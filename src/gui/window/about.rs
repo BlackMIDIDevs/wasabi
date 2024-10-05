@@ -1,13 +1,15 @@
 use crate::state::WasabiState;
 use std::env::consts::{ARCH, OS};
 
-use super::GuiWasabiWindow;
+use super::{GuiWasabiWindow, WasabiError};
 
 impl GuiWasabiWindow {
     pub fn show_about(&mut self, ctx: &egui::Context, state: &mut WasabiState) {
         let frame =
             egui::Frame::inner_margin(egui::Frame::window(ctx.style().as_ref()), super::WIN_MARGIN);
         let size = [600.0, 450.0];
+
+        let mut updcheck = false;
 
         egui::Window::new("About Wasabi")
             .resizable(true)
@@ -143,10 +145,18 @@ impl GuiWasabiWindow {
                     ui.add_space(w);
 
                     if ui.button(gh_text).clicked() {
-                        open::that("https://github.com/BlackMIDIDevs/wasabi").unwrap();
+                        open::that("https://github.com/BlackMIDIDevs/wasabi").unwrap_or_else(|e| {
+                            state.errors.error(&WasabiError::Other(e.to_string()))
+                        });
                     }
-                    if ui.button(upd_text).clicked() {}
+                    if ui.button(upd_text).clicked() {
+                        updcheck = true;
+                    }
                 });
             });
+
+        if updcheck {
+            crate::utils::check_for_updates(state);
+        }
     }
 }

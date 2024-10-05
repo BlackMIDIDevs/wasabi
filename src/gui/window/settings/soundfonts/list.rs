@@ -1,4 +1,8 @@
-use std::{path::PathBuf, sync::Arc, thread};
+use std::{
+    io,
+    path::{Path, PathBuf},
+    thread,
+};
 
 use crossbeam_channel::{Receiver, Sender};
 use egui::WidgetText;
@@ -6,19 +10,12 @@ use egui_extras::{Column, TableBuilder};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    audio_playback::WasabiAudioPlayer,
-    gui::window::loading::LoadingStatus,
+    gui::window::WasabiError,
     settings::{WasabiSettings, WasabiSoundfont},
+    state::WasabiState,
 };
 
 use super::SoundfontConfigWindow;
-
-#[derive(Default, Clone, PartialEq, Serialize, Deserialize)]
-pub enum SFFormat {
-    #[default]
-    Sfz,
-    Sf2,
-}
 
 #[derive(Default, Clone, Serialize, Deserialize)]
 #[serde(default)]
@@ -26,7 +23,6 @@ pub struct SFListItem {
     pub item: WasabiSoundfont,
     pub id: usize,
     pub selected: bool,
-    pub format: SFFormat,
 }
 
 pub struct EguiSFList {
@@ -49,36 +45,22 @@ impl EguiSFList {
         }
     }
 
-    pub fn add_item(&mut self, sf: WasabiSoundfont) -> Result<(), String> {
-        let err = Err(format!(
-            "The selected soundfont does not have the correct format: {:?}",
-            sf.path
-        ));
-
-        if let Some(ext) = sf.path.extension() {
-            let format = match ext.to_str().unwrap().to_lowercase().as_str() {
-                "sfz" => SFFormat::Sfz,
-                "sf2" => SFFormat::Sf2,
-                _ => return err,
-            };
-
-            let item = SFListItem {
-                item: sf,
-                id: self.id_count,
-                selected: false,
-                format,
-            };
-            self.list.push(item);
-            self.id_count += 1;
-            return Ok(());
-        }
-
-        err
+    pub fn add_item(&mut self, sf: WasabiSoundfont) {
+        let item = SFListItem {
+            item: sf,
+            id: self.id_count,
+            selected: false,
+        };
+        self.list.push(item);
+        self.id_count += 1;
     }
 
-    pub fn add_path(&mut self, path: PathBuf) -> Result<(), String> {
+    pub fn add_path(&mut self, path: PathBuf) -> Result<(), WasabiError> {
         if !path.exists() {
-            return Err(format!("File not found: {:?}", path));
+            return Err(WasabiError::FilesystemError(io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("{:?} not found.", &path),
+            )));
         }
 
         let item = WasabiSoundfont {
@@ -87,7 +69,7 @@ impl EguiSFList {
             options: Default::default(),
         };
 
-        self.add_item(item)
+        Ok(self.add_item(item))
     }
 
     pub fn select_all(&mut self) {
@@ -110,7 +92,6 @@ impl EguiSFList {
             .filter(|item| !item.selected)
             .collect();
 
-        // I'm bored to make it close only the windows needed, so instead I'll close all of them
         self.sf_cfg_win.clear();
     }
 
@@ -127,8 +108,7 @@ impl EguiSFList {
         &mut self,
         ui: &mut egui::Ui,
         settings: &mut WasabiSettings,
-        synth: Arc<WasabiAudioPlayer>,
-        loading_status: Arc<LoadingStatus>,
+        state: &mut WasabiState,
     ) {
         let events = ui.input(|i| i.events.clone());
         for event in &events {
@@ -157,19 +137,13 @@ impl EguiSFList {
             let recv = self.sf_picker.1.clone();
             if !recv.is_empty() {
                 for path in recv {
-                    //state.last_location = path.clone();
+                    state.last_sf_location = path.clone();
                     if path.is_file() {
-                        if let Err(error) = self.add_path(path.clone()) {
-                            let title = if let Some(filen) = path.file_name() {
-                                format!(
-                                    "There was an error adding \"{}\" to the list.",
-                                    filen.to_str().unwrap()
-                                )
-                            } else {
-                                "There was an error adding the selected soundfont to the list."
-                                    .to_string()
-                            };
-                            // TODO: errors
+                        if let Err(err) = self.add_path(path.clone()) {
+                            state.errors.warning(format!(
+                                "Error adding SoundFont to the list: {}",
+                                err.to_string()
+                            ));
                         }
                     }
                     break;
@@ -205,13 +179,12 @@ impl EguiSFList {
                         .clicked()
                     {
                         let sender = self.sf_picker.0.clone();
-                        // TODO: Fix
-                        //let last_location = state.last_location.clone();
+                        let last_sf_location = state.last_sf_location.clone();
 
                         thread::spawn(move || {
                             let midi_path = rfd::FileDialog::new()
                                 .add_filter("Supported SoundFonts", &["sfz", "SFZ", "sf2", "SF2"])
-                                //.set_directory(last_location.parent().unwrap_or(Path::new("./")))
+                                .set_directory(last_sf_location.parent().unwrap_or(Path::new("./")))
                                 .pick_file();
 
                             if let Some(midi_path) = midi_path {
@@ -247,7 +220,9 @@ impl EguiSFList {
                         .on_hover_text("Apply SoundFont List")
                         .clicked()
                     {
-                        synth.set_soundfonts(&settings.synth.soundfonts, loading_status);
+                        state
+                            .synth
+                            .set_soundfonts(&settings.synth.soundfonts, state);
                     }
                     // TODO: Rearrange list
                 });
@@ -286,14 +261,12 @@ impl EguiSFList {
                 .resizable(true)
                 .column(Column::exact(20.0).resizable(false))
                 .column(Column::remainder().at_least(50.0).clip(true))
-                .columns(Column::auto().at_least(40.0).clip(true).resizable(false), 3)
+                .columns(Column::auto().at_least(40.0).clip(true).resizable(false), 2)
+                .column(Column::exact(60.0).resizable(false))
                 .header(20.0, |mut header| {
                     header.col(|_ui| {});
                     header.col(|ui| {
                         ui.strong("Filename");
-                    });
-                    header.col(|ui| {
-                        ui.strong("Format");
                     });
                     header.col(|ui| {
                         ui.strong("Bank");
@@ -324,12 +297,6 @@ impl EguiSFList {
                                 {
                                     self.sf_cfg_win.push(SoundfontConfigWindow::new(item.id))
                                 }
-                            });
-                            row.col(|ui| {
-                                ui.label(match item.format {
-                                    SFFormat::Sfz => "SFZ",
-                                    SFFormat::Sf2 => "SF2",
-                                });
                             });
 
                             let bank_txt = if let Some(bank) = item.item.options.bank {

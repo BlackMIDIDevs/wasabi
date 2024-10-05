@@ -19,7 +19,10 @@ pub use cake::{blocks::CakeBlock, intvec4::IntVector4, CakeMIDIFile, CakeSignatu
 pub use live::LiveLoadMIDIFile;
 pub use ram::InRamMIDIFile;
 
-use crate::settings::{Colors, MidiSettings};
+use crate::{
+    gui::window::WasabiError,
+    settings::{Colors, MidiSettings},
+};
 
 use self::shared::timer::TimeKeeper;
 
@@ -53,17 +56,22 @@ pub struct MIDIFileUniqueSignature {
     pub last_modified: u128,
 }
 
-fn open_file_and_signature(path: impl Into<PathBuf>) -> (File, MIDIFileUniqueSignature) {
+fn open_file_and_signature(
+    path: impl Into<PathBuf>,
+) -> Result<(File, MIDIFileUniqueSignature), WasabiError> {
     let path = path.into();
-    let file = std::fs::File::open(&path).unwrap();
-    let file_length = file.metadata().unwrap().len();
+    let file = std::fs::File::open(&path).map_err(|e| WasabiError::FilesystemError(e))?;
+    let file_length = file
+        .metadata()
+        .map_err(|e| WasabiError::FilesystemError(e))?
+        .len();
     let file_last_modified = file
         .metadata()
-        .unwrap()
+        .map_err(|e| WasabiError::FilesystemError(e))?
         .modified()
-        .unwrap()
+        .map_err(|e| WasabiError::FilesystemError(e))?
         .duration_since(UNIX_EPOCH)
-        .unwrap()
+        .map_err(|e: std::time::SystemTimeError| WasabiError::Other(e.to_string()))?
         .as_micros();
 
     let signature = MIDIFileUniqueSignature {
@@ -72,7 +80,7 @@ fn open_file_and_signature(path: impl Into<PathBuf>) -> (File, MIDIFileUniqueSig
         last_modified: file_last_modified,
     };
 
-    (file, signature)
+    Ok((file, signature))
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -133,26 +141,37 @@ impl MIDIColor {
             .collect()
     }
 
-    pub fn new_vec_from_settings(tracks: usize, settings: &MidiSettings) -> Vec<Self> {
+    pub fn new_vec_from_settings(
+        tracks: usize,
+        settings: &MidiSettings,
+    ) -> Result<Vec<Self>, WasabiError> {
         match settings.colors {
-            Colors::Rainbow => MIDIColor::new_vec(tracks),
-            Colors::Random => MIDIColor::new_random_vec(tracks),
+            Colors::Rainbow => Ok(MIDIColor::new_vec(tracks)),
+            Colors::Random => Ok(MIDIColor::new_random_vec(tracks)),
             Colors::Palette => {
-                let path = settings.palette_path.clone();
+                let path = &settings.palette_path;
                 if path.exists() {
-                    if let Ok(image) = ImageReader::open(path) {
-                        if let Ok(image) = image.with_guessed_format() {
-                            if let Ok(image) = image.decode() {
-                                if image.dimensions().0 == 16 {
-                                    return MIDIColor::new_vec_from_palette(tracks, image);
-                                }
-                            }
-                        }
+                    let image = ImageReader::open(path)
+                        .map_err(|e| WasabiError::PaletteError(e.to_string()))?;
+                    let image = image
+                        .with_guessed_format()
+                        .map_err(|e| WasabiError::PaletteError(e.to_string()))?;
+                    let image = image
+                        .decode()
+                        .map_err(|e| WasabiError::PaletteError(e.to_string()))?;
+
+                    if image.dimensions().0 == 16 {
+                        Ok(MIDIColor::new_vec_from_palette(tracks, image))
+                    } else {
+                        Err(WasabiError::PaletteError(format!(
+                            "Palette has invalid dimensions: {path:?}"
+                        )))
                     }
+                } else {
+                    Err(WasabiError::PaletteError(format!(
+                        "Palette does not exist: {path:?}"
+                    )))
                 }
-                // TODO: palette error
-                //settings.midi.colors = Colors::Rainbow;
-                MIDIColor::new_vec(tracks)
             }
         }
     }

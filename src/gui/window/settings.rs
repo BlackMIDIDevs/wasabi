@@ -1,12 +1,13 @@
-use std::{path::PathBuf, sync::Arc};
+use std::path::PathBuf;
 
 use soundfonts::EguiSFList;
 
 use crate::{
-    audio_playback::WasabiAudioPlayer,
     settings::{Colors, Synth, WasabiSettings},
     state::{SettingsTab, WasabiState},
 };
+
+use super::WasabiError;
 
 mod midi;
 mod soundfonts;
@@ -38,7 +39,7 @@ impl SettingsWindow {
     pub fn new(settings: &WasabiSettings) -> Self {
         let mut sf_list = EguiSFList::new();
         for sf in settings.synth.soundfonts.iter() {
-            sf_list.add_item(sf.clone()).unwrap_or_default();
+            sf_list.add_item(sf.clone());
         }
 
         Self {
@@ -53,7 +54,6 @@ impl SettingsWindow {
         ctx: &egui::Context,
         settings: &mut WasabiSettings,
         state: &mut WasabiState,
-        synth: Arc<WasabiAudioPlayer>,
     ) {
         let frame =
             egui::Frame::inner_margin(egui::Frame::window(ctx.style().as_ref()), super::WIN_MARGIN);
@@ -65,9 +65,9 @@ impl SettingsWindow {
             .title_bar(true)
             .enabled(true)
             .frame(frame)
-            .default_size([win.width() * 0.7, win.height() * 0.7])
-            .min_size([500.0, 200.0])
-            .open(&mut state.show_settings)
+            .default_size([win.width() * 0.75, win.height() * 0.75])
+            .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+            .min_size([730.0, 400.0])
             .show(ctx, |ui| {
                 egui::TopBottomPanel::top("settings_tab_selector")
                     .resizable(false)
@@ -78,46 +78,69 @@ impl SettingsWindow {
                             .unwrap()
                             .size = 20.0;
 
-                        ui.horizontal(|ui| {
-                            ui.selectable_value(
-                                &mut state.settings_tab,
-                                SettingsTab::Visual,
-                                "\u{1f4bb} Visual",
-                            );
-                            ui.selectable_value(
-                                &mut state.settings_tab,
-                                SettingsTab::Midi,
-                                "\u{1f3b5} MIDI",
-                            );
-                            ui.selectable_value(
-                                &mut state.settings_tab,
-                                SettingsTab::Synth,
-                                "\u{1f3b9} Synth",
-                            );
-                            ui.add_enabled_ui(
-                                settings.synth.synth == Synth::XSynth
-                                    || (settings.synth.synth == Synth::Kdmapi
-                                        && !settings.synth.kdmapi.use_om_sflist),
-                                |ui| {
-                                    ui.selectable_value(
-                                        &mut state.settings_tab,
-                                        SettingsTab::SoundFonts,
-                                        "\u{1f50a} SoundFonts",
-                                    )
-                                },
-                            );
+                        ui.columns(4, |columns| {
+                            columns[0].vertical_centered_justified(|ui| {
+                                ui.selectable_value(
+                                    &mut state.settings_tab,
+                                    SettingsTab::Visual,
+                                    "\u{1f4bb} Visual",
+                                )
+                            });
+                            columns[1].vertical_centered_justified(|ui| {
+                                ui.selectable_value(
+                                    &mut state.settings_tab,
+                                    SettingsTab::Midi,
+                                    "\u{1f3b5} MIDI",
+                                )
+                            });
+                            columns[2].vertical_centered_justified(|ui| {
+                                ui.selectable_value(
+                                    &mut state.settings_tab,
+                                    SettingsTab::Synth,
+                                    "\u{1f3b9} Synth",
+                                )
+                            });
+                            columns[3].vertical_centered_justified(|ui| {
+                                ui.add_enabled_ui(
+                                    settings.synth.synth == Synth::XSynth
+                                        || (settings.synth.synth == Synth::Kdmapi
+                                            && !settings.synth.kdmapi.use_om_sflist),
+                                    |ui| {
+                                        ui.selectable_value(
+                                            &mut state.settings_tab,
+                                            SettingsTab::SoundFonts,
+                                            "\u{1f50a} SoundFonts",
+                                        )
+                                    },
+                                )
+                            });
                         });
-                        ui.add_space(4.0);
+                        ui.add_space(8.0);
                     });
 
                 egui::TopBottomPanel::bottom("settings_save_panel")
                     .resizable(false)
                     .show_inside(ui, |ui| {
-                        ui.add_space(4.0);
-                        ui.centered_and_justified(|ui| {
-                            if ui.button("Save").clicked() {
-                                settings.save_to_file();
-                            }
+                        ui.add_space(8.0);
+                        ui.columns(2, |columns| {
+                            columns[0].with_layout(
+                                egui::Layout::top_down(egui::Align::RIGHT),
+                                |ui| {
+                                    if ui.button("\u{1F4BE} Save").clicked() {
+                                        settings
+                                            .save_to_file()
+                                            .unwrap_or_else(|e| state.errors.error(&e));
+                                    }
+                                },
+                            );
+                            columns[1].with_layout(
+                                egui::Layout::top_down(egui::Align::LEFT),
+                                |ui| {
+                                    if ui.button("\u{2716} Close").clicked() {
+                                        state.show_settings = false;
+                                    }
+                                },
+                            );
                         });
                     });
 
@@ -126,30 +149,24 @@ impl SettingsWindow {
                     egui::ScrollArea::vertical().animated(true).show(ui, |ui| {
                         match state.settings_tab {
                             SettingsTab::Visual => self.show_visual_settings(ui, settings, width),
-                            SettingsTab::Midi => self.show_midi_settings(ui, settings, width),
-                            SettingsTab::Synth => self.show_synth_settings(
-                                ui,
-                                settings,
-                                width,
-                                synth,
-                                state.loading_status.clone(),
-                            ),
-                            SettingsTab::SoundFonts => self.show_soundfont_settings(
-                                ui,
-                                settings,
-                                synth,
-                                state.loading_status.clone(),
-                            ),
+                            SettingsTab::Midi => {
+                                self.show_midi_settings(ui, settings, state, width)
+                            }
+                            SettingsTab::Synth => {
+                                self.show_synth_settings(ui, settings, state, width)
+                            }
+                            SettingsTab::SoundFonts => self.sf_list.show(ui, settings, state),
                         }
                     })
                 });
             });
     }
 
-    pub fn load_palettes(&mut self, settings: &mut WasabiSettings) {
+    pub fn load_palettes(&mut self, settings: &mut WasabiSettings) -> Result<(), WasabiError> {
         self.palettes.clear();
 
-        let files = std::fs::read_dir(WasabiSettings::get_palettes_dir()).unwrap();
+        let files = std::fs::read_dir(WasabiSettings::get_palettes_dir())
+            .map_err(|e| WasabiError::FilesystemError(e))?;
 
         for file in files.filter_map(|i| i.ok()) {
             if let Ok(ftype) = file.file_type() {
@@ -163,33 +180,42 @@ impl SettingsWindow {
             }
         }
 
-        // TODO: Test if the selected is valid
-        //let _ = crate::midi::MIDIColor::new_vec_from_settings(1, &settings.midi);
+        Ok(())
     }
 
-    pub fn load_midi_devices(&mut self, settings: &mut WasabiSettings) {
+    pub fn load_midi_devices(&mut self, settings: &mut WasabiSettings) -> Result<(), WasabiError> {
         self.midi_devices.clear();
-        if let Ok(con) = midir::MidiOutput::new("wasabi") {
-            let ports = con.ports();
-            for port in ports.iter() {
-                if let Ok(name) = con.port_name(&port) {
-                    self.midi_devices.push(MidiDevice {
-                        name,
-                        selected: false,
-                    });
-                }
-            }
+        let con = midir::MidiOutput::new("wasabi")
+            .map_err(|e| WasabiError::MidiOutError(format!("{e:?}")))?;
+
+        for port in con.ports().iter() {
+            let name = con
+                .port_name(&port)
+                .map_err(|e| WasabiError::MidiOutError(format!("{e:?}")))?;
+            self.midi_devices.push(MidiDevice {
+                name,
+                selected: false,
+            });
+        }
+
+        if self.midi_devices.is_empty() {
+            settings.synth.synth = Synth::None;
+            return Err(WasabiError::MidiOutError(
+                "No MIDI Out devices found.".into(),
+            ));
         }
 
         let saved = settings.synth.midi_device.clone();
         if let Some(found) = self.midi_devices.iter_mut().find(|d| d.name == saved) {
             found.selected = true;
-            return;
+            return Ok(());
         }
 
         if !self.midi_devices.is_empty() {
             self.midi_devices[0].selected = true;
             settings.synth.midi_device = self.midi_devices[0].name.clone();
         }
+
+        Ok(())
     }
 }

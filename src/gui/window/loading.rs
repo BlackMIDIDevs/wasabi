@@ -1,4 +1,4 @@
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 
 use egui::Context;
 
@@ -11,8 +11,8 @@ struct StatusInfoHolder {
 pub struct LoadingStatus(RwLock<Option<StatusInfoHolder>>);
 
 impl LoadingStatus {
-    pub fn new() -> Self {
-        Self(RwLock::new(None))
+    pub fn new() -> Arc<Self> {
+        Arc::new(Self(RwLock::new(None)))
     }
 
     pub fn create(&self, title: String, message: String) {

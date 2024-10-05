@@ -36,6 +36,7 @@ impl MidiAudioPlayer for KdmapiPlayer {
         &mut self,
         _soundfonts: &Vec<WasabiSoundfont>,
         _loading_status: Arc<LoadingStatus>,
+        _errors: Arc<GuiMessageSystem>,
     ) {
         if !self.use_om_list {
             // TODO: Create OM compatible SF list to be sent through "LoadCustomSoundFontsList"

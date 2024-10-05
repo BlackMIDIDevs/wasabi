@@ -16,6 +16,8 @@ mod migrations;
 
 pub use enums::*;
 
+use crate::gui::window::WasabiError;
+
 // region: gui
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -52,7 +54,7 @@ impl Default for StatisticsSettings {
         Self {
             border: true,
             floating: true,
-            opacity: 0.8,
+            opacity: 0.5,
             order: Statistics::iter().map(|i| (*i, true)).collect(),
         }
     }
@@ -179,48 +181,66 @@ pub struct WasabiSettings {
 impl WasabiSettings {
     const VERSION_TEXT: &str = "# DON'T EDIT THIS LINE; Version: 2\n";
 
-    pub fn new_or_load() -> Self {
+    pub fn new_or_load() -> Result<Self, WasabiError> {
+        let mut err = WasabiError::SettingsError("Unknown".into());
+
         let config_path = Self::get_config_path();
+        let old_config_path = Self::get_old_config_path();
+
+        if old_config_path.exists() {
+            std::fs::rename(old_config_path, &config_path)
+                .map_err(|e| WasabiError::FilesystemError(e))?;
+        }
+
         if !Path::new(&config_path).exists() {
-            return Self::load_and_save_defaults();
+            return Ok(Self::load_and_save_defaults()?);
         } else if let Ok(config) = fs::read_to_string(&config_path) {
             if config.starts_with(Self::VERSION_TEXT) {
                 let offset = Self::VERSION_TEXT.len();
-                if let Ok(config) = serde_json::from_str(&config[offset..]) {
-                    return config;
+                match serde_json::from_str(&config[offset..]) {
+                    Ok(config) => return Ok(config),
+                    Err(e) => err = WasabiError::SettingsError(e.to_string()),
                 }
             } else if config.starts_with("# DON'T EDIT THIS LINE; Version: 1") {
-                if let Ok(cfg) = migrations::WasabiConfigFileV1::migrate_to_v2(config) {
-                    cfg.save_to_file();
-                    return cfg;
+                match migrations::WasabiConfigFileV1::migrate_to_v2(config) {
+                    Ok(cfg) => {
+                        cfg.save_to_file()?;
+                        return Ok(cfg);
+                    }
+                    Err(e) => err = WasabiError::SettingsError(e.to_string()),
                 }
             } else {
-                if let Ok(v1) = migrations::WasabiConfigFileV0::migrate_to_v1(config) {
-                    let cfg = migrations::WasabiConfigFileV1::migrate_to_v2_raw(v1);
-                    cfg.save_to_file();
-                    return cfg;
+                match migrations::WasabiConfigFileV0::migrate_to_v1(config) {
+                    Ok(v1) => {
+                        let cfg = migrations::WasabiConfigFileV1::migrate_to_v2_raw(v1);
+                        cfg.save_to_file()?;
+                        return Ok(cfg);
+                    }
+                    Err(e) => err = WasabiError::SettingsError(e.to_string()),
                 }
             }
         }
 
-        println!("Error loading config. Resetting.");
-        Self::load_and_save_defaults()
+        Err(err)
     }
 
-    pub fn save_to_file(&self) {
+    pub fn save_to_file(&self) -> Result<(), WasabiError> {
         let config_path = Self::get_config_path();
-        let cfg: String = serde_json::to_string_pretty(&self).unwrap();
+        let cfg: String = serde_json::to_string_pretty(&self)
+            .map_err(|e| WasabiError::SettingsError(e.to_string()))?;
         if let Ok(mut file) = fs::File::create(&config_path) {
-            file.write_all(Self::VERSION_TEXT.as_bytes()).unwrap();
+            file.write_all(Self::VERSION_TEXT.as_bytes())
+                .map_err(|e| WasabiError::FilesystemError(e))?;
             file.write_all(cfg.as_bytes())
                 .expect("Error creating config");
         }
+        Ok(())
     }
 
-    fn load_and_save_defaults() -> Self {
+    fn load_and_save_defaults() -> Result<Self, WasabiError> {
         let cfg = Self::default();
-        Self::save_to_file(&cfg);
-        cfg
+        Self::save_to_file(&cfg)?;
+        Ok(cfg)
     }
 
     fn get_config_dir() -> PathBuf {
@@ -237,6 +257,13 @@ impl WasabiSettings {
     }
 
     fn get_config_path() -> PathBuf {
+        let mut path = Self::get_config_dir();
+        path.push("wasabi-config.json");
+
+        path
+    }
+
+    fn get_old_config_path() -> PathBuf {
         let mut path = Self::get_config_dir();
         path.push("wasabi-config.toml");
 

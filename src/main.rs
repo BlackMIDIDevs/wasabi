@@ -40,9 +40,18 @@ pub fn main() {
     event_loop.set_control_flow(ControlFlow::Poll);
 
     // Load the settings values
-    let mut settings = WasabiSettings::new_or_load();
-    settings.save_to_file();
-    let mut wasabi_state = WasabiState::default();
+    let mut wasabi_state = WasabiState::new();
+    let mut settings = WasabiSettings::new_or_load().unwrap_or_else(|e| {
+        wasabi_state.errors.error(&e);
+        WasabiSettings::default()
+    });
+    settings
+        .save_to_file()
+        .unwrap_or_else(|e| wasabi_state.errors.error(&e));
+
+    if settings.gui.check_for_updates {
+        utils::check_for_updates(&wasabi_state);
+    }
 
     // Create renderer for our scene & ui
     let mut renderer = Renderer::new(&event_loop, "Wasabi");
@@ -89,7 +98,7 @@ pub fn main() {
                             target.exit();
                         }
                         WindowEvent::DroppedFile(path) => {
-                            gui_state.load_midi(path, &mut settings, &wasabi_state);
+                            gui_state.load_midi(path, &mut settings, &mut wasabi_state);
                         }
                         WindowEvent::RedrawRequested => {
                             renderer.render(|frame, future| {

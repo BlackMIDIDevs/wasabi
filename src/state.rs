@@ -1,6 +1,9 @@
 use std::{path::PathBuf, sync::Arc};
 
-use crate::gui::window::LoadingStatus;
+use crate::{
+    audio_playback::{EmptyPlayer, MidiAudioPlayer, WasabiAudioPlayer},
+    gui::window::{GuiMessageSystem, LoadingStatus},
+};
 
 #[derive(Default, PartialEq)]
 pub enum SettingsTab {
@@ -12,12 +15,16 @@ pub enum SettingsTab {
 }
 
 pub struct WasabiState {
+    pub synth: Arc<WasabiAudioPlayer>,
+
     pub fullscreen: bool,
+
+    pub errors: Arc<GuiMessageSystem>,
+    pub loading_status: Arc<LoadingStatus>,
 
     pub panel_pinned: bool,
     pub panel_popup_id: egui::Id,
     pub stats_visible: bool,
-    pub loading_status: Arc<LoadingStatus>,
 
     pub show_settings: bool,
     pub show_shortcuts: bool,
@@ -25,18 +32,27 @@ pub struct WasabiState {
 
     pub settings_tab: SettingsTab,
 
-    pub last_location: PathBuf,
+    pub last_midi_location: PathBuf,
+    pub last_sf_location: PathBuf,
 }
 
-impl Default for WasabiState {
-    fn default() -> Self {
+impl WasabiState {
+    pub fn new() -> Self {
+        let loading_status = LoadingStatus::new();
+        let errors = GuiMessageSystem::new();
+        let synth: Box<dyn MidiAudioPlayer> = Box::new(EmptyPlayer::new());
+
         Self {
+            synth: WasabiAudioPlayer::new(synth),
+
             fullscreen: false,
+
+            errors,
+            loading_status,
 
             panel_pinned: true,
             panel_popup_id: egui::Id::new("options_popup"),
             stats_visible: true,
-            loading_status: Arc::new(LoadingStatus::new()),
 
             show_settings: false,
             show_shortcuts: false,
@@ -44,7 +60,8 @@ impl Default for WasabiState {
 
             settings_tab: SettingsTab::default(),
 
-            last_location: PathBuf::default(),
+            last_midi_location: PathBuf::default(),
+            last_sf_location: PathBuf::default(),
         }
     }
 }

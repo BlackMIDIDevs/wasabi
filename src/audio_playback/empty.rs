@@ -23,6 +23,7 @@ impl MidiAudioPlayer for EmptyPlayer {
         &mut self,
         _soundfonts: &Vec<WasabiSoundfont>,
         _loading_status: Arc<LoadingStatus>,
+        _errors: Arc<GuiMessageSystem>,
     ) {
     }
 }

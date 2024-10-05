@@ -73,7 +73,7 @@ impl GuiWasabiWindow {
                         {
                             if let Some(midi) = self.midi_file.take().as_mut() {
                                 midi.timer_mut().pause();
-                                self.synth.reset();
+                                state.synth.reset();
                             }
                         }
 
