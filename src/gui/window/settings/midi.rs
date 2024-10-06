@@ -170,7 +170,8 @@ impl SettingsWindow {
                 open::that(WasabiSettings::get_palettes_dir()).unwrap_or_default();
             }
             ui.separator();
-            ui.checkbox(&mut settings.midi.randomize_palette, " Randomize Palette");
+            ui.checkbox(&mut settings.midi.randomize_palette, " Randomize Palette")
+                .on_hover_text("Does not affect \"Rainbow\" and \"Random\" palettes.");
         });
     }
 }

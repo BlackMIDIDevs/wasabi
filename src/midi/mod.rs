@@ -13,8 +13,7 @@ use std::{fs::File, path::PathBuf, time::UNIX_EPOCH};
 use enum_dispatch::enum_dispatch;
 use image::{DynamicImage, GenericImageView, ImageReader};
 use palette::{convert::FromColorUnclamped, Hsv, Srgb};
-use rand::seq::SliceRandom;
-use rand::thread_rng;
+use rand::seq::IteratorRandom;
 use rand::Rng;
 
 pub use cake::{blocks::CakeBlock, intvec4::IntVector4, CakeMIDIFile, CakeSignature};
@@ -132,24 +131,34 @@ impl MIDIColor {
         vec
     }
 
-    pub fn new_vec_from_palette(tracks: usize, image: DynamicImage) -> Vec<Self> {
-        image
-            .to_rgb8()
+    pub fn new_vec_from_palette(tracks: usize, image: DynamicImage, randomize: bool) -> Vec<Self> {
+        let image = image.to_rgb8();
+        let all_colors = image
             .pixels()
             .into_iter()
-            .map(|p| Self::new(p.0[0], p.0[1], p.0[2]))
-            .cycle()
-            .take(tracks * 16)
-            .collect()
+            .map(|p| Self::new(p.0[0], p.0[1], p.0[2]));
+
+        let num = tracks * 16;
+        if randomize {
+            let mut rng = rand::thread_rng();
+            all_colors
+                .choose_multiple(&mut rng, num)
+                .into_iter()
+                .cycle()
+                .take(num)
+                .collect()
+        } else {
+            all_colors.cycle().take(num).collect()
+        }
     }
 
     pub fn new_vec_from_settings(
         tracks: usize,
         settings: &MidiSettings,
     ) -> Result<Vec<Self>, WasabiError> {
-        let mut palette = match settings.colors {
-            Colors::Rainbow => MIDIColor::new_vec(tracks),
-            Colors::Random => MIDIColor::new_random_vec(tracks),
+        match settings.colors {
+            Colors::Rainbow => Ok(MIDIColor::new_vec(tracks)),
+            Colors::Random => Ok(MIDIColor::new_random_vec(tracks)),
             Colors::Palette => {
                 let path = &settings.palette_path;
                 if path.exists() {
@@ -163,7 +172,11 @@ impl MIDIColor {
                         .map_err(|e| WasabiError::PaletteError(e.to_string()))?;
 
                     if image.dimensions().0 == 16 {
-                        MIDIColor::new_vec_from_palette(tracks, image)
+                        Ok(MIDIColor::new_vec_from_palette(
+                            tracks,
+                            image,
+                            settings.randomize_palette,
+                        ))
                     } else {
                         return Err(WasabiError::PaletteError(format!(
                             "Palette has invalid dimensions: {path:?}"
@@ -175,13 +188,7 @@ impl MIDIColor {
                     )));
                 }
             }
-        };
-
-        if settings.randomize_palette {
-            palette.shuffle(&mut thread_rng());
         }
-
-        Ok(palette)
     }
 
     pub fn as_u32(&self) -> u32 {
