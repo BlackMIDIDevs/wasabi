@@ -55,6 +55,7 @@ impl WasabiAudioPlayer {
 
     pub fn configure(&self, settings: &SynthSettings) {
         self.player.write().unwrap().configure(settings);
+        // TODO: realtime options
     }
 
     pub fn set_soundfonts(&self, soundfonts: &Vec<WasabiSoundfont>, state: &WasabiState) {

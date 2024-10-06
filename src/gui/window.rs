@@ -97,7 +97,7 @@ impl GuiWasabiWindow {
             style.visuals.override_text_color = Some(egui::Color32::from_rgb(210, 210, 210));
 
             style.spacing.menu_margin = egui::Margin::same(8.0);
-            style.spacing.interact_size.y = 26.0;
+            style.spacing.interact_size.y = 22.0;
         });
 
         // Set fonts
@@ -128,14 +128,14 @@ impl GuiWasabiWindow {
         // Set font size
         let mut style = (*ctx.style()).clone();
         style.text_styles = [
-            (egui::TextStyle::Heading, FontId::new(26.0, Proportional)),
-            (egui::TextStyle::Body, FontId::new(16.0, Proportional)),
+            (egui::TextStyle::Heading, FontId::new(22.0, Proportional)),
+            (egui::TextStyle::Body, FontId::new(14.0, Proportional)),
             (egui::TextStyle::Monospace, FontId::new(12.0, Monospace)),
-            (egui::TextStyle::Button, FontId::new(16.0, Proportional)),
-            (egui::TextStyle::Small, FontId::new(12.0, Proportional)),
+            (egui::TextStyle::Button, FontId::new(14.0, Proportional)),
+            (egui::TextStyle::Small, FontId::new(10.0, Proportional)),
             (
                 egui::TextStyle::Name("monospace big".into()),
-                FontId::new(22.0, Monospace),
+                FontId::new(20.0, Monospace),
             ),
         ]
         .into();

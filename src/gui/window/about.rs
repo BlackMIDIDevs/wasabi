@@ -7,7 +7,7 @@ impl GuiWasabiWindow {
     pub fn show_about(&mut self, ctx: &egui::Context, state: &mut WasabiState) {
         let frame =
             egui::Frame::inner_margin(egui::Frame::window(ctx.style().as_ref()), super::WIN_MARGIN);
-        let size = [600.0, 450.0];
+        let size = [600.0, 400.0];
 
         let mut updcheck = false;
 
@@ -23,9 +23,9 @@ impl GuiWasabiWindow {
             .show(ctx, |ui| {
                 ui.add_space(4.0);
                 ui.horizontal(|ui| {
-                    let image_size = 100.0;
+                    let image_size = 84.0;
 
-                    let title_size = 46.0;
+                    let title_size = 40.0;
                     let titleid = egui::FontId {
                         size: title_size,
                         ..Default::default()

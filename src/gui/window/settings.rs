@@ -65,9 +65,9 @@ impl SettingsWindow {
             .title_bar(true)
             .enabled(true)
             .frame(frame)
-            .default_size([win.width() * 0.75, win.height() * 0.75])
+            .default_size([win.width() * 0.7, win.height() * 0.7])
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
-            .min_size([730.0, 400.0])
+            .min_size([700.0, 400.0])
             .show(ctx, |ui| {
                 egui::TopBottomPanel::top("settings_tab_selector")
                     .resizable(false)
@@ -76,7 +76,7 @@ impl SettingsWindow {
                             .text_styles
                             .get_mut(&egui::TextStyle::Button)
                             .unwrap()
-                            .size = 20.0;
+                            .size = 18.0;
 
                         ui.columns(4, |columns| {
                             columns[0].vertical_centered_justified(|ui| {

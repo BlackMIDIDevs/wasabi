@@ -174,6 +174,7 @@ impl MIDIColor {
                 }
             }
         }
+        // TODO: palette randomize
     }
 
     pub fn as_u32(&self) -> u32 {

@@ -60,7 +60,7 @@ impl LoadingStatus {
                         ui.add(
                             egui::Image::new(egui::include_image!("../../../assets/logo.svg"))
                                 .rotate(rotation, egui::Vec2::splat(0.5))
-                                .fit_to_exact_size([64.0, 64.0].into()),
+                                .fit_to_exact_size([56.0, 56.0].into()),
                         );
                         ui.label(&info.message);
                     });
