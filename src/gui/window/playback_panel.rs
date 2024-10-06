@@ -40,6 +40,11 @@ impl GuiWasabiWindow {
             }
         });
 
+        // If panel is collapsed, skip rendering it.
+        if height < f32::EPSILON {
+            return 0.0;
+        }
+
         let frame = egui::Frame::side_top_panel(&ctx.style()).inner_margin(super::WIN_MARGIN);
         let response = egui::Window::new("panel")
             .constrain(false)
