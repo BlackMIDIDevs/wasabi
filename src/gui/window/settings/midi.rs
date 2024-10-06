@@ -169,6 +169,8 @@ impl SettingsWindow {
             if ui.button("Open Palettes Directory").clicked() {
                 open::that(WasabiSettings::get_palettes_dir()).unwrap_or_default();
             }
+            ui.separator();
+            ui.checkbox(&mut settings.midi.randomize_palette, " Randomize Palette");
         });
     }
 }

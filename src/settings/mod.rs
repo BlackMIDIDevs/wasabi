@@ -92,6 +92,7 @@ pub struct MidiSettings {
     pub parsing: MidiParsing,
     pub start_delay: f64,
     pub colors: Colors,
+    pub randomize_palette: bool,
     pub palette_path: PathBuf,
 }
 
@@ -101,6 +102,7 @@ impl Default for MidiSettings {
             parsing: MidiParsing::Cake,
             start_delay: 2.0,
             colors: Colors::Rainbow,
+            randomize_palette: false,
             palette_path: PathBuf::new(),
         }
     }

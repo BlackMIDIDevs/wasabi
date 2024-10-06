@@ -13,6 +13,8 @@ use std::{fs::File, path::PathBuf, time::UNIX_EPOCH};
 use enum_dispatch::enum_dispatch;
 use image::{DynamicImage, GenericImageView, ImageReader};
 use palette::{convert::FromColorUnclamped, Hsv, Srgb};
+use rand::seq::SliceRandom;
+use rand::thread_rng;
 use rand::Rng;
 
 pub use cake::{blocks::CakeBlock, intvec4::IntVector4, CakeMIDIFile, CakeSignature};
@@ -145,9 +147,9 @@ impl MIDIColor {
         tracks: usize,
         settings: &MidiSettings,
     ) -> Result<Vec<Self>, WasabiError> {
-        match settings.colors {
-            Colors::Rainbow => Ok(MIDIColor::new_vec(tracks)),
-            Colors::Random => Ok(MIDIColor::new_random_vec(tracks)),
+        let mut palette = match settings.colors {
+            Colors::Rainbow => MIDIColor::new_vec(tracks),
+            Colors::Random => MIDIColor::new_random_vec(tracks),
             Colors::Palette => {
                 let path = &settings.palette_path;
                 if path.exists() {
@@ -161,20 +163,25 @@ impl MIDIColor {
                         .map_err(|e| WasabiError::PaletteError(e.to_string()))?;
 
                     if image.dimensions().0 == 16 {
-                        Ok(MIDIColor::new_vec_from_palette(tracks, image))
+                        MIDIColor::new_vec_from_palette(tracks, image)
                     } else {
-                        Err(WasabiError::PaletteError(format!(
+                        return Err(WasabiError::PaletteError(format!(
                             "Palette has invalid dimensions: {path:?}"
-                        )))
+                        )));
                     }
                 } else {
-                    Err(WasabiError::PaletteError(format!(
+                    return Err(WasabiError::PaletteError(format!(
                         "Palette does not exist: {path:?}"
-                    )))
+                    )));
                 }
             }
+        };
+
+        if settings.randomize_palette {
+            palette.shuffle(&mut thread_rng());
         }
-        // TODO: palette randomize
+
+        Ok(palette)
     }
 
     pub fn as_u32(&self) -> u32 {
