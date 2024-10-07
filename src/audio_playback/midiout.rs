@@ -1,5 +1,7 @@
 use std::thread;
 
+use crate::gui::window::WasabiError;
+
 use super::*;
 use crossbeam_channel::Sender;
 use midir::MidiOutput;
@@ -9,11 +11,12 @@ pub struct MidiDevicePlayer {
 }
 
 impl MidiDevicePlayer {
-    pub fn new(device: String) -> Result<Self, String> {
-        let out = MidiOutput::new("wasabi").map_err(|e| format!("{:?}", e))?;
+    pub fn new(device: String) -> Result<Self, WasabiError> {
+        let out = MidiOutput::new("wasabi")
+            .map_err(|e| WasabiError::SynthError(format!("MIDI Out Error: {e}")))?;
         let ports = out.ports();
         if ports.is_empty() {
-            return Err("No MIDI devices available.".into());
+            return Err(WasabiError::SynthError("No MIDI devices available.".into()));
         }
 
         let find = ports.iter().find(|d| {
@@ -26,7 +29,7 @@ impl MidiDevicePlayer {
         let found = find.unwrap_or(&ports[0]);
         let mut connection = out
             .connect(found, "wasabi")
-            .map_err(|e| format!("{:?}", e))?;
+            .map_err(|e| WasabiError::SynthError(format!("MIDI Out Error: {e}")))?;
 
         let (sender, receiver) = crossbeam_channel::bounded::<u32>(1000);
 
@@ -43,15 +46,9 @@ impl MidiDevicePlayer {
 
 impl MidiAudioPlayer for MidiDevicePlayer {
     fn reset(&mut self) {
-        // Send "All sounds off" and "Reset controllers" to all channels
-        for ch in 0..16 {
-            let code: u32 = 0xB << 4 | ch;
-            for cc in [120, 121] {
-                let z = 0 << 8;
-                let cc = cc << 8 | z;
-                let cc = cc | code;
-                self.push_event(cc);
-            }
+        let reset = crate::utils::create_reset_midi_messages();
+        for ev in reset {
+            self.push_event(ev);
         }
     }
 

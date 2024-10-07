@@ -16,7 +16,7 @@ vulkano-win = { git = "https://github.com/vulkano-rs/vulkano.git", rev = "4a77d3
 midi-toolkit-rs = "0.1.0"
 xsynth-core = { version = "0.3.1", features = ["serde"] }
 xsynth-realtime = { version = "0.3.1", features = ["serde"] }
-kdmapi-rs = { package = "kdmapi", git = "https://github.com/arduano/kdmapi.git", rev = "4116b00" }
+kdmapi-rs = { package = "kdmapi", git = "https://github.com/MyBlackMIDIScore/kdmapi-rs.git", rev = "3215f5e" }
 serde = "1.0.210"
 serde_derive = "1.0.210"
 serde_json = "1.0"

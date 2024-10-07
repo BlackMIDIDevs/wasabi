@@ -2045,7 +2045,7 @@ dependencies = [
 [[package]]
 name = "kdmapi"
 version = "0.1.0"
-source = "git+https://github.com/arduano/kdmapi.git?rev=4116b00#4116b0095c48e0cbcbb003f2ee453cf0c6e8bc4f"
+source = "git+https://github.com/MyBlackMIDIScore/kdmapi-rs.git?rev=3215f5e#3215f5e822be5bb7f63f49d39dafb71e0093d3d6"
 dependencies = [
  "lazy_static",
  "libloading 0.7.4",

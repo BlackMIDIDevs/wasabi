@@ -245,7 +245,7 @@ impl WasabiSettings {
         Ok(cfg)
     }
 
-    fn get_config_dir() -> PathBuf {
+    pub fn get_config_dir() -> PathBuf {
         if let Some(base_dirs) = BaseDirs::new() {
             let mut path: PathBuf = base_dirs.config_dir().to_path_buf();
             path.push("wasabi");

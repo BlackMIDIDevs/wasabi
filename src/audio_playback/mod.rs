@@ -55,7 +55,6 @@ impl WasabiAudioPlayer {
 
     pub fn configure(&self, settings: &SynthSettings) {
         self.player.write().unwrap().configure(settings);
-        // TODO: realtime options
     }
 
     pub fn set_soundfonts(&self, soundfonts: &Vec<WasabiSoundfont>, state: &WasabiState) {
@@ -77,18 +76,24 @@ impl WasabiAudioPlayer {
     ) -> Box<dyn MidiAudioPlayer> {
         let mut synth: Box<dyn MidiAudioPlayer> = match settings.synth.synth {
             Synth::XSynth => Box::new(XSynthPlayer::new(settings.synth.xsynth.config.clone())),
-            Synth::Kdmapi => Box::new(KdmapiPlayer::new()),
-            Synth::MidiDevice => {
-                if let Ok(midiout) = MidiDevicePlayer::new(settings.synth.midi_device.clone()) {
-                    Box::new(midiout)
-                } else {
+            Synth::Kdmapi => match KdmapiPlayer::new() {
+                Ok(kdmapi) => Box::new(kdmapi),
+                Err(e) => {
+                    errors.error(&e);
                     Box::new(EmptyPlayer::new())
                 }
-            }
+            },
+            Synth::MidiDevice => match MidiDevicePlayer::new(settings.synth.midi_device.clone()) {
+                Ok(midiout) => Box::new(midiout),
+                Err(e) => {
+                    errors.error(&e);
+                    Box::new(EmptyPlayer::new())
+                }
+            },
             Synth::None => Box::new(EmptyPlayer::new()),
         };
-        synth.set_soundfonts(&settings.synth.soundfonts, loading_status, errors);
         synth.configure(&settings.synth);
+        synth.set_soundfonts(&settings.synth.soundfonts, loading_status, errors);
 
         synth
     }

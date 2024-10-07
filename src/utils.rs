@@ -4,6 +4,9 @@ use std::{collections::HashMap, ops::RangeInclusive};
 
 use crate::{gui::window::WasabiError, state::WasabiState};
 
+#[cfg(target_os = "windows")]
+use crate::settings::WasabiSoundfont;
+
 pub const NOTE_SPEED_RANGE: RangeInclusive<f64> = 8.0..=0.05;
 
 pub fn calculate_border_width(width_pixels: f32, keys_len: f32) -> f32 {
@@ -51,6 +54,7 @@ fn get_latest_version() -> Result<String, WasabiError> {
         current.into()
     })
 }
+
 pub fn check_for_updates(state: &WasabiState) {
     let current = format!("v{}", env!("CARGO_PKG_VERSION"));
     match get_latest_version() {
@@ -61,4 +65,47 @@ pub fn check_for_updates(state: &WasabiState) {
         }
         Err(e) => state.errors.error(&e),
     }
+}
+
+#[cfg(target_os = "windows")]
+pub fn create_om_sf_list(list: &Vec<WasabiSoundfont>) -> String {
+    let mut out = String::new();
+
+    for sf in list {
+        out += "sf.start\nsf.path = ";
+        out += sf.path.to_str().unwrap_or_default();
+        out += "\nsf.enabled = ";
+        out += if sf.enabled { "1" } else { "0" };
+        out += "\nsf.preload = 1\nsf.srcb = ";
+        let bank = match sf.options.bank {
+            Some(b) => b.to_string(),
+            None => "-1".into(),
+        };
+        out += &bank;
+        out += "\nsf.srcp = ";
+        let preset = match sf.options.preset {
+            Some(p) => p.to_string(),
+            None => "-1".into(),
+        };
+        out += &preset;
+        out += "\nsf.desb = 0\nsf.desp = -1\nsf.desblsb = 0\nsf.xgdrums = 0\nsf.end\n\n"
+    }
+
+    out
+}
+
+pub fn create_reset_midi_messages() -> Vec<u32> {
+    let mut out = Vec::new();
+
+    for ch in 0..16 {
+        let code: u32 = 0xB << 4 | ch;
+        for cc in [120, 121] {
+            let z = 0 << 8;
+            let cc = cc << 8 | z;
+            let cc = cc | code;
+            out.push(cc);
+        }
+    }
+
+    out
 }

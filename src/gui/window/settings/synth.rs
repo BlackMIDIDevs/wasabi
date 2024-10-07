@@ -89,7 +89,7 @@ impl SettingsWindow {
 
         match settings.synth.synth {
             Synth::XSynth => self.show_xsynth_settings(ui, settings, state, width),
-            Synth::Kdmapi => self.show_kdmapi_settings(ui, settings, width),
+            Synth::Kdmapi => self.show_kdmapi_settings(ui, settings, state, width),
             Synth::MidiDevice => self.show_mididevice_settings(ui, settings, state, width),
             Synth::None => {
                 ui.label("No Settings");

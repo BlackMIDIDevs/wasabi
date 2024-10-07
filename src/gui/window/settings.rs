@@ -186,23 +186,16 @@ impl SettingsWindow {
     pub fn load_midi_devices(&mut self, settings: &mut WasabiSettings) -> Result<(), WasabiError> {
         self.midi_devices.clear();
         let con = midir::MidiOutput::new("wasabi")
-            .map_err(|e| WasabiError::MidiOutError(format!("{e:?}")))?;
+            .map_err(|e| WasabiError::SynthError(format!("{e:?}")))?;
 
         for port in con.ports().iter() {
             let name = con
                 .port_name(&port)
-                .map_err(|e| WasabiError::MidiOutError(format!("{e:?}")))?;
+                .map_err(|e| WasabiError::SynthError(format!("{e:?}")))?;
             self.midi_devices.push(MidiDevice {
                 name,
                 selected: false,
             });
-        }
-
-        if self.midi_devices.is_empty() {
-            settings.synth.synth = Synth::None;
-            return Err(WasabiError::MidiOutError(
-                "No MIDI Out devices found.".into(),
-            ));
         }
 
         let saved = settings.synth.midi_device.clone();
