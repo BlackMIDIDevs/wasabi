@@ -5111,6 +5111,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
+ "spin_sleep",
  "time",
  "toml 0.8.19",
  "vulkano",

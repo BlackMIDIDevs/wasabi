@@ -118,7 +118,7 @@ pub fn draw_stats(
                     Statistics::Fps => ui.horizontal(|ui| {
                         ui.monospace("FPS:");
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                            ui.monospace(format!("{}", win.fps.get_fps().round()));
+                            ui.monospace(format!("{}", win.fps.get_fps()));
                         });
                     }),
                     Statistics::VoiceCount => ui.horizontal(|ui| {

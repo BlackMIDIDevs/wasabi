@@ -150,12 +150,6 @@ impl GuiWasabiWindow {
         state: &mut WasabiState,
     ) {
         let ctx = gui_state.renderer.gui.context();
-
-        let fps_limit = match settings.gui.fps_limit {
-            0 => None,
-            f => Some(f),
-        };
-        self.fps.update(fps_limit);
         Self::set_style(&ctx, settings);
 
         {
@@ -355,6 +349,13 @@ impl GuiWasabiWindow {
 
         // Render errors
         state.errors.show(&ctx);
+
+        let fps_limit = match settings.gui.fps_limit {
+            0 => None,
+            f => Some(f),
+        };
+        self.fps.set_limit(fps_limit);
+        self.fps.update();
     }
 
     pub fn open_midi_dialog(&mut self, state: &mut WasabiState) {

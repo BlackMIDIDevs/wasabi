@@ -1,31 +1,52 @@
-use std::{collections::VecDeque, time::Instant};
+use std::{
+    collections::VecDeque,
+    time::{Duration, Instant},
+};
 
-pub struct Fps(VecDeque<Instant>);
-
-const FPS_WINDOW: f64 = 0.5;
+pub struct Fps {
+    frames: VecDeque<Instant>,
+    limit: Option<usize>,
+    current: Instant,
+}
 
 impl Fps {
     pub fn new() -> Self {
-        Self(VecDeque::new())
+        Self {
+            frames: VecDeque::new(),
+            limit: None,
+            current: Instant::now(),
+        }
     }
 
-    pub fn update(&mut self, _limit: Option<usize>) {
-        self.0.push_back(Instant::now());
-        while let Some(front) = self.0.front() {
-            // TODO: FPS limit
-            if front.elapsed().as_secs_f64() > FPS_WINDOW {
-                self.0.pop_front();
+    pub fn set_limit(&mut self, limit: Option<usize>) {
+        self.limit = limit;
+    }
+
+    pub fn update(&mut self) {
+        self.frames.push_back(Instant::now());
+        while let Some(front) = self.frames.front() {
+            if front.elapsed() > Duration::from_secs(1) {
+                self.frames.pop_front();
             } else {
                 break;
             }
         }
+
+        if let Some(limit) = self.limit {
+            let elapsed = self.current.elapsed().as_secs_f64();
+            if self.frames.len() > limit {
+                let limit = 1.0 / limit as f64;
+                let should_wait = limit - elapsed;
+                if should_wait > 0.0 {
+                    spin_sleep::sleep(Duration::from_secs_f64(should_wait));
+                }
+            }
+        }
+
+        self.current = Instant::now();
     }
 
-    pub fn get_fps(&self) -> f64 {
-        if self.0.is_empty() {
-            0.0
-        } else {
-            self.0.len() as f64 / self.0.front().unwrap().elapsed().as_secs_f64()
-        }
+    pub fn get_fps(&self) -> usize {
+        self.frames.len()
     }
 }
