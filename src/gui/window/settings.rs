@@ -39,7 +39,7 @@ impl SettingsWindow {
     pub fn new(settings: &WasabiSettings) -> Self {
         let mut sf_list = EguiSFList::new();
         for sf in settings.synth.soundfonts.iter() {
-            sf_list.add_item(sf.clone());
+            sf_list.add_item(sf.clone(), false);
         }
 
         Self {

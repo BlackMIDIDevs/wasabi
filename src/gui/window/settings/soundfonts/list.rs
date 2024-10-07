@@ -15,7 +15,7 @@ use crate::{
     state::WasabiState,
 };
 
-use super::SoundfontConfigWindow;
+use super::show_sf_config;
 
 #[derive(Default, Clone, Serialize, Deserialize)]
 #[serde(default)]
@@ -23,6 +23,7 @@ pub struct SFListItem {
     pub item: WasabiSoundfont,
     pub id: usize,
     pub selected: bool,
+    pub config_visible: bool,
 }
 
 pub struct EguiSFList {
@@ -30,7 +31,6 @@ pub struct EguiSFList {
     id_count: usize,
 
     sf_picker: (Sender<PathBuf>, Receiver<PathBuf>),
-    sf_cfg_win: Vec<SoundfontConfigWindow>,
 }
 
 impl EguiSFList {
@@ -41,15 +41,15 @@ impl EguiSFList {
             list: Vec::new(),
             id_count: 0,
             sf_picker,
-            sf_cfg_win: Vec::new(),
         }
     }
 
-    pub fn add_item(&mut self, sf: WasabiSoundfont) {
+    pub fn add_item(&mut self, sf: WasabiSoundfont, show_cfg: bool) {
         let item = SFListItem {
             item: sf,
             id: self.id_count,
             selected: false,
+            config_visible: show_cfg,
         };
         self.list.push(item);
         self.id_count += 1;
@@ -69,7 +69,7 @@ impl EguiSFList {
             options: Default::default(),
         };
 
-        Ok(self.add_item(item))
+        Ok(self.add_item(item, true))
     }
 
     fn select_all(&mut self) {
@@ -91,8 +91,6 @@ impl EguiSFList {
             .into_iter()
             .filter(|item| !item.selected)
             .collect();
-
-        self.sf_cfg_win.clear();
     }
 
     fn move_selected_down(&mut self) {
@@ -115,7 +113,6 @@ impl EguiSFList {
 
     fn clear(&mut self) {
         self.list.clear();
-        self.sf_cfg_win.clear();
     }
 
     fn as_vec(&self) -> Vec<WasabiSoundfont> {
@@ -128,6 +125,7 @@ impl EguiSFList {
         settings: &mut WasabiSettings,
         state: &mut WasabiState,
     ) {
+        // Set keyboard shortcuts
         let events = ui.input(|i| i.events.clone());
         for event in &events {
             if let egui::Event::Key {
@@ -151,6 +149,7 @@ impl EguiSFList {
             }
         }
 
+        // Check for paths sent by the file picker
         {
             let recv = self.sf_picker.1.clone();
             if !recv.is_empty() {
@@ -169,20 +168,14 @@ impl EguiSFList {
             }
         }
 
-        self.sf_cfg_win = self
-            .sf_cfg_win
-            .clone()
-            .into_iter()
-            .filter(|item| item.visible)
-            .collect();
-
-        for cfg in self.sf_cfg_win.iter_mut() {
-            let index = self.list.iter().position(|item| item.id == cfg.id());
-            if let Some(index) = index {
-                cfg.show(ui.ctx(), &mut self.list[index]);
+        // Show config windows
+        for sf in self.list.iter_mut() {
+            if sf.config_visible {
+                show_sf_config(ui.ctx(), sf);
             }
         }
 
+        // Render action buttons
         egui::TopBottomPanel::bottom("bottom_panel")
             .resizable(false)
             .show_inside(ui, |ui| {
@@ -278,30 +271,8 @@ impl EguiSFList {
                 ui.small("Loading order is bottom to top. Double click on a soundfont to modify its options. Supported formats: SFZ, SF2");
             });
 
+        // Render the list
         egui::ScrollArea::both().show(ui, |ui| {
-            let events = ui.input(|i| i.events.clone());
-            for event in &events {
-                if let egui::Event::Key {
-                    key,
-                    modifiers,
-                    pressed,
-                    ..
-                } = event
-                {
-                    match *key {
-                        egui::Key::A => {
-                            if *pressed && modifiers.ctrl {
-                                self.select_all();
-                            }
-                        }
-                        egui::Key::Delete => {
-                            self.remove_selected_items();
-                        }
-                        _ => {}
-                    }
-                }
-            }
-
             TableBuilder::new(ui)
                 .striped(true)
                 .cell_layout(egui::Layout::centered_and_justified(
@@ -340,10 +311,8 @@ impl EguiSFList {
                                 if selectable.clicked() {
                                     item.selected = !item.selected;
                                 }
-                                if selectable.double_clicked()
-                                    && !self.sf_cfg_win.iter().any(|cfg| cfg.id() == item.id)
-                                {
-                                    self.sf_cfg_win.push(SoundfontConfigWindow::new(item.id))
+                                if selectable.double_clicked() {
+                                    item.config_visible = true;
                                 }
                             });
 
