@@ -1,6 +1,6 @@
 use egui_extras::{Column, TableBuilder};
 
-use crate::{audio_playback::WasabiAudioPlayer, settings::WasabiSettings, state::WasabiState};
+use crate::{settings::WasabiSettings, state::WasabiState};
 
 use super::SettingsWindow;
 
@@ -47,11 +47,11 @@ impl SettingsWindow {
                         }
                         if changed {
                             self.midi_devices = temp;
-                            state.synth.switch(WasabiAudioPlayer::create_synth(
-                                settings,
+                            state.synth.switch(
+                                &settings.synth,
                                 state.loading_status.clone(),
                                 state.errors.clone(),
-                            ));
+                            );
                         }
                     });
             });

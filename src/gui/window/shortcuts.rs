@@ -1,12 +1,11 @@
-use crate::state::WasabiState;
+use crate::{state::WasabiState, utils};
 
 use super::GuiWasabiWindow;
 
 impl GuiWasabiWindow {
     pub fn show_shortcuts(&mut self, ctx: &egui::Context, state: &mut WasabiState) {
-        let frame =
-            egui::Frame::inner_margin(egui::Frame::window(ctx.style().as_ref()), super::WIN_MARGIN);
-        let size = [400.0, 210.0];
+        let frame = utils::create_window_frame(ctx);
+        let size = [400.0, 200.0];
 
         egui::Window::new("Keyboard Shortcuts")
             .collapsible(false)

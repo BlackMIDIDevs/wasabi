@@ -101,8 +101,7 @@ impl InRamMIDIFile {
         settings: &MidiSettings,
     ) -> Result<Self, WasabiError> {
         let (file, signature) = open_file_and_signature(path)?;
-        let midi =
-            TKMIDIFile::open_from_stream(file, None).map_err(|e| WasabiError::MidiLoadError(e))?;
+        let midi = TKMIDIFile::open_from_stream(file, None).map_err(WasabiError::MidiLoadError)?;
 
         let ppq = midi.ppq();
         let merged = pipe!(

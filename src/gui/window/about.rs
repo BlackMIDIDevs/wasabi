@@ -1,13 +1,12 @@
-use crate::state::WasabiState;
+use crate::{state::WasabiState, utils};
 use std::env::consts::{ARCH, OS};
 
 use super::{GuiWasabiWindow, WasabiError};
 
 impl GuiWasabiWindow {
     pub fn show_about(&mut self, ctx: &egui::Context, state: &mut WasabiState) {
-        let frame =
-            egui::Frame::inner_margin(egui::Frame::window(ctx.style().as_ref()), super::WIN_MARGIN);
-        let size = [600.0, 400.0];
+        let frame = utils::create_window_frame(ctx);
+        let size = [600.0, 460.0];
 
         let mut updcheck = false;
 
@@ -90,8 +89,16 @@ impl GuiWasabiWindow {
                     .min_col_width(col_width)
                     .striped(true)
                     .show(ui, |ui| {
+                        ui.label("Vulkano Version:");
+                        ui.label("0.34");
+                        ui.end_row();
+
                         ui.label("Egui Version:");
                         ui.label("0.29");
+                        ui.end_row();
+
+                        ui.label("Winit Version:");
+                        ui.label("0.30");
                         ui.end_row();
 
                         ui.label("XSynth Version:");

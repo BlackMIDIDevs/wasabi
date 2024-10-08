@@ -5,6 +5,7 @@ use soundfonts::EguiSFList;
 use crate::{
     settings::{Colors, Synth, WasabiSettings},
     state::{SettingsTab, WasabiState},
+    utils,
 };
 
 use super::WasabiError;
@@ -55,8 +56,7 @@ impl SettingsWindow {
         settings: &mut WasabiSettings,
         state: &mut WasabiState,
     ) {
-        let frame =
-            egui::Frame::inner_margin(egui::Frame::window(ctx.style().as_ref()), super::WIN_MARGIN);
+        let frame = utils::create_window_frame(ctx);
         let win = ctx.available_rect();
 
         egui::Window::new("Settings")
@@ -166,7 +166,7 @@ impl SettingsWindow {
         self.palettes.clear();
 
         let files = std::fs::read_dir(WasabiSettings::get_palettes_dir())
-            .map_err(|e| WasabiError::FilesystemError(e))?;
+            .map_err(WasabiError::FilesystemError)?;
 
         for file in files.filter_map(|i| i.ok()) {
             if let Ok(ftype) = file.file_type() {
@@ -188,6 +188,7 @@ impl SettingsWindow {
         let con = midir::MidiOutput::new("wasabi")
             .map_err(|e| WasabiError::SynthError(format!("{e:?}")))?;
 
+        // Add all valid ports
         for port in con.ports().iter() {
             let name = con
                 .port_name(&port)
@@ -198,13 +199,11 @@ impl SettingsWindow {
             });
         }
 
+        // Select the device specified in settings if found, or select the first available
         let saved = settings.synth.midi_device.clone();
         if let Some(found) = self.midi_devices.iter_mut().find(|d| d.name == saved) {
             found.selected = true;
-            return Ok(());
-        }
-
-        if !self.midi_devices.is_empty() {
+        } else if !self.midi_devices.is_empty() {
             self.midi_devices[0].selected = true;
             settings.synth.midi_device = self.midi_devices[0].name.clone();
         }

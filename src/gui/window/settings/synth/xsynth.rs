@@ -19,24 +19,22 @@ impl SettingsWindow {
             .min_col_width(width / 2.0)
             .show(ui, |ui| {
                 let layer_limit_prev = settings.synth.xsynth.limit_layers;
-
-                ui.label("Enable Layer Limiting: ");
-                ui.checkbox(&mut settings.synth.xsynth.limit_layers, "");
-                ui.end_row();
-
                 let layer_count_prev = settings.synth.xsynth.layers;
 
                 ui.horizontal(|ui| {
                     ui.label("Layer Limit:");
                     ui.monospace("\u{2139}")
-                        .on_hover_text("One layer is one voice per key per channel.");
+                        .on_hover_text("One layer is one voice per key per channel.\nDisable for unlimited voices.");
                 });
-                ui.add_enabled(
-                    settings.synth.xsynth.limit_layers,
-                    egui::DragValue::new(&mut settings.synth.xsynth.layers)
-                        .speed(1)
-                        .range(1..=usize::MAX),
-                );
+                ui.horizontal(|ui| {
+                    ui.checkbox(&mut settings.synth.xsynth.limit_layers, "");
+                    ui.add_enabled(
+                        settings.synth.xsynth.limit_layers,
+                        egui::DragValue::new(&mut settings.synth.xsynth.layers)
+                            .speed(1)
+                            .range(1..=usize::MAX),
+                    );
+                });
                 ui.end_row();
 
                 if settings.synth.xsynth.layers != layer_count_prev

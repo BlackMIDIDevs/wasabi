@@ -56,8 +56,8 @@ impl MidiAudioPlayer for MidiDevicePlayer {
         self.sender.send(data).unwrap();
     }
 
-    fn voice_count(&self) -> u64 {
-        0
+    fn voice_count(&self) -> Option<u64> {
+        None
     }
 
     fn configure(&mut self, _settings: &SynthSettings) {}

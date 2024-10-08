@@ -199,6 +199,7 @@ impl EguiSFList {
                                         "Supported SoundFonts",
                                         &["sfz", "SFZ", "sf2", "SF2"],
                                     )
+                                    .set_title("Pick SoundFonts...")
                                     .set_directory(
                                         last_sf_location.parent().unwrap_or(Path::new("./")),
                                     )
@@ -268,7 +269,13 @@ impl EguiSFList {
                         }
                     });
                 });
-                ui.small("Loading order is bottom to top. Double click on a soundfont to modify its options. Supported formats: SFZ, SF2");
+                ui.vertical_centered(|ui| {
+                    ui.small(
+                        "Loading order is bottom to top. \
+                        Double click on a soundfont to modify its options. \
+                        Supported formats: SFZ, SF2",
+                    );
+                });
             });
 
         // Render the list
@@ -319,7 +326,7 @@ impl EguiSFList {
                             let bank_txt = if let Some(bank) = item.item.options.bank {
                                 format!("{}", bank)
                             } else {
-                                "None".to_owned()
+                                "-".to_owned()
                             };
                             row.col(|ui| {
                                 ui.label(bank_txt.to_string());
@@ -328,7 +335,7 @@ impl EguiSFList {
                             let preset_txt = if let Some(preset) = item.item.options.preset {
                                 format!("{}", preset)
                             } else {
-                                "None".to_owned()
+                                "-".to_owned()
                             };
                             row.col(|ui| {
                                 ui.label(preset_txt.to_string());

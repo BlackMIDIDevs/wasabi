@@ -4,7 +4,10 @@ use std::{
     thread,
 };
 
-use crate::{gui::window::WasabiError, settings::WasabiSoundfont};
+use crate::{
+    gui::window::{LoadingType, WasabiError},
+    settings::WasabiSoundfont,
+};
 
 use xsynth_core::{
     channel::{ChannelConfigEvent, ChannelEvent},
@@ -61,8 +64,8 @@ impl XSynthPlayer {
 }
 
 impl MidiAudioPlayer for XSynthPlayer {
-    fn voice_count(&self) -> u64 {
-        self.stats.voice_count()
+    fn voice_count(&self) -> Option<u64> {
+        Some(self.stats.voice_count())
     }
 
     fn push_event(&mut self, data: u32) {
@@ -96,7 +99,7 @@ impl MidiAudioPlayer for XSynthPlayer {
         let soundfonts = soundfonts.clone();
         let stream_params = self.stream_params.clone();
 
-        loading_status.create("Loading SoundFonts...".into(), Default::default());
+        loading_status.create(LoadingType::SoundFont, Default::default());
 
         thread::spawn(move || {
             sender.send_event(SynthEvent::AllChannels(ChannelEvent::Config(

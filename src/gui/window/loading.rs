@@ -2,10 +2,26 @@ use std::sync::{Arc, RwLock};
 
 use egui::Context;
 
+use crate::utils;
+
 #[derive(Default, Clone)]
 struct StatusInfoHolder {
     title: String,
     message: String,
+}
+
+pub enum LoadingType {
+    MIDI,
+    SoundFont,
+}
+
+impl ToString for LoadingType {
+    fn to_string(&self) -> String {
+        match self {
+            LoadingType::MIDI => "Loading MIDI...".into(),
+            LoadingType::SoundFont => "Loading SoundFont...".into(),
+        }
+    }
 }
 
 pub struct LoadingStatus(RwLock<Option<StatusInfoHolder>>);
@@ -15,18 +31,15 @@ impl LoadingStatus {
         Arc::new(Self(RwLock::new(None)))
     }
 
-    pub fn create(&self, title: String, message: String) {
-        *self.0.write().unwrap() = Some(StatusInfoHolder { title, message });
+    pub fn create(&self, loading_type: LoadingType, message: String) {
+        *self.0.write().unwrap() = Some(StatusInfoHolder {
+            title: loading_type.to_string(),
+            message,
+        });
     }
 
     pub fn is_loading(&self) -> bool {
         self.0.read().unwrap().is_some()
-    }
-
-    pub fn _update_title(&self, new_title: String) {
-        if let Some(info) = self.0.write().unwrap().as_mut() {
-            info.title = new_title.clone();
-        }
     }
 
     pub fn update_message(&self, new_message: String) {
@@ -41,10 +54,7 @@ impl LoadingStatus {
 
     pub fn show(&self, ctx: &Context) {
         if let Some(info) = self.0.read().unwrap().as_ref() {
-            let frame = egui::Frame::inner_margin(
-                egui::Frame::window(ctx.style().as_ref()),
-                super::WIN_MARGIN,
-            );
+            let frame = utils::create_window_frame(ctx);
 
             egui::Window::new(&info.title)
                 .frame(frame)

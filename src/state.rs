@@ -1,7 +1,7 @@
 use std::{path::PathBuf, sync::Arc};
 
 use crate::{
-    audio_playback::{EmptyPlayer, MidiAudioPlayer, WasabiAudioPlayer},
+    audio_playback::WasabiAudioPlayer,
     gui::window::{GuiMessageSystem, LoadingStatus},
 };
 
@@ -41,10 +41,9 @@ impl WasabiState {
     pub fn new() -> Self {
         let loading_status = LoadingStatus::new();
         let errors = GuiMessageSystem::new();
-        let synth: Box<dyn MidiAudioPlayer> = Box::new(EmptyPlayer::new());
 
         Self {
-            synth: WasabiAudioPlayer::new(synth),
+            synth: WasabiAudioPlayer::empty(),
 
             fullscreen: false,
 

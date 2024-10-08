@@ -190,8 +190,7 @@ impl WasabiSettings {
         let old_config_path = Self::get_old_config_path();
 
         if old_config_path.exists() {
-            std::fs::rename(old_config_path, &config_path)
-                .map_err(|e| WasabiError::FilesystemError(e))?;
+            std::fs::rename(old_config_path, &config_path).map_err(WasabiError::FilesystemError)?;
         }
 
         if !Path::new(&config_path).exists() {
@@ -232,7 +231,7 @@ impl WasabiSettings {
             .map_err(|e| WasabiError::SettingsError(e.to_string()))?;
         if let Ok(mut file) = fs::File::create(&config_path) {
             file.write_all(Self::VERSION_TEXT.as_bytes())
-                .map_err(|e| WasabiError::FilesystemError(e))?;
+                .map_err(WasabiError::FilesystemError)?;
             file.write_all(cfg.as_bytes())
                 .expect("Error creating config");
         }

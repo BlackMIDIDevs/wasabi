@@ -1,5 +1,4 @@
 use crate::{
-    audio_playback::WasabiAudioPlayer,
     settings::{Synth, WasabiSettings},
     state::WasabiState,
 };
@@ -59,24 +58,16 @@ impl SettingsWindow {
                         )
                         .on_hover_text("Reload Synth")
                         .clicked()
+                        || settings.synth.synth != synth_prev
                     {
-                        state.synth.switch(WasabiAudioPlayer::create_synth(
-                            settings,
+                        state.synth.switch(
+                            &settings.synth,
                             state.loading_status.clone(),
                             state.errors.clone(),
-                        ));
+                        );
                     }
                 });
                 ui.end_row();
-
-                if settings.synth.synth != synth_prev {
-                    let new_player = WasabiAudioPlayer::create_synth(
-                        settings,
-                        state.loading_status.clone(),
-                        state.errors.clone(),
-                    );
-                    state.synth.switch(new_player);
-                }
             });
 
         ui.add_space(8.0);

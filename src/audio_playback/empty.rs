@@ -13,8 +13,8 @@ impl MidiAudioPlayer for EmptyPlayer {
 
     fn push_event(&mut self, _data: u32) {}
 
-    fn voice_count(&self) -> u64 {
-        0
+    fn voice_count(&self) -> Option<u64> {
+        None
     }
 
     fn configure(&mut self, _settings: &SynthSettings) {}

@@ -42,8 +42,8 @@ impl MidiAudioPlayer for KdmapiPlayer {
         self.stream.send_direct_data(data);
     }
 
-    fn voice_count(&self) -> u64 {
-        0
+    fn voice_count(&self) -> Option<u64> {
+        None
     }
 
     fn configure(&mut self, settings: &SynthSettings) {
@@ -57,6 +57,8 @@ impl MidiAudioPlayer for KdmapiPlayer {
         _loading_status: Arc<LoadingStatus>,
         errors: Arc<GuiMessageSystem>,
     ) {
+        // Due to Windows using UTF16 formatting, this is currently only available for
+        // the official Windows OmniMIDI.
         #[cfg(target_os = "windows")]
         if !self.use_om_list {
             let list = utils::create_om_sf_list(soundfonts);

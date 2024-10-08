@@ -1,4 +1,4 @@
-mod fps;
+pub mod fps;
 mod keyboard;
 mod keyboard_layout;
 mod scene;
@@ -20,11 +20,10 @@ use crossbeam_channel::{Receiver, Sender};
 use egui::FontFamily::{Monospace, Proportional};
 use egui::FontId;
 use egui::Frame;
-pub use loading::LoadingStatus;
+pub use loading::*;
 use settings::SettingsWindow;
 use time::Duration;
 
-use crate::audio_playback::WasabiAudioPlayer;
 use crate::{
     gui::window::{keyboard::GuiKeyboard, scene::GuiRenderScene},
     midi::{CakeMIDIFile, InRamMIDIFile, LiveLoadMIDIFile, MIDIFileBase, MIDIFileUnion},
@@ -33,8 +32,6 @@ use crate::{
     utils::NOTE_SPEED_RANGE,
     GuiRenderer, GuiState,
 };
-
-const WIN_MARGIN: egui::Margin = egui::Margin::same(12.0);
 
 pub struct GuiWasabiWindow {
     render_scene: GuiRenderScene,
@@ -62,11 +59,11 @@ impl GuiWasabiWindow {
             .load_midi_devices(settings)
             .unwrap_or_else(|e| state.errors.warning(e.to_string()));
 
-        state.synth.switch(WasabiAudioPlayer::create_synth(
-            settings,
+        state.synth.switch(
+            &settings.synth,
             state.loading_status.clone(),
             state.errors.clone(),
-        ));
+        );
 
         GuiWasabiWindow {
             render_scene: GuiRenderScene::new(renderer),
@@ -152,6 +149,7 @@ impl GuiWasabiWindow {
         let ctx = gui_state.renderer.gui.context();
         Self::set_style(&ctx, settings);
 
+        // Check for MIDIs selected by the file picker
         {
             let recv = self.midi_picker.1.clone();
             if !recv.is_empty() {
@@ -163,6 +161,7 @@ impl GuiWasabiWindow {
             }
         }
 
+        // Check for MIDIs parsed by the MIDI loader and play
         {
             let recv = self.midi_loader.1.clone();
             if !recv.is_empty() {
@@ -174,6 +173,7 @@ impl GuiWasabiWindow {
             }
         }
 
+        // If something is loading, pause playback and hide all windows
         if state.loading_status.is_loading() {
             if let Some(midi) = self.midi_file.as_mut() {
                 midi.timer_mut().pause();
@@ -184,7 +184,7 @@ impl GuiWasabiWindow {
             state.show_shortcuts = false;
         }
 
-        // Other windows
+        // Render windows
         if state.show_settings {
             self.settings_win.show(&ctx, settings, state);
         }
@@ -257,14 +257,14 @@ impl GuiWasabiWindow {
             .show_separator_line(false)
             .show(&ctx, |ui| {
                 if let Some(midi_file) = self.midi_file.as_mut() {
-                    let skip_dur = Duration::seconds_f64(settings.gui.skip_control);
-                    let time = midi_file.timer().get_time();
-
                     // Set playback keyboard shortcuts
                     ui.input(|events| {
                         for event in &events.events {
                             if let egui::Event::Key { key, pressed, .. } = event {
                                 if pressed == &true {
+                                    let skip_dur = Duration::seconds_f64(settings.gui.skip_control);
+                                    let time = midi_file.timer().get_time();
+
                                     match key {
                                         egui::Key::ArrowRight => {
                                             midi_file.timer_mut().seek(time + skip_dur)
@@ -344,7 +344,7 @@ impl GuiWasabiWindow {
                 0.0
             };
             let pos = egui::Pos2::new(pad, panel_height + pad);
-            stats::draw_stats(self, &ctx, pos, stats, settings);
+            self.draw_stats(&ctx, pos, stats, settings);
         }
 
         // Render errors
@@ -359,12 +359,20 @@ impl GuiWasabiWindow {
     }
 
     pub fn open_midi_dialog(&mut self, state: &mut WasabiState) {
+        // Do not open if something is loading already
+        if state.loading_status.is_loading() {
+            return;
+        }
+
         let sender = self.midi_picker.0.clone();
         let last_location = state.last_midi_location.clone();
 
+        // Open the file picker in a thread so the main UI thread does not freeze
+        // and send the selected path via crossbeam
         thread::spawn(move || {
             let midi_path = rfd::FileDialog::new()
                 .add_filter("mid", &["mid", "MID"])
+                .set_title("Pick a MIDI file...")
                 .set_directory(last_location.parent().unwrap_or(Path::new("./")))
                 .pick_file();
 
@@ -380,17 +388,17 @@ impl GuiWasabiWindow {
         settings: &mut WasabiSettings,
         state: &WasabiState,
     ) {
-        if let Some(midi_file) = self.midi_file.as_mut() {
+        // Unload current MIDI to free resources while loading the new one
+        if let Some(mut midi_file) = self.midi_file.take() {
             midi_file.timer_mut().pause();
         }
-        state.synth.reset();
-        self.midi_file = None;
 
         let filename = midi_path.file_name().unwrap_or_default().to_os_string();
 
-        state
-            .loading_status
-            .create("Loading MIDI...".into(), format!("Parsing {:?}", filename));
+        state.loading_status.create(
+            loading::LoadingType::MIDI,
+            format!("Parsing {:?}", filename),
+        );
 
         let synth = state.synth.clone();
         let settings = settings.midi.clone();
@@ -398,6 +406,8 @@ impl GuiWasabiWindow {
         let loading_status = state.loading_status.clone();
         let errors = state.errors.clone();
 
+        // Load the MIDI in a thread so the UI doesn't freeze and send it
+        // via crossbeam
         thread::spawn(move || {
             if let Some(midi_path) = midi_path.to_str() {
                 match settings.parsing {

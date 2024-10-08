@@ -5,12 +5,14 @@ use time::Duration;
 use egui::{popup_below_widget, PopupCloseBehavior};
 
 use crate::{
-    midi::MIDIFileBase, settings::WasabiSettings, state::WasabiState,
-    utils::convert_seconds_to_time_string,
+    midi::MIDIFileBase,
+    settings::WasabiSettings,
+    state::WasabiState,
+    utils::{self, convert_seconds_to_time_string},
 };
 
-const SPACE: f32 = super::WIN_MARGIN.left;
-const MAX_PANEL_HEIGHT: f32 = 70.0;
+const SPACE: f32 = utils::WIN_MARGIN.left;
+const MAX_PANEL_HEIGHT: f32 = 60.0;
 
 impl GuiWasabiWindow {
     pub fn show_playback_panel(
@@ -19,9 +21,10 @@ impl GuiWasabiWindow {
         settings: &WasabiSettings,
         state: &mut WasabiState,
     ) -> f32 {
+        // Check if mouse is on the panel area
         let mut mouse_over_panel = false;
         if let Some(mouse) = ctx.pointer_latest_pos() {
-            if mouse.y < 60.0 {
+            if mouse.y < MAX_PANEL_HEIGHT {
                 mouse_over_panel = true;
             }
         }
@@ -30,22 +33,23 @@ impl GuiWasabiWindow {
         let button_rounding = 8.0;
         let is_popup_open = ctx.memory(|mem| mem.is_popup_open(state.panel_popup_id));
 
-        let is_expanded = state.panel_pinned || mouse_over_panel || is_popup_open;
+        let should_expand = state.panel_pinned || mouse_over_panel || is_popup_open;
 
-        let height = ctx.animate_bool_with_time_and_easing(state.panel_id, is_expanded, 0.2, |v| {
-            if v < 0.5 {
-                (2.0 * v).powi(2) / 2.0
-            } else {
-                (2.0 * (v - 0.5)).sqrt() / 2.0 + 0.5
-            }
-        });
+        let height =
+            ctx.animate_bool_with_time_and_easing(state.panel_id, should_expand, 0.2, |v| {
+                if v < 0.5 {
+                    (2.0 * v).powi(2) / 2.0
+                } else {
+                    (2.0 * (v - 0.5)).sqrt() / 2.0 + 0.5
+                }
+            });
 
-        // If panel is collapsed, skip rendering it.
+        // If panel is collapsed, do not render it.
         if height < f32::EPSILON {
             return 0.0;
         }
 
-        let frame = egui::Frame::side_top_panel(&ctx.style()).inner_margin(super::WIN_MARGIN);
+        let frame = egui::Frame::side_top_panel(&ctx.style()).inner_margin(utils::WIN_MARGIN);
         let response = egui::Window::new("panel")
             .constrain(false)
             .fixed_size([ctx.available_rect().width(), MAX_PANEL_HEIGHT])
@@ -255,6 +259,7 @@ impl GuiWasabiWindow {
                 });
             });
 
+        // Return the current height of the panel to calculate the statistics pos
         if let Some(res) = response {
             res.response.rect.height() * height
         } else {

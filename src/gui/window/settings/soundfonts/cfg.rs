@@ -1,4 +1,4 @@
-use crate::gui::window::WIN_MARGIN;
+use crate::utils;
 
 use super::SFListItem;
 use egui::{Context, Window};
@@ -11,7 +11,7 @@ pub fn show_sf_config(ctx: &Context, item: &mut SFListItem) {
         format!("Config for {}", item.id)
     };
 
-    let frame = egui::Frame::inner_margin(egui::Frame::window(ctx.style().as_ref()), WIN_MARGIN);
+    let frame = utils::create_window_frame(ctx);
 
     Window::new(title)
         .id(egui::Id::new(item.id))
@@ -21,7 +21,7 @@ pub fn show_sf_config(ctx: &Context, item: &mut SFListItem) {
         .frame(frame)
         .open(&mut item.config_visible)
         .scroll([false, true])
-        .default_height(300.0)
+        .default_height(350.0)
         .show(ctx, |ui| {
             let col_width = 220.0;
 

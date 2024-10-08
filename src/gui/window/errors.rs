@@ -8,6 +8,8 @@ use egui::{Context, Id, OpenUrl, WidgetText};
 use midi_toolkit::io::MIDILoadError;
 use xsynth_core::soundfont::LoadSfError;
 
+use crate::utils;
+
 #[derive(Debug)]
 pub enum WasabiError {
     MidiLoadError(MIDILoadError),
@@ -119,8 +121,7 @@ impl GuiMessageSystem {
     pub fn show(&self, ctx: &Context) {
         self.errors.lock().unwrap().retain(|m| m.visible);
 
-        let frame =
-            egui::Frame::inner_margin(egui::Frame::window(ctx.style().as_ref()), super::WIN_MARGIN);
+        let frame = utils::create_window_frame(ctx);
 
         for message in self.errors.lock().unwrap().iter_mut() {
             egui::Window::new(&message.title)

@@ -61,16 +61,13 @@ fn open_file_and_signature(
     path: impl Into<PathBuf>,
 ) -> Result<(File, MIDIFileUniqueSignature), WasabiError> {
     let path = path.into();
-    let file = std::fs::File::open(&path).map_err(|e| WasabiError::FilesystemError(e))?;
-    let file_length = file
-        .metadata()
-        .map_err(|e| WasabiError::FilesystemError(e))?
-        .len();
+    let file = std::fs::File::open(&path).map_err(WasabiError::FilesystemError)?;
+    let file_length = file.metadata().map_err(WasabiError::FilesystemError)?.len();
     let file_last_modified = file
         .metadata()
-        .map_err(|e| WasabiError::FilesystemError(e))?
+        .map_err(WasabiError::FilesystemError)?
         .modified()
-        .map_err(|e| WasabiError::FilesystemError(e))?
+        .map_err(WasabiError::FilesystemError)?
         .duration_since(UNIX_EPOCH)
         .map_err(|e: std::time::SystemTimeError| WasabiError::Other(e.to_string()))?
         .as_micros();

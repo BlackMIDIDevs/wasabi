@@ -7,6 +7,7 @@ use crate::{gui::window::WasabiError, state::WasabiState};
 #[cfg(target_os = "windows")]
 use crate::settings::WasabiSoundfont;
 
+pub const WIN_MARGIN: egui::Margin = egui::Margin::same(12.0);
 pub const NOTE_SPEED_RANGE: RangeInclusive<f64> = 8.0..=0.05;
 
 pub fn calculate_border_width(width_pixels: f32, keys_len: f32) -> f32 {
@@ -30,6 +31,10 @@ pub fn convert_seconds_to_time_string(sec: f64) -> String {
         time_millis.abs(),
         width = 2
     )
+}
+
+pub fn create_window_frame(ctx: &egui::Context) -> egui::Frame {
+    egui::Frame::inner_margin(egui::Frame::window(ctx.style().as_ref()), WIN_MARGIN)
 }
 
 fn get_latest_version() -> Result<String, WasabiError> {
