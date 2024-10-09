@@ -25,12 +25,14 @@ use settings::SettingsWindow;
 use time::Duration;
 
 use crate::{
-    gui::window::{keyboard::GuiKeyboard, scene::GuiRenderScene},
+    gui::{
+        window::{keyboard::GuiKeyboard, scene::GuiRenderScene},
+        GuiRenderer, GuiState,
+    },
     midi::{CakeMIDIFile, InRamMIDIFile, LiveLoadMIDIFile, MIDIFileBase, MIDIFileUnion},
     settings::{MidiParsing, WasabiSettings},
     state::WasabiState,
     utils::NOTE_SPEED_RANGE,
-    GuiRenderer, GuiState,
 };
 
 pub struct GuiWasabiWindow {

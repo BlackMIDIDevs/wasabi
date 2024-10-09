@@ -2,6 +2,7 @@ pub mod swapchain;
 
 use std::sync::Arc;
 
+use egui_winit_vulkano::{Gui, GuiConfig};
 use raw_window_handle::RawDisplayHandle;
 use vulkano::{
     device::{
@@ -18,26 +19,37 @@ use vulkano::{
 use raw_window_handle::HasDisplayHandle;
 use winit::{
     dpi::PhysicalSize,
-    event_loop::EventLoop,
+    event_loop::ActiveEventLoop,
     monitor::VideoModeHandle,
-    window::{Fullscreen, Icon, Window, WindowAttributes},
+    window::{Fullscreen, Window},
 };
 
-use self::swapchain::{ManagedSwapchain, SwapchainFrame};
+use crate::{
+    gui::{window::GuiWasabiWindow, GuiRenderer, GuiState},
+    settings::WasabiSettings,
+    state::WasabiState,
+};
 
-const ICON: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/icon.bitmap"));
+use self::swapchain::ManagedSwapchain;
 
 pub struct Renderer {
     _instance: Arc<Instance>,
     device: Arc<Device>,
-    surface: Arc<Surface>,
     window: Arc<Window>,
     queue: Arc<Queue>,
     swap_chain: ManagedSwapchain,
+
+    gui: Gui,
+    gui_window: GuiWasabiWindow,
 }
 
 impl Renderer {
-    pub fn new(event_loop: &EventLoop<()>, name: &str) -> Self {
+    pub fn new(
+        event_loop: &ActiveEventLoop,
+        window: Window,
+        settings: &mut WasabiSettings,
+        state: &WasabiState,
+    ) -> Self {
         // Why
         let library = VulkanLibrary::new().unwrap();
 
@@ -56,15 +68,6 @@ impl Renderer {
             },
         )
         .expect("Failed to create instance");
-
-        // Create rendering surface along with window
-        let win_attr = WindowAttributes::default()
-            .with_window_icon(Some(Icon::from_rgba(ICON.to_vec(), 16, 16).unwrap()))
-            .with_inner_size(crate::WINDOW_SIZE)
-            .with_title(name);
-        let window = event_loop
-            .create_window(win_attr)
-            .expect("Failed to create vulkan surface & window");
 
         let window = Arc::new(window);
 
@@ -149,13 +152,35 @@ impl Renderer {
 
         let queue = queues.next().unwrap();
 
+        // Vulkano & Winit & egui integration
+        let mut gui = Gui::new(
+            &event_loop,
+            surface.clone(),
+            queue.clone(),
+            swap_chain.state().images_state.format,
+            GuiConfig {
+                is_overlay: true,
+                ..Default::default()
+            },
+        );
+
+        let mut gui_render_data = GuiRenderer {
+            gui: &mut gui,
+            device: device.clone(),
+            queue: queue.clone(),
+            format: swap_chain.state().images_state.format,
+        };
+
+        let gui_window = GuiWasabiWindow::new(&mut gui_render_data, settings, state);
+
         Self {
             _instance: instance,
             device,
-            surface,
             queue,
             swap_chain,
             window,
+            gui,
+            gui_window,
         }
     }
 
@@ -165,10 +190,6 @@ impl Renderer {
 
     pub fn device(&self) -> Arc<Device> {
         self.device.clone()
-    }
-
-    pub fn surface(&self) -> Arc<Surface> {
-        self.surface.clone()
     }
 
     pub fn window(&self) -> Arc<Window> {
@@ -181,6 +202,14 @@ impl Renderer {
 
     pub fn resize(&mut self, size: Option<PhysicalSize<u32>>) {
         self.swap_chain.resize(size);
+    }
+
+    pub fn gui(&mut self) -> &mut Gui {
+        &mut self.gui
+    }
+
+    pub fn gui_window(&mut self) -> &mut GuiWasabiWindow {
+        &mut self.gui_window
     }
 
     pub fn set_fullscreen(&self, mode: VideoModeHandle) {
@@ -199,10 +228,11 @@ impl Renderer {
         }
     }
 
-    pub fn render(
-        &mut self,
-        draw: impl FnOnce(&SwapchainFrame, Box<dyn GpuFuture>) -> Box<dyn GpuFuture>,
-    ) {
+    pub fn render(&mut self, settings: &mut WasabiSettings, state: &mut WasabiState) {
+        let device = self.device();
+        let queue = self.queue();
+        let format = self.format();
+
         // Get the previous frame before starting a new one
         let previous_frame_future = self.swap_chain.take_previous_frame_end().unwrap();
 
@@ -212,8 +242,26 @@ impl Renderer {
         // Join the futures
         let future = previous_frame_future.join(acquire_future);
 
-        // Call the passed-in renderer
-        let after_future = draw(&frame, Box::new(future));
+        self.gui.immediate_ui(|gui| {
+            let mut gui_render_data = GuiRenderer {
+                gui,
+                device,
+                queue,
+                format,
+            };
+
+            let mut gui_state = GuiState {
+                renderer: &mut gui_render_data,
+                frame: &frame,
+            };
+            egui_extras::install_image_loaders(&gui_state.renderer.gui.context());
+            self.gui_window.layout(&mut gui_state, settings, state);
+        });
+
+        // Render the layouts
+        let after_future = self
+            .gui
+            .draw_on_image(Box::new(future), frame.image.clone());
 
         // Finish render
         frame.present(&self.queue, after_future);
