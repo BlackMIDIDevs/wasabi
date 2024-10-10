@@ -44,13 +44,13 @@ pub struct XSynthPlayer {
     sender: RealtimeEventSender,
     stats: RealtimeSynthStatsReader,
     stream_params: AudioStreamParams,
-    _synth: FuckYouImSend<RealtimeSynth>,
+    synth: FuckYouImSend<RealtimeSynth>,
 }
 
 impl XSynthPlayer {
     pub fn new(config: XSynthRealtimeConfig) -> Self {
         let synth = FuckYouImSend(RealtimeSynth::open_with_default_output(config));
-        let sender = synth.get_senders();
+        let sender = synth.get_sender_ref().clone();
         let stream_params = synth.stream_params();
         let stats = synth.get_stats();
 
@@ -58,7 +58,7 @@ impl XSynthPlayer {
             sender,
             stats,
             stream_params,
-            _synth: synth,
+            synth,
         }
     }
 }
@@ -82,11 +82,15 @@ impl MidiAudioPlayer for XSynthPlayer {
         } else {
             None
         };
-
         self.sender
             .send_event(SynthEvent::AllChannels(ChannelEvent::Config(
                 ChannelConfigEvent::SetLayerCount(layers),
             )));
+
+        self.synth
+            .set_buffer(settings.xsynth.config.render_window_ms);
+        self.sender
+            .set_ignore_range(settings.xsynth.config.ignore_range.clone());
     }
 
     fn set_soundfonts(

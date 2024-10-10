@@ -5980,8 +5980,7 @@ checksum = "ec7a2a501ed189703dba8b08142f057e887dfc4b2cc4db2d343ac6376ba3e0b9"
 [[package]]
 name = "xsynth-core"
 version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dae271d1273f7b89fa64dea59aa1ac2118ff10e45bc68534ec90af1ebf2b922a"
+source = "git+https://github.com/BlackMIDIDevs/xsynth?rev=0d1d11d#0d1d11d766faf9ef0aefd8a4d0cf2dfa1ed32dd6"
 dependencies = [
  "atomic_refcell",
  "biquad",
@@ -6002,8 +6001,7 @@ dependencies = [
 [[package]]
 name = "xsynth-realtime"
 version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f9aff201315141cc7b717110be1423dc1c39903159ebfbfda1b9170d4a83b337"
+source = "git+https://github.com/BlackMIDIDevs/xsynth?rev=0d1d11d#0d1d11d766faf9ef0aefd8a4d0cf2dfa1ed32dd6"
 dependencies = [
  "atomic_refcell",
  "bytemuck",
@@ -6022,8 +6020,7 @@ dependencies = [
 [[package]]
 name = "xsynth-soundfonts"
 version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec960ddf8437cf3711aee93e6b5e29c8c52dda57521ee5bfa3b13da4ca4a35bf"
+source = "git+https://github.com/BlackMIDIDevs/xsynth?rev=0d1d11d#0d1d11d766faf9ef0aefd8a4d0cf2dfa1ed32dd6"
 dependencies = [
  "encoding_rs",
  "encoding_rs_io",
