@@ -155,10 +155,9 @@ impl GuiWasabiWindow {
         {
             let recv = self.midi_picker.1.clone();
             if !recv.is_empty() {
-                for midi in recv {
+                if let Some(midi) = recv.into_iter().next() {
                     state.last_midi_location = midi.clone();
                     self.load_midi(midi, settings, state);
-                    break;
                 }
             }
         }
@@ -167,10 +166,9 @@ impl GuiWasabiWindow {
         {
             let recv = self.midi_loader.1.clone();
             if !recv.is_empty() {
-                for mut midi in recv {
+                if let Some(mut midi) = recv.into_iter().next() {
                     midi.timer_mut().play();
                     self.midi_file = Some(midi);
-                    break;
                 }
             }
         }
@@ -398,7 +396,7 @@ impl GuiWasabiWindow {
         let filename = midi_path.file_name().unwrap_or_default().to_os_string();
 
         state.loading_status.create(
-            loading::LoadingType::MIDI,
+            loading::LoadingType::Midi,
             format!("Parsing {:?}", filename),
         );
 

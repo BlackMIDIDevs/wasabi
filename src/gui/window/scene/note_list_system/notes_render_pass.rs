@@ -391,8 +391,10 @@ impl NoteRenderPass {
             )
             .unwrap();
 
-            let mut subpassbegininfo = SubpassBeginInfo::default();
-            subpassbegininfo.contents = SubpassContents::Inline;
+            let subpassbegininfo = SubpassBeginInfo {
+                contents: SubpassContents::Inline,
+                ..Default::default()
+            };
 
             command_buffer_builder
                 .begin_render_pass(

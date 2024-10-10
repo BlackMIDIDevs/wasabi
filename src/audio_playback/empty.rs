@@ -21,7 +21,7 @@ impl MidiAudioPlayer for EmptyPlayer {
 
     fn set_soundfonts(
         &mut self,
-        _soundfonts: &Vec<WasabiSoundfont>,
+        _soundfonts: &[WasabiSoundfont],
         _loading_status: Arc<LoadingStatus>,
         _errors: Arc<GuiMessageSystem>,
     ) {

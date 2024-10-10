@@ -84,7 +84,7 @@ impl ApplicationHandler for WasabiApplication {
                 WindowEvent::DroppedFile(path) => {
                     renderer
                         .gui_window()
-                        .load_midi(path, &mut self.settings, &mut self.state);
+                        .load_midi(path, &mut self.settings, &self.state);
                 }
                 WindowEvent::RedrawRequested => {
                     renderer.render(&mut self.settings, &mut self.state);

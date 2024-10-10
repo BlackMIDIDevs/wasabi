@@ -11,15 +11,15 @@ struct StatusInfoHolder {
 }
 
 pub enum LoadingType {
-    MIDI,
+    Midi,
     SoundFont,
 }
 
-impl ToString for LoadingType {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for LoadingType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            LoadingType::MIDI => "Loading MIDI...".into(),
-            LoadingType::SoundFont => "Loading SoundFont...".into(),
+            LoadingType::Midi => write!(f, "Loading MIDI..."),
+            LoadingType::SoundFont => write!(f, "Loading SoundFont..."),
         }
     }
 }

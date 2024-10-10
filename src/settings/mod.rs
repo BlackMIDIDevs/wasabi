@@ -194,7 +194,7 @@ impl WasabiSettings {
         }
 
         if !Path::new(&config_path).exists() {
-            return Ok(Self::load_and_save_defaults()?);
+            return Self::load_and_save_defaults();
         } else if let Ok(config) = fs::read_to_string(&config_path) {
             if config.starts_with(Self::VERSION_TEXT) {
                 let offset = Self::VERSION_TEXT.len();

@@ -270,13 +270,18 @@ impl CakeRenderer {
     ) -> RenderResultData {
         let img_dims = final_image.image().extent();
         if self.depth_buffer.image().extent() != img_dims {
-            let mut create_info: ImageCreateInfo = Default::default();
-            create_info.extent = [img_dims[0], img_dims[1], 1];
-            create_info.format = Format::D16_UNORM;
-            create_info.usage = ImageUsage::SAMPLED | ImageUsage::DEPTH_STENCIL_ATTACHMENT;
-
             self.depth_buffer = ImageView::new_default(
-                Image::new(self.allocator.clone(), create_info, Default::default()).unwrap(),
+                Image::new(
+                    self.allocator.clone(),
+                    ImageCreateInfo {
+                        extent: [img_dims[0], img_dims[1], 1],
+                        format: Format::D16_UNORM,
+                        usage: ImageUsage::SAMPLED | ImageUsage::DEPTH_STENCIL_ATTACHMENT,
+                        ..Default::default()
+                    },
+                    Default::default(),
+                )
+                .unwrap(),
             )
             .unwrap();
         }
@@ -378,8 +383,10 @@ impl CakeRenderer {
         )
         .unwrap();
 
-        let mut subpassbegininfo = SubpassBeginInfo::default();
-        subpassbegininfo.contents = SubpassContents::Inline;
+        let subpassbegininfo = SubpassBeginInfo {
+            contents: SubpassContents::Inline,
+            ..Default::default()
+        };
 
         command_buffer_builder
             .begin_render_pass(

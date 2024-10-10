@@ -69,7 +69,9 @@ impl EguiSFList {
             options: Default::default(),
         };
 
-        Ok(self.add_item(item, true))
+        self.add_item(item, true);
+
+        Ok(())
     }
 
     fn select_all(&mut self) {
@@ -153,17 +155,15 @@ impl EguiSFList {
         {
             let recv = self.sf_picker.1.clone();
             if !recv.is_empty() {
-                for path in recv {
+                if let Some(path) = recv.into_iter().next() {
                     state.last_sf_location = path.clone();
                     if path.is_file() {
                         if let Err(err) = self.add_path(path.clone()) {
-                            state.errors.warning(format!(
-                                "Error adding SoundFont to the list: {}",
-                                err.to_string()
-                            ));
+                            state
+                                .errors
+                                .warning(format!("Error adding SoundFont to the list: {}", err));
                         }
                     }
-                    break;
                 }
             }
         }

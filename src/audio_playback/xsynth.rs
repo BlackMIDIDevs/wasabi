@@ -91,13 +91,13 @@ impl MidiAudioPlayer for XSynthPlayer {
 
     fn set_soundfonts(
         &mut self,
-        soundfonts: &Vec<WasabiSoundfont>,
+        soundfonts: &[WasabiSoundfont],
         loading_status: Arc<LoadingStatus>,
         errors: Arc<GuiMessageSystem>,
     ) {
         let mut sender = self.sender.clone();
-        let soundfonts = soundfonts.clone();
-        let stream_params = self.stream_params.clone();
+        let soundfonts: Vec<WasabiSoundfont> = soundfonts.to_vec();
+        let stream_params = self.stream_params;
 
         loading_status.create(LoadingType::SoundFont, Default::default());
 

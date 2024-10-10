@@ -53,7 +53,7 @@ impl MidiAudioPlayer for KdmapiPlayer {
     #[allow(unused_variables)]
     fn set_soundfonts(
         &mut self,
-        soundfonts: &Vec<WasabiSoundfont>,
+        soundfonts: &[WasabiSoundfont],
         _loading_status: Arc<LoadingStatus>,
         errors: Arc<GuiMessageSystem>,
     ) {

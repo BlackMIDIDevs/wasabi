@@ -40,10 +40,12 @@ impl SceneSwapchain {
             }
 
             let allocator = Arc::new(StandardMemoryAllocator::new_default(self.device.clone()));
-            let mut create_info: ImageCreateInfo = Default::default();
-            create_info.format = image_state.format;
-            create_info.extent = [size[0], size[1], 1];
-            create_info.usage = ImageUsage::SAMPLED | ImageUsage::COLOR_ATTACHMENT;
+            let create_info = ImageCreateInfo {
+                format: image_state.format,
+                extent: [size[0], size[1], 1],
+                usage: ImageUsage::SAMPLED | ImageUsage::COLOR_ATTACHMENT,
+                ..Default::default()
+            };
 
             // Create new images
             for _ in 0..image_state.count {

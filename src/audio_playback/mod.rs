@@ -21,7 +21,7 @@ pub trait MidiAudioPlayer: Send + Sync {
     fn configure(&mut self, settings: &SynthSettings);
     fn set_soundfonts(
         &mut self,
-        soundfonts: &Vec<WasabiSoundfont>,
+        soundfonts: &[WasabiSoundfont],
         loading_status: Arc<LoadingStatus>,
         errors: Arc<GuiMessageSystem>,
     );
@@ -53,7 +53,7 @@ impl WasabiAudioPlayer {
         self.player.write().unwrap().configure(settings);
     }
 
-    pub fn set_soundfonts(&self, soundfonts: &Vec<WasabiSoundfont>, state: &WasabiState) {
+    pub fn set_soundfonts(&self, soundfonts: &[WasabiSoundfont], state: &WasabiState) {
         self.player.write().unwrap().set_soundfonts(
             soundfonts,
             state.loading_status.clone(),
@@ -95,7 +95,7 @@ impl WasabiAudioPlayer {
         };
 
         // Configure the synth and load the soundfont list
-        synth.configure(&settings);
+        synth.configure(settings);
         synth.set_soundfonts(&settings.soundfonts, loading_status, errors);
 
         // Apply the synth to the struct

@@ -108,7 +108,7 @@ impl GuiMessageSystem {
         self.add(GuiMessage {
             id: Id::new(rand::random::<usize>()),
             visible: true,
-            errtype: MessageType::NewUpdate(link.into()),
+            errtype: MessageType::NewUpdate(link),
             title: "Update Available".into(),
             message: format!(
                 "A new update for Wasabi ({}) is available.\nWould you like to download it?",

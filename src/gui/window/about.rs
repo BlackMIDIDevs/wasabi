@@ -30,7 +30,7 @@ impl GuiWasabiWindow {
                         ..Default::default()
                     };
 
-                    let title_text = format!("Wasabi");
+                    let title_text = "Wasabi";
                     let title_galley = ui.painter().layout_no_wrap(
                         title_text.to_owned(),
                         titleid,

@@ -56,7 +56,7 @@ fn get_latest_version() -> Result<String, WasabiError> {
     Ok(if let Some(tag) = json.get("tag_name") {
         tag.as_str().unwrap_or(&current).to_owned()
     } else {
-        current.into()
+        current
     })
 }
 

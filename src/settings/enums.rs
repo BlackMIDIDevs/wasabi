@@ -38,6 +38,7 @@ impl FromStr for MidiParsing {
     }
 }
 
+#[allow(clippy::enum_variant_names)]
 #[repr(usize)]
 #[derive(Debug, Default, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, FromPrimitive)]
 #[serde(rename_all = "lowercase")]

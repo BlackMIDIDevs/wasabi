@@ -130,10 +130,7 @@ impl MIDIColor {
 
     pub fn new_vec_from_palette(tracks: usize, image: DynamicImage, randomize: bool) -> Vec<Self> {
         let image = image.to_rgb8();
-        let all_colors = image
-            .pixels()
-            .into_iter()
-            .map(|p| Self::new(p.0[0], p.0[1], p.0[2]));
+        let all_colors = image.pixels().map(|p| Self::new(p.0[0], p.0[1], p.0[2]));
 
         let num = tracks * 16;
         if randomize {
@@ -175,14 +172,14 @@ impl MIDIColor {
                             settings.randomize_palette,
                         ))
                     } else {
-                        return Err(WasabiError::PaletteError(format!(
+                        Err(WasabiError::PaletteError(format!(
                             "Palette has invalid dimensions: {path:?}"
-                        )));
+                        )))
                     }
                 } else {
-                    return Err(WasabiError::PaletteError(format!(
+                    Err(WasabiError::PaletteError(format!(
                         "Palette does not exist: {path:?}"
-                    )));
+                    )))
                 }
             }
         }

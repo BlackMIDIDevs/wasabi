@@ -191,7 +191,7 @@ impl SettingsWindow {
         // Add all valid ports
         for port in con.ports().iter() {
             let name = con
-                .port_name(&port)
+                .port_name(port)
                 .map_err(|e| WasabiError::SynthError(format!("{e:?}")))?;
             self.midi_devices.push(MidiDevice {
                 name,
