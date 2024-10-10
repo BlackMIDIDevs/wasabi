@@ -1,4 +1,6 @@
 #[cfg(target_os = "windows")]
+use crate::settings::WasabiSettings;
+#[cfg(target_os = "windows")]
 use std::io::Write;
 
 use crate::{gui::window::WasabiError, utils};

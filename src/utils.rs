@@ -73,7 +73,7 @@ pub fn check_for_updates(state: &WasabiState) {
 }
 
 #[cfg(target_os = "windows")]
-pub fn create_om_sf_list(list: &Vec<WasabiSoundfont>) -> String {
+pub fn create_om_sf_list(list: &[WasabiSoundfont]) -> String {
     let mut out = String::new();
 
     for sf in list {
