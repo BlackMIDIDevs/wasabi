@@ -32,13 +32,13 @@ fn write_icon(s: u32, tree: &Tree, icon_dir: &mut IconDir) {
 }
 
 fn main() {
-    let svg = std::fs::read_to_string("logo.svg").unwrap();
+    let svg = std::fs::read_to_string("assets/logo.svg").unwrap();
     let tree = Tree::from_str(&svg, &Options::default()).unwrap();
 
     let mut icon_dir = ico::IconDir::new(ico::ResourceType::Icon);
 
     {
-        let small_svg = std::fs::read_to_string("logo_16.svg").unwrap();
+        let small_svg = std::fs::read_to_string("assets/logo_16.svg").unwrap();
         let small_tree = Tree::from_str(&small_svg, &Options::default()).unwrap();
 
         write_icon(16, &small_tree, &mut icon_dir)

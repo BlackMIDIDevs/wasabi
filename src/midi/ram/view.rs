@@ -22,18 +22,14 @@ impl<'a> InRamCurrentNoteViews<'a> {
 }
 
 impl InRamNoteViewData {
-    pub fn new(columns: Vec<InRamNoteColumn>, track_count: usize, random_colors: bool) -> Self {
+    pub fn new(columns: Vec<InRamNoteColumn>, colors: Vec<MIDIColor>) -> Self {
         InRamNoteViewData {
             columns,
             view_range: MIDIViewRange {
                 start: 0.0,
                 end: 0.0,
             },
-            default_track_colors: if random_colors {
-                MIDIColor::new_random_vec_for_tracks(track_count)
-            } else {
-                MIDIColor::new_vec_for_tracks(track_count)
-            },
+            default_track_colors: colors,
         }
     }
 

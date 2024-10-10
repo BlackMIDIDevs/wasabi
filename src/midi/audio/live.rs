@@ -1,5 +1,5 @@
 use std::{
-    sync::{Arc, RwLock},
+    sync::Arc,
     thread::{self, JoinHandle},
 };
 use time::Duration;
@@ -7,7 +7,7 @@ use time::Duration;
 use crossbeam_channel::Receiver;
 
 use crate::{
-    audio_playback::SimpleTemporaryPlayer,
+    audio_playback::WasabiAudioPlayer,
     midi::shared::{
         audio::CompressedAudio,
         timer::{TimeListener, UnpauseWaitResult, WaitResult},
@@ -17,14 +17,14 @@ use crate::{
 pub struct LiveAudioPlayer {
     events: Receiver<CompressedAudio>,
     timer: TimeListener,
-    player: Arc<RwLock<SimpleTemporaryPlayer>>,
+    player: Arc<WasabiAudioPlayer>,
 }
 
 impl LiveAudioPlayer {
     pub fn new(
         events: Receiver<CompressedAudio>,
         timer: TimeListener,
-        player: Arc<RwLock<SimpleTemporaryPlayer>>,
+        player: Arc<WasabiAudioPlayer>,
     ) -> Self {
         LiveAudioPlayer {
             events,
@@ -39,21 +39,13 @@ impl LiveAudioPlayer {
 
             let max_fall_time = 0.1;
 
-            let reset = || {
-                if let Ok(mut player) = self.player.clone().write() {
-                    player.reset();
-                };
-            };
-
             let push_cc = |e: &CompressedAudio| {
-                if let Ok(mut player) = self.player.clone().write() {
-                    player.push_events(e.iter_control_events());
-                }
+                self.player.push_events(e.iter_control_events());
             };
 
             for event in self.events.into_iter() {
                 if self.timer.is_paused() {
-                    reset();
+                    self.player.reset();
                     match self.timer.wait_until_unpause() {
                         UnpauseWaitResult::Unpaused => push_cc(&event),
                         UnpauseWaitResult::UnpausedAndSeeked(time) => {
@@ -83,21 +75,19 @@ impl LiveAudioPlayer {
                         continue;
                     }
                     WaitResult::Seeked(time) => {
-                        reset();
+                        self.player.reset();
                         if time.as_seconds_f64() - event.time > max_fall_time {
                             seek_catching_up = true;
                         }
                         continue;
                     }
                     WaitResult::Killed => {
-                        reset();
+                        self.player.reset();
                         break;
                     }
                 }
 
-                if let Ok(mut player) = self.player.clone().write() {
-                    player.push_events(event.iter_events());
-                }
+                self.player.push_events(event.iter_events());
             }
         })
     }

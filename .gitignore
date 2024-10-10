@@ -2,3 +2,5 @@
 wasabi_config.toml
 .direnv
 .vscode
+.envrc
+shell.nix

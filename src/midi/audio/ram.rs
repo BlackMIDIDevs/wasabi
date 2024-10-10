@@ -1,11 +1,11 @@
 use std::{
-    sync::{Arc, RwLock},
+    sync::Arc,
     thread::{self, JoinHandle},
 };
 use time::Duration;
 
 use crate::{
-    audio_playback::SimpleTemporaryPlayer,
+    audio_playback::WasabiAudioPlayer,
     midi::shared::{
         audio::CompressedAudio,
         timer::{SeekWaitResult, TimeListener, UnpauseWaitResult, WaitResult},
@@ -15,7 +15,7 @@ use crate::{
 pub struct InRamAudioPlayer {
     events: Vec<CompressedAudio>,
     timer: TimeListener,
-    player: Arc<RwLock<SimpleTemporaryPlayer>>,
+    player: Arc<WasabiAudioPlayer>,
     index: usize,
 }
 
@@ -23,7 +23,7 @@ impl InRamAudioPlayer {
     pub fn new(
         events: Vec<CompressedAudio>,
         timer: TimeListener,
-        player: Arc<RwLock<SimpleTemporaryPlayer>>,
+        player: Arc<WasabiAudioPlayer>,
     ) -> Self {
         InRamAudioPlayer {
             events,
@@ -36,9 +36,7 @@ impl InRamAudioPlayer {
     pub fn spawn_playback(mut self) -> JoinHandle<()> {
         thread::spawn(move || loop {
             let reset = || {
-                if let Ok(mut player) = self.player.clone().write() {
-                    player.reset();
-                };
+                self.player.reset();
             };
 
             if self.timer.is_paused() {
@@ -85,9 +83,7 @@ impl InRamAudioPlayer {
                 }
             }
 
-            if let Ok(mut player) = self.player.clone().write() {
-                player.push_events(event.iter_events());
-            }
+            self.player.push_events(event.iter_events());
             self.index += 1;
         })
     }
@@ -131,11 +127,10 @@ impl InRamAudioPlayer {
         self.index = self.find_time_index(time);
 
         // Reset and push all control events before
-        if let Ok(mut player) = self.player.clone().write() {
-            player.reset();
-            for i in 0..(self.index) {
-                player.push_events(self.events[i].iter_control_events());
-            }
-        };
+        self.player.reset();
+        for i in 0..(self.index) {
+            self.player
+                .push_events(self.events[i].iter_control_events());
+        }
     }
 }

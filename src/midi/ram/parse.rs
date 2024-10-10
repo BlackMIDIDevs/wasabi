@@ -1,8 +1,4 @@
-use std::{
-    collections::VecDeque,
-    sync::{Arc, RwLock},
-    thread,
-};
+use std::{collections::VecDeque, path::PathBuf, sync::Arc, thread};
 
 use midi_toolkit::{
     events::{Event, MIDIEventEnum},
@@ -16,13 +12,16 @@ use midi_toolkit::{
 use rustc_hash::FxHashMap;
 
 use crate::{
-    audio_playback::SimpleTemporaryPlayer,
+    audio_playback::WasabiAudioPlayer,
+    gui::window::WasabiError,
     midi::{
         audio::ram::InRamAudioPlayer,
         open_file_and_signature,
         ram::{column::InRamNoteColumn, view::InRamNoteViewData},
         shared::{audio::CompressedAudio, timer::TimeKeeper, track_channel::TrackAndChannel},
+        MIDIColor,
     },
+    settings::MidiSettings,
 };
 
 use super::{block::InRamNoteBlock, InRamMIDIFile};
@@ -97,12 +96,12 @@ impl Key {
 
 impl InRamMIDIFile {
     pub fn load_from_file(
-        path: &str,
-        player: Arc<RwLock<SimpleTemporaryPlayer>>,
-        random_colors: bool,
-    ) -> Self {
-        let (file, signature) = open_file_and_signature(path);
-        let midi = TKMIDIFile::open_from_stream(file, None).unwrap();
+        path: impl Into<PathBuf>,
+        player: Arc<WasabiAudioPlayer>,
+        settings: &MidiSettings,
+    ) -> Result<Self, WasabiError> {
+        let (file, signature) = open_file_and_signature(path)?;
+        let midi = TKMIDIFile::open_from_stream(file, None).map_err(WasabiError::MidiLoadError)?;
 
         let ppq = midi.ppq();
         let merged = pipe!(
@@ -183,7 +182,7 @@ impl InRamMIDIFile {
         let (keys, note_count) = key_join_handle.join().unwrap();
         let audio = audio_join_handle.join().unwrap();
 
-        let mut timer = TimeKeeper::new();
+        let mut timer = TimeKeeper::new(settings.start_delay);
 
         InRamAudioPlayer::new(audio, timer.get_listener(), player).spawn_playback();
 
@@ -192,12 +191,14 @@ impl InRamMIDIFile {
             .map(|key| InRamNoteColumn::new(key.column))
             .collect();
 
-        InRamMIDIFile {
-            view_data: InRamNoteViewData::new(columns, midi.track_count(), random_colors),
+        let colors = MIDIColor::new_vec_from_settings(midi.track_count(), settings)?;
+
+        Ok(InRamMIDIFile {
+            view_data: InRamNoteViewData::new(columns, colors),
             timer,
             length,
             note_count,
             signature,
-        }
+        })
     }
 }

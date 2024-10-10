@@ -1,123 +1,104 @@
-use kdmapi::{KDMAPIStream, KDMAPI};
-use std::ops::RangeInclusive;
-use xsynth_core::{channel::ChannelInitOptions, soundfont::SoundfontInitOptions};
-pub mod xsynth;
+use std::sync::{Arc, RwLock};
 
-#[derive(Clone)]
-pub enum AudioPlayerType {
-    XSynth {
-        buffer: f64,
-        use_threadpool: bool,
-        ignore_range: RangeInclusive<u8>,
-        options: ChannelInitOptions,
-    },
-    Kdmapi,
+use crate::{
+    gui::window::{GuiMessageSystem, LoadingStatus},
+    settings::{Synth, SynthSettings, WasabiSoundfont},
+    state::WasabiState,
+};
+
+mod xsynth;
+pub use xsynth::*;
+mod kdmapi;
+pub use kdmapi::*;
+mod midiout;
+pub use midiout::*;
+mod empty;
+pub use empty::*;
+
+pub trait MidiAudioPlayer: Send + Sync {
+    fn voice_count(&self) -> Option<u64>;
+    fn push_event(&mut self, data: u32);
+    fn configure(&mut self, settings: &SynthSettings);
+    fn set_soundfonts(
+        &mut self,
+        soundfonts: &[WasabiSoundfont],
+        loading_status: Arc<LoadingStatus>,
+        errors: Arc<GuiMessageSystem>,
+    );
+    fn reset(&mut self);
 }
 
-pub struct SimpleTemporaryPlayer {
-    player_type: AudioPlayerType,
-    xsynth: Option<xsynth::XSynthPlayer>,
-    kdmapi: Option<KDMAPIStream>,
+pub struct WasabiAudioPlayer {
+    player: RwLock<Box<dyn MidiAudioPlayer>>,
 }
 
-impl SimpleTemporaryPlayer {
-    pub fn new(player_type: AudioPlayerType) -> Self {
-        let (xsynth, kdmapi) = match player_type.clone() {
-            AudioPlayerType::XSynth {
-                buffer,
-                use_threadpool,
-                ignore_range,
-                options,
-            } => {
-                let xsynth =
-                    xsynth::XSynthPlayer::new(buffer, use_threadpool, ignore_range, options);
-                (Some(xsynth), None)
-            }
-            AudioPlayerType::Kdmapi => {
-                let kdmapi = KDMAPI.open_stream();
-                (None, Some(kdmapi))
-            }
+impl WasabiAudioPlayer {
+    pub fn empty() -> Arc<Self> {
+        Arc::new(Self {
+            player: RwLock::new(Box::new(EmptyPlayer::new())),
+        })
+    }
+
+    pub fn voice_count(&self) -> Option<u64> {
+        self.player.read().unwrap().voice_count()
+    }
+
+    pub fn push_events(&self, data: impl Iterator<Item = u32>) {
+        for ev in data {
+            self.player.write().unwrap().push_event(ev);
+        }
+    }
+
+    pub fn configure(&self, settings: &SynthSettings) {
+        self.player.write().unwrap().configure(settings);
+    }
+
+    pub fn set_soundfonts(&self, soundfonts: &[WasabiSoundfont], state: &WasabiState) {
+        self.player.write().unwrap().set_soundfonts(
+            soundfonts,
+            state.loading_status.clone(),
+            state.errors.clone(),
+        );
+    }
+
+    pub fn reset(&self) {
+        self.player.write().unwrap().reset();
+    }
+
+    pub fn switch(
+        &self,
+        settings: &SynthSettings,
+        loading_status: Arc<LoadingStatus>,
+        errors: Arc<GuiMessageSystem>,
+    ) {
+        // First drop the previous synth to avoid any loading errors
+        *self.player.write().unwrap() = Box::new(EmptyPlayer::new());
+
+        // Create the new synth object based on the settings
+        let mut synth: Box<dyn MidiAudioPlayer> = match settings.synth {
+            Synth::XSynth => Box::new(XSynthPlayer::new(settings.xsynth.config.clone())),
+            Synth::Kdmapi => match KdmapiPlayer::new() {
+                Ok(kdmapi) => Box::new(kdmapi),
+                Err(e) => {
+                    errors.error(&e);
+                    Box::new(EmptyPlayer::new())
+                }
+            },
+            Synth::MidiDevice => match MidiDevicePlayer::new(settings.midi_device.clone()) {
+                Ok(midiout) => Box::new(midiout),
+                Err(e) => {
+                    errors.error(&e);
+                    Box::new(EmptyPlayer::new())
+                }
+            },
+            Synth::None => Box::new(EmptyPlayer::new()),
         };
-        Self {
-            player_type,
-            xsynth,
-            kdmapi,
-        }
-    }
 
-    pub fn switch_player(&mut self, player_type: AudioPlayerType) {
-        self.reset();
-        self.xsynth = None;
-        self.kdmapi = None;
-        let new_player = Self::new(player_type);
+        // Configure the synth and load the soundfont list
+        synth.configure(settings);
+        synth.set_soundfonts(&settings.soundfonts, loading_status, errors);
 
-        self.player_type = new_player.player_type;
-        self.xsynth = new_player.xsynth;
-        self.kdmapi = new_player.kdmapi;
-    }
-
-    pub fn get_voice_count(&self) -> u64 {
-        match self.player_type {
-            AudioPlayerType::XSynth { .. } => {
-                if let Some(xsynth) = &self.xsynth {
-                    xsynth.get_voice_count()
-                } else {
-                    0
-                }
-            }
-            AudioPlayerType::Kdmapi => 0,
-        }
-    }
-
-    pub fn push_events(&mut self, data: impl Iterator<Item = u32>) {
-        for e in data {
-            self.push_event(e);
-        }
-    }
-
-    pub fn push_event(&mut self, data: u32) {
-        match self.player_type {
-            AudioPlayerType::XSynth { .. } => {
-                if let Some(xsynth) = self.xsynth.as_mut() {
-                    xsynth.push_event(data);
-                }
-            }
-            AudioPlayerType::Kdmapi => {
-                if let Some(kdmapi) = self.kdmapi.as_mut() {
-                    kdmapi.send_direct_data(data);
-                }
-            }
-        }
-    }
-
-    pub fn reset(&mut self) {
-        match self.player_type {
-            AudioPlayerType::XSynth { .. } => {
-                if let Some(xsynth) = self.xsynth.as_mut() {
-                    xsynth.reset();
-                }
-            }
-            AudioPlayerType::Kdmapi => {
-                if let Some(kdmapi) = self.kdmapi.as_mut() {
-                    kdmapi.reset();
-                }
-            }
-        }
-    }
-
-    pub fn set_layer_count(&mut self, layers: Option<usize>) {
-        if let AudioPlayerType::XSynth { .. } = self.player_type {
-            if let Some(xsynth) = self.xsynth.as_mut() {
-                xsynth.set_layer_count(layers);
-            }
-        }
-    }
-
-    pub fn set_soundfont(&mut self, path: &str, options: SoundfontInitOptions) {
-        if let AudioPlayerType::XSynth { .. } = self.player_type {
-            if let Some(xsynth) = self.xsynth.as_mut() {
-                xsynth.set_soundfont(path, options);
-            }
-        }
+        // Apply the synth to the struct
+        *self.player.write().unwrap() = synth;
     }
 }
