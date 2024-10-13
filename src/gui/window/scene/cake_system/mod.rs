@@ -17,7 +17,7 @@ use vulkano::{
     pipeline::{
         graphics::{
             color_blend::{ColorBlendAttachmentState, ColorBlendState},
-            depth_stencil::DepthStencilState,
+            depth_stencil::{DepthState, DepthStencilState},
             input_assembly::{InputAssemblyState, PrimitiveTopology},
             multisample::MultisampleState,
             rasterization::RasterizationState,
@@ -220,7 +220,10 @@ impl CakeRenderer {
                     subpass.num_color_attachments(),
                     ColorBlendAttachmentState::default(),
                 )),
-                depth_stencil_state: Some(DepthStencilState::default()),
+                depth_stencil_state: Some(DepthStencilState {
+                    depth: Some(DepthState::simple()),
+                    ..Default::default()
+                }),
                 subpass: Some(subpass.into()),
                 ..GraphicsPipelineCreateInfo::layout(layout)
             },
@@ -314,10 +317,10 @@ impl CakeRenderer {
 
         let mut buffer_instances = self.buffers_init.write().unwrap();
         let mut written_instances = 0;
-        // White keys
+        // Black keys first, as they stencil out in the depth buffer
         for (i, buffer) in self.buffers.buffers.iter().enumerate() {
             let key = key_view.note(i);
-            if !key.black {
+            if key.black {
                 buffer_instances[written_instances] = CakeNoteColumn {
                     buffer_index: i as i32,
                     border_width,
@@ -329,10 +332,10 @@ impl CakeRenderer {
                 written_instances += 1;
             }
         }
-        // Black keys
+        // White keys second
         for (i, buffer) in self.buffers.buffers.iter().enumerate() {
             let key = key_view.note(i);
-            if key.black {
+            if !key.black {
                 buffer_instances[written_instances] = CakeNoteColumn {
                     buffer_index: i as i32,
                     border_width,

@@ -17,7 +17,7 @@ use vulkano::{
     pipeline::{
         graphics::{
             color_blend::{ColorBlendAttachmentState, ColorBlendState},
-            depth_stencil::DepthStencilState,
+            depth_stencil::{DepthState, DepthStencilState},
             input_assembly::{InputAssemblyState, PrimitiveTopology},
             multisample::MultisampleState,
             rasterization::RasterizationState,
@@ -258,7 +258,10 @@ impl NoteRenderPass {
                 subpass.num_color_attachments(),
                 ColorBlendAttachmentState::default(),
             )),
-            depth_stencil_state: Some(DepthStencilState::default()),
+            depth_stencil_state: Some(DepthStencilState {
+                depth: Some(DepthState::simple()),
+                ..Default::default()
+            }),
             subpass: Some(subpass.into()),
             ..GraphicsPipelineCreateInfo::layout(layout)
         };

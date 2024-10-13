@@ -73,9 +73,9 @@ impl NoteRenderer {
             key_view.visible_range.len() as f32,
         );
 
-        // White keys
+        // Black keys first
         for (i, column) in columns.iter().enumerate() {
-            if !key_view.key(i).black {
+            if key_view.key(i).black {
                 let iter = column.iterate_displaced_notes();
                 let length = iter.len();
                 columns_view_info.push(ColumnViewInfo {
@@ -90,9 +90,9 @@ impl NoteRenderer {
             }
         }
 
-        // Black keys
+        // Then white keys after
         for (i, column) in columns.iter().enumerate() {
-            if key_view.key(i).black {
+            if !key_view.key(i).black {
                 let iter = column.iterate_displaced_notes();
                 let length = iter.len();
                 columns_view_info.push(ColumnViewInfo {
@@ -150,7 +150,7 @@ impl NoteRenderer {
                                 for i in 0..allowed_to_write {
                                     let next_note = column.iter.next();
                                     if let Some(note) = next_note {
-                                        buffer[allowed_to_write - 1 - i + offset] = NoteVertex::new(
+                                        buffer[i + offset] = NoteVertex::new(
                                             note.start,
                                             note.len,
                                             column.key,
