@@ -263,9 +263,11 @@ impl EguiSFList {
                             .on_hover_text("Apply SoundFont List")
                             .clicked()
                         {
-                            state
-                                .synth
-                                .set_soundfonts(&settings.synth.soundfonts, state);
+                            state.synth.set_soundfonts(
+                                &settings.synth.soundfonts,
+                                state.loading_status.clone(),
+                                state.errors.clone(),
+                            );
                         }
                     });
                 });

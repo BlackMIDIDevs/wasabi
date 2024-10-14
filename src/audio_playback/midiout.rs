@@ -2,7 +2,6 @@ use std::thread;
 
 use crate::gui::window::WasabiError;
 
-use super::*;
 use crossbeam_channel::Sender;
 use midir::MidiOutput;
 
@@ -42,31 +41,15 @@ impl MidiDevicePlayer {
 
         Ok(Self { sender })
     }
-}
 
-impl MidiAudioPlayer for MidiDevicePlayer {
-    fn reset(&mut self) {
+    pub fn reset(&mut self) {
         let reset = crate::utils::create_reset_midi_messages();
-        for ev in reset {
-            self.push_event(ev);
+        self.push_events(reset.into_iter());
+    }
+
+    pub fn push_events(&mut self, data: impl Iterator<Item = u32>) {
+        for ev in data {
+            self.sender.send(ev).unwrap();
         }
-    }
-
-    fn push_event(&mut self, data: u32) {
-        self.sender.send(data).unwrap();
-    }
-
-    fn voice_count(&self) -> Option<u64> {
-        None
-    }
-
-    fn configure(&mut self, _settings: &SynthSettings) {}
-
-    fn set_soundfonts(
-        &mut self,
-        _soundfonts: &[WasabiSoundfont],
-        _loading_status: Arc<LoadingStatus>,
-        _errors: Arc<GuiMessageSystem>,
-    ) {
     }
 }

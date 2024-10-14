@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
     gui::window::{LoadingType, WasabiError},
-    settings::WasabiSoundfont,
+    settings::{WasabiSoundfont, XSynthSettings},
 };
 
 use xsynth_core::{
@@ -61,24 +61,24 @@ impl XSynthPlayer {
             synth,
         }
     }
-}
 
-impl MidiAudioPlayer for XSynthPlayer {
-    fn voice_count(&self) -> Option<u64> {
-        Some(self.stats.voice_count())
+    pub fn voice_count(&self) -> u64 {
+        self.stats.voice_count()
     }
 
-    fn push_event(&mut self, data: u32) {
-        self.sender.send_event_u32(data);
+    pub fn push_events(&mut self, data: impl Iterator<Item = u32>) {
+        for ev in data {
+            self.sender.send_event_u32(ev);
+        }
     }
 
-    fn reset(&mut self) {
+    pub fn reset(&mut self) {
         self.sender.reset_synth();
     }
 
-    fn configure(&mut self, settings: &SynthSettings) {
-        let layers = if settings.xsynth.limit_layers {
-            Some(settings.xsynth.layers)
+    pub fn configure(&mut self, settings: &XSynthSettings) {
+        let layers = if settings.limit_layers {
+            Some(settings.layers)
         } else {
             None
         };
@@ -87,13 +87,12 @@ impl MidiAudioPlayer for XSynthPlayer {
                 ChannelConfigEvent::SetLayerCount(layers),
             )));
 
-        self.synth
-            .set_buffer(settings.xsynth.config.render_window_ms);
+        self.synth.set_buffer(settings.config.render_window_ms);
         self.sender
-            .set_ignore_range(settings.xsynth.config.ignore_range.clone());
+            .set_ignore_range(settings.config.ignore_range.clone());
     }
 
-    fn set_soundfonts(
+    pub fn set_soundfonts(
         &mut self,
         soundfonts: &[WasabiSoundfont],
         loading_status: Arc<LoadingStatus>,

@@ -1,4 +1,4 @@
-use crate::settings::WasabiSettings;
+use crate::settings::{KdmapiSettings, WasabiSettings};
 use std::io::Write;
 
 use crate::{gui::window::WasabiError, utils};
@@ -26,34 +26,26 @@ impl KdmapiPlayer {
             use_om_list: false,
         })
     }
-}
 
-impl MidiAudioPlayer for KdmapiPlayer {
-    fn reset(&mut self) {
+    pub fn reset(&mut self) {
         let reset = utils::create_reset_midi_messages();
-        for ev in reset {
-            self.push_event(ev);
-        }
-
+        self.push_events(reset.into_iter());
         self.stream.reset();
     }
 
-    fn push_event(&mut self, data: u32) {
-        self.stream.send_direct_data(data);
+    pub fn push_events(&mut self, data: impl Iterator<Item = u32>) {
+        for ev in data {
+            self.stream.send_direct_data(ev);
+        }
     }
 
-    fn voice_count(&self) -> Option<u64> {
-        None
+    pub fn configure(&mut self, settings: &KdmapiSettings) {
+        self.use_om_list = settings.use_om_sflist;
     }
 
-    fn configure(&mut self, settings: &SynthSettings) {
-        self.use_om_list = settings.kdmapi.use_om_sflist;
-    }
-
-    fn set_soundfonts(
+    pub fn set_soundfonts(
         &mut self,
         soundfonts: &[WasabiSoundfont],
-        _loading_status: Arc<LoadingStatus>,
         errors: Arc<GuiMessageSystem>,
     ) {
         if !self.use_om_list {

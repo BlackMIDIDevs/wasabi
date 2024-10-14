@@ -3,7 +3,6 @@ use std::sync::{Arc, RwLock};
 use crate::{
     gui::window::{GuiMessageSystem, LoadingStatus},
     settings::{Synth, SynthSettings, WasabiSoundfont},
-    state::WasabiState,
 };
 
 mod xsynth;
@@ -12,57 +11,67 @@ mod kdmapi;
 pub use kdmapi::*;
 mod midiout;
 pub use midiout::*;
-mod empty;
-pub use empty::*;
 
-pub trait MidiAudioPlayer: Send + Sync {
-    fn voice_count(&self) -> Option<u64>;
-    fn push_event(&mut self, data: u32);
-    fn configure(&mut self, settings: &SynthSettings);
-    fn set_soundfonts(
-        &mut self,
-        soundfonts: &[WasabiSoundfont],
-        loading_status: Arc<LoadingStatus>,
-        errors: Arc<GuiMessageSystem>,
-    );
-    fn reset(&mut self);
+enum MidiAudioPlayer {
+    XSynth(XSynthPlayer),
+    Kdmapi(KdmapiPlayer),
+    MidiDevice(MidiDevicePlayer),
+    None,
 }
 
-pub struct WasabiAudioPlayer {
-    player: RwLock<Box<dyn MidiAudioPlayer>>,
-}
+pub struct WasabiAudioPlayer(RwLock<MidiAudioPlayer>);
 
 impl WasabiAudioPlayer {
     pub fn empty() -> Arc<Self> {
-        Arc::new(Self {
-            player: RwLock::new(Box::new(EmptyPlayer::new())),
-        })
+        Arc::new(Self(RwLock::new(MidiAudioPlayer::None)))
     }
 
     pub fn voice_count(&self) -> Option<u64> {
-        self.player.read().unwrap().voice_count()
+        match &*self.0.read().unwrap() {
+            MidiAudioPlayer::XSynth(player) => Some(player.voice_count()),
+            _ => None,
+        }
     }
 
     pub fn push_events(&self, data: impl Iterator<Item = u32>) {
-        for ev in data {
-            self.player.write().unwrap().push_event(ev);
+        match &mut *self.0.write().unwrap() {
+            MidiAudioPlayer::XSynth(player) => player.push_events(data),
+            MidiAudioPlayer::Kdmapi(player) => player.push_events(data),
+            MidiAudioPlayer::MidiDevice(player) => player.push_events(data),
+            _ => {}
         }
     }
 
     pub fn configure(&self, settings: &SynthSettings) {
-        self.player.write().unwrap().configure(settings);
+        match &mut *self.0.write().unwrap() {
+            MidiAudioPlayer::XSynth(player) => player.configure(&settings.xsynth),
+            MidiAudioPlayer::Kdmapi(player) => player.configure(&settings.kdmapi),
+            _ => {}
+        }
     }
 
-    pub fn set_soundfonts(&self, soundfonts: &[WasabiSoundfont], state: &WasabiState) {
-        self.player.write().unwrap().set_soundfonts(
-            soundfonts,
-            state.loading_status.clone(),
-            state.errors.clone(),
-        );
+    pub fn set_soundfonts(
+        &self,
+        soundfonts: &[WasabiSoundfont],
+        loading_status: Arc<LoadingStatus>,
+        errors: Arc<GuiMessageSystem>,
+    ) {
+        match &mut *self.0.write().unwrap() {
+            MidiAudioPlayer::XSynth(player) => {
+                player.set_soundfonts(soundfonts, loading_status, errors)
+            }
+            MidiAudioPlayer::Kdmapi(player) => player.set_soundfonts(soundfonts, errors),
+            _ => {}
+        }
     }
 
     pub fn reset(&self) {
-        self.player.write().unwrap().reset();
+        match &mut *self.0.write().unwrap() {
+            MidiAudioPlayer::XSynth(player) => player.reset(),
+            MidiAudioPlayer::Kdmapi(player) => player.reset(),
+            MidiAudioPlayer::MidiDevice(player) => player.reset(),
+            _ => {}
+        }
     }
 
     pub fn switch(
@@ -72,33 +81,35 @@ impl WasabiAudioPlayer {
         errors: Arc<GuiMessageSystem>,
     ) {
         // First drop the previous synth to avoid any loading errors
-        *self.player.write().unwrap() = Box::new(EmptyPlayer::new());
+        *self.0.write().unwrap() = MidiAudioPlayer::None;
 
         // Create the new synth object based on the settings
-        let mut synth: Box<dyn MidiAudioPlayer> = match settings.synth {
-            Synth::XSynth => Box::new(XSynthPlayer::new(settings.xsynth.config.clone())),
+        let synth = match settings.synth {
+            Synth::XSynth => {
+                MidiAudioPlayer::XSynth(XSynthPlayer::new(settings.xsynth.config.clone()))
+            }
             Synth::Kdmapi => match KdmapiPlayer::new() {
-                Ok(kdmapi) => Box::new(kdmapi),
+                Ok(kdmapi) => MidiAudioPlayer::Kdmapi(kdmapi),
                 Err(e) => {
                     errors.error(&e);
-                    Box::new(EmptyPlayer::new())
+                    MidiAudioPlayer::None
                 }
             },
             Synth::MidiDevice => match MidiDevicePlayer::new(settings.midi_device.clone()) {
-                Ok(midiout) => Box::new(midiout),
+                Ok(midiout) => MidiAudioPlayer::MidiDevice(midiout),
                 Err(e) => {
                     errors.error(&e);
-                    Box::new(EmptyPlayer::new())
+                    MidiAudioPlayer::None
                 }
             },
-            Synth::None => Box::new(EmptyPlayer::new()),
+            Synth::None => MidiAudioPlayer::None,
         };
 
-        // Configure the synth and load the soundfont list
-        synth.configure(settings);
-        synth.set_soundfonts(&settings.soundfonts, loading_status, errors);
-
         // Apply the synth to the struct
-        *self.player.write().unwrap() = synth;
+        *self.0.write().unwrap() = synth;
+
+        // Configure the synth and load the soundfont list
+        self.configure(settings);
+        self.set_soundfonts(&settings.soundfonts, loading_status, errors);
     }
 }
