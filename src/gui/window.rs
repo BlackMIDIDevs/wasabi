@@ -16,13 +16,13 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::thread;
 
-use crossbeam_channel::{Receiver, Sender};
 use egui::FontFamily::{Monospace, Proportional};
 use egui::FontId;
 use egui::Frame;
 pub use loading::*;
 use settings::SettingsWindow;
 use time::Duration;
+use tokio::sync::{oneshot, oneshot::Receiver};
 
 use crate::{
     gui::{
@@ -43,8 +43,8 @@ pub struct GuiWasabiWindow {
     fps: fps::Fps,
 
     settings_win: SettingsWindow,
-    midi_picker: (Sender<PathBuf>, Receiver<PathBuf>),
-    midi_loader: (Sender<MIDIFileUnion>, Receiver<MIDIFileUnion>),
+    midi_picker: Option<Receiver<PathBuf>>,
+    midi_loader: Option<Receiver<MIDIFileUnion>>,
 }
 
 impl GuiWasabiWindow {
@@ -75,8 +75,8 @@ impl GuiWasabiWindow {
             fps: fps::Fps::new(),
 
             settings_win,
-            midi_picker: crossbeam_channel::bounded(1),
-            midi_loader: crossbeam_channel::bounded(1),
+            midi_picker: None,
+            midi_loader: None,
         }
     }
 
@@ -152,24 +152,20 @@ impl GuiWasabiWindow {
         Self::set_style(&ctx, settings);
 
         // Check for MIDIs selected by the file picker
-        {
-            let recv = self.midi_picker.1.clone();
-            if !recv.is_empty() {
-                if let Some(midi) = recv.into_iter().next() {
-                    state.last_midi_location = midi.clone();
-                    self.load_midi(midi, settings, state);
-                }
+        if let Some(recv) = self.midi_picker.as_mut() {
+            if let Ok(midi) = recv.try_recv() {
+                state.last_midi_location = midi.clone();
+                self.load_midi(midi, settings, state);
+                self.midi_picker = None;
             }
         }
 
         // Check for MIDIs parsed by the MIDI loader and play
-        {
-            let recv = self.midi_loader.1.clone();
-            if !recv.is_empty() {
-                if let Some(mut midi) = recv.into_iter().next() {
-                    midi.timer_mut().play();
-                    self.midi_file = Some(midi);
-                }
+        if let Some(recv) = self.midi_loader.as_mut() {
+            if let Ok(mut midi) = recv.try_recv() {
+                midi.timer_mut().play();
+                self.midi_file = Some(midi);
+                self.midi_loader = None;
             }
         }
 
@@ -364,7 +360,8 @@ impl GuiWasabiWindow {
             return;
         }
 
-        let sender = self.midi_picker.0.clone();
+        let (tx, rx) = oneshot::channel();
+        self.midi_picker = Some(rx);
         let last_location = state.last_midi_location.clone();
 
         // Open the file picker in a thread so the main UI thread does not freeze
@@ -377,7 +374,7 @@ impl GuiWasabiWindow {
                 .pick_file();
 
             if let Some(midi_path) = midi_path {
-                sender.send(midi_path).unwrap_or_default();
+                tx.send(midi_path).unwrap_or_default();
             }
         });
     }
@@ -402,9 +399,11 @@ impl GuiWasabiWindow {
 
         let synth = state.synth.clone();
         let settings = settings.midi.clone();
-        let sender = self.midi_loader.0.clone();
         let loading_status = state.loading_status.clone();
         let errors = state.errors.clone();
+
+        let (tx, rx) = oneshot::channel();
+        self.midi_loader = Some(rx);
 
         // Load the MIDI in a thread so the UI doesn't freeze and send it
         // via crossbeam
@@ -415,7 +414,7 @@ impl GuiWasabiWindow {
                         match InRamMIDIFile::load_from_file(midi_path, synth, &settings) {
                             Ok(midi) => {
                                 let midi_file = MIDIFileUnion::InRam(midi);
-                                sender.send(midi_file).unwrap();
+                                tx.send(midi_file).ok();
                             }
                             Err(e) => errors.error(&e),
                         }
@@ -425,7 +424,7 @@ impl GuiWasabiWindow {
                         match LiveLoadMIDIFile::load_from_file(midi_path, synth, &settings) {
                             Ok(midi) => {
                                 let midi_file = MIDIFileUnion::Live(midi);
-                                sender.send(midi_file).unwrap();
+                                tx.send(midi_file).ok();
                             }
                             Err(e) => errors.error(&e),
                         }
@@ -435,7 +434,7 @@ impl GuiWasabiWindow {
                         match CakeMIDIFile::load_from_file(midi_path, synth, &settings) {
                             Ok(midi) => {
                                 let midi_file = MIDIFileUnion::Cake(midi);
-                                sender.send(midi_file).unwrap();
+                                tx.send(midi_file).ok();
                             }
                             Err(e) => errors.error(&e),
                         }

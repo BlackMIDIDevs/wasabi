@@ -38,6 +38,7 @@ time = "0.3.36"
 image = "0.25.2"
 reqwest = { version = "0.12.8", features = ["json", "blocking"] }
 spin_sleep = "1.2.1"
+tokio = { version = "1.40.0", features = ["sync"] }
 
 num_enum = "0.7.3"
 palette = "0.7.6"
