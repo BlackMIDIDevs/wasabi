@@ -1,6 +1,4 @@
-#[cfg(target_os = "windows")]
 use crate::settings::WasabiSettings;
-#[cfg(target_os = "windows")]
 use std::io::Write;
 
 use crate::{gui::window::WasabiError, utils};
@@ -52,16 +50,12 @@ impl MidiAudioPlayer for KdmapiPlayer {
         self.use_om_list = settings.kdmapi.use_om_sflist;
     }
 
-    #[allow(unused_variables)]
     fn set_soundfonts(
         &mut self,
         soundfonts: &[WasabiSoundfont],
         _loading_status: Arc<LoadingStatus>,
         errors: Arc<GuiMessageSystem>,
     ) {
-        // Due to Windows using UTF16 formatting, this is currently only available for
-        // the official Windows OmniMIDI.
-        #[cfg(target_os = "windows")]
         if !self.use_om_list {
             let list = utils::create_om_sf_list(soundfonts);
 

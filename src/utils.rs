@@ -2,10 +2,8 @@ use reqwest::blocking::ClientBuilder;
 use serde_json::Value;
 use std::{collections::HashMap, ops::RangeInclusive};
 
-use crate::{gui::window::WasabiError, state::WasabiState};
-
-#[cfg(target_os = "windows")]
 use crate::settings::WasabiSoundfont;
+use crate::{gui::window::WasabiError, state::WasabiState};
 
 pub const WIN_MARGIN: egui::Margin = egui::Margin::same(12.0);
 pub const NOTE_SPEED_RANGE: RangeInclusive<f64> = 8.0..=0.05;
@@ -72,7 +70,6 @@ pub fn check_for_updates(state: &WasabiState) {
     }
 }
 
-#[cfg(target_os = "windows")]
 pub fn create_om_sf_list(list: &[WasabiSoundfont]) -> String {
     let mut out = String::new();
 
