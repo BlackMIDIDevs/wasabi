@@ -204,6 +204,20 @@ impl Renderer {
         self.swap_chain.resize(size);
     }
 
+    pub fn set_vsync(&mut self, enable_vsync: bool) {
+        if enable_vsync {
+            self.swap_chain.set_present_mode(crate::VSYNC_PRESENT_MODE);
+        } else if matches!(
+            self.window.display_handle().unwrap().as_raw(),
+            RawDisplayHandle::Wayland(..)
+        ) {
+            self.swap_chain
+                .set_present_mode(crate::WAYLAND_PRESENT_MODE);
+        } else {
+            self.swap_chain.set_present_mode(crate::PRESENT_MODE);
+        }
+    }
+
     pub fn gui(&mut self) -> &mut Gui {
         &mut self.gui
     }

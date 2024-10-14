@@ -23,19 +23,8 @@ impl SettingsWindow {
                 ui.checkbox(&mut settings.gui.check_for_updates, "");
                 ui.end_row();
 
-                ui.horizontal(|ui| {
-                    ui.label("FPS Limit:");
-                    ui.monospace("\u{2139}").on_hover_text(
-                        "\
-                        Use 0 for no limit.\n\
-                        Warning: Do not rely on this option for VSync.",
-                    );
-                });
-                ui.add(
-                    egui::DragValue::new(&mut settings.gui.fps_limit)
-                        .speed(1)
-                        .range(0..=usize::MAX),
-                );
+                ui.label("Enable VSync:");
+                ui.checkbox(&mut settings.gui.vsync, "");
                 ui.end_row();
 
                 ui.label("Skip Control:");

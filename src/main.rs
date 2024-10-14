@@ -28,6 +28,7 @@ pub const WINDOW_SIZE: Size = Size::Logical(LogicalSize {
 
 pub const PRESENT_MODE: PresentMode = PresentMode::Immediate;
 pub const WAYLAND_PRESENT_MODE: PresentMode = PresentMode::Mailbox;
+pub const VSYNC_PRESENT_MODE: PresentMode = PresentMode::Fifo;
 
 pub fn main() {
     let event_loop = EventLoop::new().unwrap();

@@ -346,11 +346,6 @@ impl GuiWasabiWindow {
         // Render errors
         state.errors.show(&ctx);
 
-        let fps_limit = match settings.gui.fps_limit {
-            0 => None,
-            f => Some(f),
-        };
-        self.fps.set_limit(fps_limit);
         self.fps.update();
     }
 

@@ -31,6 +31,7 @@ pub struct ManagedSwapchain {
     previous_frame_end: Option<Box<dyn GpuFuture>>,
     device: Arc<Device>,
     recreate_on_next_frame: bool,
+    present_mode: PresentMode,
 }
 
 impl ManagedSwapchain {
@@ -92,6 +93,7 @@ impl ManagedSwapchain {
             previous_frame_end: Some(sync::now(device.clone()).boxed()),
             device,
             recreate_on_next_frame: false,
+            present_mode,
         }
     }
 
@@ -106,9 +108,19 @@ impl ManagedSwapchain {
         }
     }
 
+    pub fn set_present_mode(&mut self, present_mode: PresentMode) {
+        let prev = self.present_mode;
+        self.present_mode = present_mode;
+
+        if prev != self.present_mode {
+            self.recreate();
+        }
+    }
+
     pub fn recreate(&mut self) {
         let (new_swapchain, new_images) = match self.swap_chain.recreate(SwapchainCreateInfo {
             image_extent: self.state.size,
+            present_mode: self.present_mode,
             ..self.swap_chain.create_info()
         }) {
             Ok(r) => r,

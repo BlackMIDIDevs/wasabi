@@ -104,6 +104,7 @@ impl ApplicationHandler for WasabiApplication {
                 renderer.set_fullscreen(mode);
                 self.state.fullscreen = false;
             }
+            renderer.set_vsync(self.settings.gui.vsync);
         }
     }
 }
