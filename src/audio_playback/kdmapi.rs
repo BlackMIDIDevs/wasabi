@@ -58,7 +58,7 @@ impl KdmapiPlayer {
                 file.write_all(list.as_bytes()).unwrap_or_else(|e| {
                     errors.warning(format!(
                         "Failed to create SoundFont list for OmniMIDI: {}",
-                        e.to_string()
+                        e
                     ))
                 });
             }

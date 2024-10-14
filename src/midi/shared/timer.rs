@@ -122,7 +122,6 @@ impl TimeKeeper {
     }
 
     pub fn seek(&mut self, time: Duration) {
-        let time = time;
         if self.current_state.is_paused() {
             self.current_state = TimerState::Paused { time_offset: time };
         } else {
