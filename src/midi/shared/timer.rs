@@ -20,13 +20,13 @@ enum TimerState {
 }
 
 impl TimerState {
-    fn get_time(&self, start_delay: Duration) -> Duration {
+    fn get_time(&self) -> Duration {
         match self {
             TimerState::Running {
                 continue_time,
                 time_offset,
-            } => continue_time.elapsed() + *time_offset - start_delay,
-            TimerState::Paused { time_offset } => *time_offset - start_delay,
+            } => continue_time.elapsed() + *time_offset,
+            TimerState::Paused { time_offset } => *time_offset,
         }
     }
 
@@ -39,7 +39,6 @@ impl TimerState {
 pub struct TimeKeeper {
     current_state: TimerState,
     listeners: Vec<crossbeam_channel::Sender<NotifySignal>>,
-    start_delay: Duration,
 }
 
 impl TimeKeeper {
@@ -50,12 +49,11 @@ impl TimeKeeper {
                 time_offset: -start_delay,
             },
             listeners: Vec::new(),
-            start_delay,
         }
     }
 
     pub fn get_time(&self) -> Duration {
-        self.current_state.get_time(self.start_delay)
+        self.current_state.get_time()
     }
 
     pub fn is_paused(&self) -> bool {
@@ -68,7 +66,6 @@ impl TimeKeeper {
         TimeListener {
             reciever: rcv,
             current: self.current_state.clone(),
-            start_delay: self.start_delay,
         }
     }
 
@@ -93,7 +90,7 @@ impl TimeKeeper {
     }
 
     pub fn toggle_pause(&mut self) {
-        let now = self.get_time() + self.start_delay;
+        let now = self.get_time();
         match self.current_state {
             TimerState::Paused { .. } => {
                 self.current_state = TimerState::Running {
@@ -110,13 +107,13 @@ impl TimeKeeper {
     }
 
     pub fn pause(&mut self) {
-        let now = self.get_time() + self.start_delay;
+        let now = self.get_time();
         self.current_state = TimerState::Paused { time_offset: now };
         self.notify_listeners(false);
     }
 
     pub fn play(&mut self) {
-        let now = self.get_time() + self.start_delay;
+        let now = self.get_time();
         self.current_state = TimerState::Running {
             continue_time: Instant::now(),
             time_offset: now,
@@ -125,7 +122,7 @@ impl TimeKeeper {
     }
 
     pub fn seek(&mut self, time: Duration) {
-        let time = time + self.start_delay;
+        let time = time;
         if self.current_state.is_paused() {
             self.current_state = TimerState::Paused { time_offset: time };
         } else {
@@ -141,7 +138,6 @@ impl TimeKeeper {
 pub struct TimeListener {
     reciever: crossbeam_channel::Receiver<NotifySignal>,
     current: TimerState,
-    start_delay: Duration,
 }
 
 #[must_use]
@@ -171,7 +167,7 @@ impl TimeListener {
     }
 
     pub fn wait_until(&mut self, time: Duration) -> WaitResult {
-        let curr_time = self.current.get_time(self.start_delay);
+        let curr_time = self.current.get_time();
         if curr_time >= time {
             return WaitResult::Ok;
         }
@@ -185,7 +181,7 @@ impl TimeListener {
             Ok(signal) => {
                 self.current = signal.new_state;
                 if signal.has_seeked {
-                    WaitResult::Seeked(self.current.get_time(self.start_delay))
+                    WaitResult::Seeked(self.current.get_time())
                 } else if self.current.is_paused() {
                     WaitResult::Paused
                 } else {
@@ -213,7 +209,7 @@ impl TimeListener {
                 Ok(signal) => {
                     self.current = signal.new_state;
                     if signal.has_seeked {
-                        seeked = Some(self.current.get_time(self.start_delay));
+                        seeked = Some(self.current.get_time());
                     }
 
                     if !self.current.is_paused() {
@@ -242,9 +238,7 @@ impl TimeListener {
                     }
 
                     if seeked && !self.current.is_paused() {
-                        return SeekWaitResult::UnpausedAndSeeked(
-                            self.current.get_time(self.start_delay),
-                        );
+                        return SeekWaitResult::UnpausedAndSeeked(self.current.get_time());
                     }
                 }
                 Err(_) => return SeekWaitResult::Killed,
@@ -253,6 +247,6 @@ impl TimeListener {
     }
 
     pub fn get_time(&self) -> Duration {
-        self.current.get_time(self.start_delay)
+        self.current.get_time()
     }
 }
