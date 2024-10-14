@@ -1,5 +1,6 @@
 use reqwest::blocking::ClientBuilder;
 use serde_json::Value;
+use std::thread;
 use std::{collections::HashMap, ops::RangeInclusive};
 
 use crate::settings::WasabiSoundfont;
@@ -59,15 +60,19 @@ fn get_latest_version() -> Result<String, WasabiError> {
 }
 
 pub fn check_for_updates(state: &WasabiState) {
-    let current = format!("v{}", env!("CARGO_PKG_VERSION"));
-    match get_latest_version() {
-        Ok(latest) => {
-            if latest != current {
-                state.errors.new_update(latest);
+    let errors = state.errors.clone();
+
+    thread::spawn(move || {
+        let current = format!("v{}", env!("CARGO_PKG_VERSION"));
+        match get_latest_version() {
+            Ok(latest) => {
+                if latest != current {
+                    errors.new_update(latest);
+                }
             }
+            Err(e) => errors.error(&e),
         }
-        Err(e) => state.errors.error(&e),
-    }
+    });
 }
 
 pub fn create_om_sf_list(list: &[WasabiSoundfont]) -> String {
