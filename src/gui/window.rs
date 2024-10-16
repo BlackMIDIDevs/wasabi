@@ -293,12 +293,10 @@ impl GuiWasabiWindow {
                     });
 
                     // If song is finished, pause
-                    {
-                        let length = midi_file.midi_length().unwrap_or(0.0);
-                        let current = midi_file.timer().get_time().as_seconds_f64();
-                        if current > length {
-                            midi_file.timer_mut().pause();
-                        }
+                    let length = midi_file.midi_length().unwrap_or(0.0);
+                    let current = midi_file.timer().get_time().as_seconds_f64();
+                    if current > length {
+                        midi_file.timer_mut().pause();
                     }
 
                     let result = self.render_scene.draw(
