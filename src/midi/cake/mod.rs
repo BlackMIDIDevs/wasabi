@@ -1,7 +1,4 @@
-use std::{
-    sync::{Arc, RwLock},
-    thread,
-};
+use std::{path::PathBuf, sync::Arc, thread};
 use time::Duration;
 
 use midi_toolkit::{
@@ -15,7 +12,8 @@ use midi_toolkit::{
 };
 
 use crate::{
-    audio_playback::SimpleTemporaryPlayer,
+    audio_playback::WasabiAudioPlayer,
+    gui::window::WasabiError,
     midi::{
         audio::ram::InRamAudioPlayer,
         cake::tree_threader::{NoteEvent, ThreadedTreeSerializers},
@@ -23,6 +21,7 @@ use crate::{
         shared::{audio::CompressedAudio, timer::TimeKeeper},
         MIDIColor,
     },
+    settings::MidiSettings,
 };
 
 use self::blocks::CakeBlock;
@@ -46,14 +45,14 @@ pub struct CakeMIDIFile {
 
 impl CakeMIDIFile {
     pub fn load_from_file(
-        path: &str,
-        player: Arc<RwLock<SimpleTemporaryPlayer>>,
-        random_colors: bool,
-    ) -> Self {
+        path: impl Into<PathBuf>,
+        player: Arc<WasabiAudioPlayer>,
+        settings: &MidiSettings,
+    ) -> Result<Self, WasabiError> {
         let ticks_per_second = 10000;
 
-        let (file, signature) = open_file_and_signature(path);
-        let midi = TKMIDIFile::open_from_stream(file, None).unwrap();
+        let (file, signature) = open_file_and_signature(path)?;
+        let midi = TKMIDIFile::open_from_stream(file, None).map_err(WasabiError::MidiLoadError)?;
 
         let ppq = midi.ppq();
         let merged = pipe!(
@@ -64,12 +63,7 @@ impl CakeMIDIFile {
             |>unwrap_items()
         );
 
-        let track_count = midi.track_count();
-        let colors = if random_colors {
-            MIDIColor::new_random_vec_for_tracks(track_count)
-        } else {
-            MIDIColor::new_vec_for_tracks(track_count)
-        };
+        let colors = MIDIColor::new_vec_from_settings(midi.track_count(), settings)?;
 
         type Ev = Delta<f64, Track<EventBatch<Event>>>;
         let (key_snd, key_rcv) = crossbeam_channel::bounded::<Arc<Ev>>(1000);
@@ -159,18 +153,18 @@ impl CakeMIDIFile {
         let (keys, note_count) = key_join_handle.join().unwrap();
         let audio = audio_join_handle.join().unwrap();
 
-        let mut timer = TimeKeeper::new();
+        let mut timer = TimeKeeper::new(settings.start_delay);
 
         InRamAudioPlayer::new(audio, timer.get_listener(), player).spawn_playback();
 
-        CakeMIDIFile {
+        Ok(CakeMIDIFile {
             blocks: keys,
             timer,
             length,
             note_count,
             ticks_per_second,
             signature,
-        }
+        })
     }
 
     pub fn key_blocks(&self) -> &[CakeBlock] {

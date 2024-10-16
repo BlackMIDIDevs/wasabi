@@ -2,14 +2,14 @@ use std::sync::Arc;
 
 use vulkano::{
     device::Device,
-    image::{view::ImageView, AttachmentImage},
+    image::{view::ImageView, Image, ImageCreateInfo, ImageUsage},
     memory::allocator::StandardMemoryAllocator,
 };
 
 use crate::{gui::GuiState, renderer::swapchain::ImagesState};
 
 pub struct SceneImage {
-    pub image: Arc<ImageView<AttachmentImage>>,
+    pub image: Arc<ImageView>,
     pub id: egui::TextureId,
 }
 
@@ -39,17 +39,26 @@ impl SceneSwapchain {
                 state.renderer.gui.unregister_user_image(image.id);
             }
 
-            let allocator = StandardMemoryAllocator::new_default(self.device.clone());
+            let allocator = Arc::new(StandardMemoryAllocator::new_default(self.device.clone()));
+            let create_info = ImageCreateInfo {
+                format: image_state.format,
+                extent: [size[0], size[1], 1],
+                usage: ImageUsage::SAMPLED | ImageUsage::COLOR_ATTACHMENT,
+                ..Default::default()
+            };
 
             // Create new images
             for _ in 0..image_state.count {
                 let image = ImageView::new_default(
-                    AttachmentImage::sampled_input_attachment(&allocator, size, image_state.format)
+                    Image::new(allocator.clone(), create_info.clone(), Default::default())
                         .expect("Failed to create scene image"),
                 )
                 .expect("Failed to create scene image view");
 
-                let id = state.renderer.gui.register_user_image_view(image.clone());
+                let id = state
+                    .renderer
+                    .gui
+                    .register_user_image_view(image.clone(), Default::default());
 
                 self.scene_images.push(SceneImage { image, id });
             }

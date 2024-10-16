@@ -2,8 +2,8 @@ mod notes_render_pass;
 
 use std::{cell::UnsafeCell, sync::Arc};
 
-use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
-use vulkano::image::ImageViewAbstract;
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
+use vulkano::image::view::ImageView;
 
 use crate::{
     gui::{window::keyboard_layout::KeyboardView, GuiRenderer},
@@ -47,7 +47,7 @@ impl NoteRenderer {
     pub fn draw(
         &mut self,
         key_view: &KeyboardView,
-        final_image: Arc<dyn ImageViewAbstract + 'static>,
+        final_image: Arc<ImageView>,
         midi_file: &mut impl MIDIFile,
         view_range: f64,
     ) -> RenderResultData {
@@ -69,11 +69,11 @@ impl NoteRenderer {
         let mut columns_view_info = Vec::new();
 
         let border_width = utils::calculate_border_width(
-            final_image.dimensions().width() as f32,
+            final_image.image().extent()[0] as f32,
             key_view.visible_range.len() as f32,
         );
 
-        // Add black keys first
+        // Black keys first
         for (i, column) in columns.iter().enumerate() {
             if key_view.key(i).black {
                 let iter = column.iterate_displaced_notes();
@@ -122,56 +122,58 @@ impl NoteRenderer {
                 // A system to write multiple note columns into 1 large allocated array in parallel
                 let written_notes = self.thrad_pool.install(|| {
                     // For each note column, write it into the buffer
-                    let written_notes_per_key = columns_view_info.par_iter_mut().map(|column| {
-                        if column.remaining == 0 {
-                            return 0;
-                        }
+                    let written_notes_per_key =
+                        columns_view_info.par_iter_mut().rev().map(|column| {
+                            if column.remaining == 0 {
+                                return 0;
+                            }
 
-                        let offset = (column.offset as i64 - notes_pushed as i64).max(0) as usize;
+                            let offset =
+                                (column.offset as i64 - notes_pushed as i64).max(0) as usize;
 
-                        if offset >= buffer_length {
-                            return 0;
-                        }
+                            if offset >= buffer_length {
+                                return 0;
+                            }
 
-                        let remaining_buffer_space = buffer_length - offset;
-                        let iter_length = column.remaining;
+                            let remaining_buffer_space = buffer_length - offset;
+                            let iter_length = column.remaining;
 
-                        let allowed_to_write = if iter_length > remaining_buffer_space {
-                            remaining_buffer_space
-                        } else {
-                            iter_length
-                        };
+                            let allowed_to_write = if iter_length > remaining_buffer_space {
+                                remaining_buffer_space
+                            } else {
+                                iter_length
+                            };
 
-                        unsafe {
-                            let buffer = buffer_writer.get_mut();
+                            unsafe {
+                                let buffer = buffer_writer.get_mut();
 
-                            for i in 0..allowed_to_write {
-                                let next_note = column.iter.next();
-                                if let Some(note) = next_note {
-                                    buffer[i + offset] = NoteVertex::new(
-                                        note.start,
-                                        note.len,
-                                        column.key,
-                                        note.color.as_u32(),
-                                        column.border_width as u32,
-                                    );
+                                for i in 0..allowed_to_write {
+                                    let next_note = column.iter.next();
+                                    if let Some(note) = next_note {
+                                        buffer[i + offset] = NoteVertex::new(
+                                            note.start,
+                                            note.len,
+                                            column.key,
+                                            note.color.as_u32(),
+                                            column.border_width as u32,
+                                        );
 
-                                    if note.start <= 0.0
-                                        && column.color.is_none()
-                                        && note.start + note.len > 0.0
-                                    {
-                                        column.color = Some(note.color);
+                                        if note.start <= 0.0
+                                            && column.color.is_none()
+                                            && note.start + note.len > 0.0
+                                        {
+                                            column.color = Some(note.color);
+                                        }
+                                    } else {
+                                        panic!("Invalid iterator length");
                                     }
-                                } else {
-                                    panic!("Invalid iterator length");
                                 }
                             }
-                        }
 
-                        column.remaining -= allowed_to_write;
+                            column.remaining -= allowed_to_write;
 
-                        allowed_to_write
-                    });
+                            allowed_to_write
+                        });
 
                     written_notes_per_key.sum::<usize>()
                 });

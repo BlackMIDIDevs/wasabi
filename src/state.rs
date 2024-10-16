@@ -1,10 +1,68 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::Arc};
 
-#[derive(Clone, Default)]
+use crate::{
+    audio_playback::WasabiAudioPlayer,
+    gui::window::{GuiMessageSystem, LoadingStatus},
+};
+
+#[derive(Default, PartialEq)]
+pub enum SettingsTab {
+    #[default]
+    Visual,
+    Midi,
+    Synth,
+    SoundFonts,
+}
+
 pub struct WasabiState {
+    pub synth: Arc<WasabiAudioPlayer>,
+
     pub fullscreen: bool,
-    pub settings_visible: bool,
-    pub xsynth_settings_visible: bool,
-    pub last_midi_file: Option<PathBuf>,
-    // pub last_sfz_file: Option<PathBuf>,
+
+    pub errors: Arc<GuiMessageSystem>,
+    pub loading_status: Arc<LoadingStatus>,
+
+    pub panel_pinned: bool,
+    pub panel_id: egui::Id,
+    pub panel_popup_id: egui::Id,
+    pub stats_visible: bool,
+
+    pub show_settings: bool,
+    pub show_shortcuts: bool,
+    pub show_about: bool,
+
+    pub settings_tab: SettingsTab,
+
+    pub last_midi_location: PathBuf,
+    pub last_sf_location: PathBuf,
+}
+
+impl WasabiState {
+    pub fn new() -> Self {
+        let loading_status = LoadingStatus::new();
+        let errors = GuiMessageSystem::new();
+
+        Self {
+            synth: WasabiAudioPlayer::empty(),
+
+            fullscreen: false,
+
+            errors,
+            loading_status,
+
+            panel_pinned: true,
+            panel_id: egui::Id::new("playback_panel"),
+            panel_popup_id: egui::Id::new("options_popup"),
+            stats_visible: true,
+
+            show_settings: false,
+            show_shortcuts: false,
+            show_about: false,
+
+            settings_tab: SettingsTab::default(),
+
+            last_midi_location: PathBuf::default(),
+            last_sf_location: PathBuf::default(),
+        }
+    }
 }

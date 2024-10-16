@@ -1,31 +1,38 @@
-mod fps;
+pub mod fps;
 mod keyboard;
 mod keyboard_layout;
 mod scene;
 mod stats;
 
-mod settings_window;
-mod top_panel;
-mod xsynth_settings;
+mod about;
+mod errors;
+mod loading;
+mod playback_panel;
+mod settings;
+mod shortcuts;
+pub use errors::*;
 
-use std::{
-    path::PathBuf,
-    sync::{Arc, RwLock},
-};
+use std::path::Path;
+use std::path::PathBuf;
+use std::thread;
+
+use egui::FontFamily::{Monospace, Proportional};
+use egui::FontId;
+use egui::Frame;
+pub use loading::*;
+use settings::SettingsWindow;
 use time::Duration;
-
-use egui::{style::Margin, Frame, Visuals};
+use tokio::sync::{oneshot, oneshot::Receiver};
 
 use crate::{
-    audio_playback::{
-        xsynth::{convert_to_channel_init, convert_to_sf_init},
-        AudioPlayerType, SimpleTemporaryPlayer,
+    gui::{
+        window::{keyboard::GuiKeyboard, scene::GuiRenderScene},
+        GuiRenderer, GuiState,
     },
-    gui::window::{keyboard::GuiKeyboard, scene::GuiRenderScene},
     midi::{CakeMIDIFile, InRamMIDIFile, LiveLoadMIDIFile, MIDIFileBase, MIDIFileUnion},
-    settings::{MidiLoading, Synth, WasabiSettings},
+    settings::{MidiParsing, WasabiSettings},
     state::WasabiState,
-    GuiRenderer, GuiState,
+    utils::NOTE_SPEED_RANGE,
 };
 
 pub struct GuiWasabiWindow {
@@ -33,95 +40,211 @@ pub struct GuiWasabiWindow {
     keyboard_layout: keyboard_layout::KeyboardLayout,
     keyboard: GuiKeyboard,
     midi_file: Option<MIDIFileUnion>,
-    synth: Arc<RwLock<SimpleTemporaryPlayer>>,
     fps: fps::Fps,
+
+    settings_win: SettingsWindow,
+    midi_picker: Option<Receiver<PathBuf>>,
+    midi_loader: Option<Receiver<MIDIFileUnion>>,
 }
 
 impl GuiWasabiWindow {
-    pub fn new(renderer: &mut GuiRenderer, settings: &mut WasabiSettings) -> GuiWasabiWindow {
-        let synth = match settings.synth.synth {
-            Synth::Kdmapi => Arc::new(RwLock::new(SimpleTemporaryPlayer::new(
-                AudioPlayerType::Kdmapi,
-            ))),
-            Synth::XSynth => {
-                let synth = Arc::new(RwLock::new(SimpleTemporaryPlayer::new(
-                    AudioPlayerType::XSynth {
-                        buffer: settings.synth.buffer_ms,
-                        use_threadpool: settings.synth.use_threadpool,
-                        ignore_range: settings.synth.vel_ignore.clone(),
-                        options: convert_to_channel_init(settings),
-                    },
-                )));
-                synth
-                    .write()
-                    .unwrap()
-                    .set_soundfont(&settings.synth.sfz_path, convert_to_sf_init(settings));
-                synth
-                    .write()
-                    .unwrap()
-                    .set_layer_count(match settings.synth.layer_count {
-                        0 => None,
-                        _ => Some(settings.synth.layer_count),
-                    });
-                synth
-            }
-        };
+    pub fn new(
+        renderer: &mut GuiRenderer,
+        settings: &mut WasabiSettings,
+        state: &WasabiState,
+    ) -> GuiWasabiWindow {
+        let mut settings_win = SettingsWindow::new(settings);
+        settings_win
+            .load_palettes(settings)
+            .unwrap_or_else(|e| state.errors.warning(e.to_string()));
+        settings_win
+            .load_midi_devices(settings)
+            .unwrap_or_else(|e| state.errors.warning(e.to_string()));
+
+        state.synth.switch(
+            &settings.synth,
+            state.loading_status.clone(),
+            state.errors.clone(),
+        );
 
         GuiWasabiWindow {
             render_scene: GuiRenderScene::new(renderer),
             keyboard_layout: keyboard_layout::KeyboardLayout::new(&Default::default()),
             keyboard: GuiKeyboard::new(),
             midi_file: None,
-            synth,
             fps: fps::Fps::new(),
+
+            settings_win,
+            midi_picker: None,
+            midi_loader: None,
         }
+    }
+
+    #[inline(always)]
+    fn set_style(ctx: &egui::Context, _settings: &WasabiSettings) {
+        // Set theme
+        ctx.style_mut(|style| {
+            style.visuals.panel_fill = egui::Color32::from_rgb(18, 18, 18);
+            style.visuals.window_fill = style.visuals.panel_fill;
+            style.visuals.widgets.inactive.weak_bg_fill = style.visuals.panel_fill;
+            style.visuals.widgets.hovered.bg_stroke = egui::Stroke::NONE;
+            style.visuals.widgets.active.bg_stroke = egui::Stroke::NONE;
+
+            style.visuals.selection.bg_fill = style.visuals.widgets.active.weak_bg_fill;
+            style.visuals.selection.stroke.color = egui::Color32::TRANSPARENT;
+
+            style.visuals.override_text_color = Some(egui::Color32::from_rgb(210, 210, 210));
+
+            style.spacing.menu_margin = egui::Margin::same(8.0);
+            style.spacing.interact_size.y = 22.0;
+        });
+
+        // Set fonts
+        let mut fonts = egui::FontDefinitions::default();
+
+        fonts.font_data.insert(
+            "poppins".to_owned(),
+            egui::FontData::from_static(include_bytes!("../../assets/Poppins-Medium.ttf")),
+        );
+        fonts
+            .families
+            .get_mut(&egui::FontFamily::Proportional)
+            .unwrap()
+            .insert(0, "poppins".to_owned());
+
+        fonts.font_data.insert(
+            "ubuntu".to_owned(),
+            egui::FontData::from_static(include_bytes!("../../assets/UbuntuSansMono-Medium.ttf")),
+        );
+        fonts
+            .families
+            .get_mut(&egui::FontFamily::Monospace)
+            .unwrap()
+            .insert(0, "ubuntu".to_owned());
+
+        ctx.set_fonts(fonts);
+
+        // Set font size
+        let mut style = (*ctx.style()).clone();
+        style.text_styles = [
+            (egui::TextStyle::Heading, FontId::new(22.0, Proportional)),
+            (egui::TextStyle::Body, FontId::new(14.0, Proportional)),
+            (egui::TextStyle::Monospace, FontId::new(12.0, Monospace)),
+            (egui::TextStyle::Button, FontId::new(14.0, Proportional)),
+            (egui::TextStyle::Small, FontId::new(10.0, Proportional)),
+            (
+                egui::TextStyle::Name("monospace big".into()),
+                FontId::new(20.0, Monospace),
+            ),
+        ]
+        .into();
+        ctx.set_style(style);
     }
 
     /// Defines the layout of our UI
     pub fn layout(
         &mut self,
-        state: &mut GuiState,
+        gui_state: &mut GuiState,
         settings: &mut WasabiSettings,
-        wasabi_state: &mut WasabiState,
+        state: &mut WasabiState,
     ) {
-        let ctx = state.renderer.gui.context();
-        self.fps.update();
-        ctx.set_visuals(Visuals::dark());
+        let ctx = gui_state.renderer.gui.context();
+        Self::set_style(&ctx, settings);
 
-        if wasabi_state.settings_visible {
-            settings_window::draw_settings(self, settings, wasabi_state, &ctx);
-        }
-        if wasabi_state.xsynth_settings_visible {
-            xsynth_settings::draw_xsynth_settings(self, settings, wasabi_state, &ctx);
+        // Check for MIDIs selected by the file picker
+        if let Some(recv) = self.midi_picker.as_mut() {
+            if let Ok(midi) = recv.try_recv() {
+                state.last_midi_location = midi.clone();
+                self.load_midi(midi, settings, state);
+                self.midi_picker = None;
+            }
         }
 
-        let height_prev = ctx.available_rect().height();
-        if settings.visual.show_top_pannel {
-            top_panel::draw_panel(self, settings, wasabi_state, &ctx);
+        // Check for MIDIs parsed by the MIDI loader and play
+        if let Some(recv) = self.midi_loader.as_mut() {
+            if let Ok(mut midi) = recv.try_recv() {
+                midi.timer_mut().play();
+                self.midi_file = Some(midi);
+                self.midi_loader = None;
+            }
         }
+
+        // If something is loading, pause playback and hide all windows
+        if state.loading_status.is_loading() {
+            if let Some(midi) = self.midi_file.as_mut() {
+                midi.timer_mut().pause();
+            }
+            state.loading_status.show(&ctx);
+            state.show_about = false;
+            state.show_settings = false;
+            state.show_shortcuts = false;
+        }
+
+        // Render windows
+        if state.show_settings {
+            self.settings_win.show(&ctx, settings, state);
+        }
+
+        if state.show_about {
+            self.show_about(&ctx, state);
+        }
+
+        if state.show_shortcuts {
+            self.show_shortcuts(&ctx, state);
+        }
+
+        // Set global keyboard shortcuts
+        ctx.input(|events| {
+            for event in &events.events {
+                if let egui::Event::Key {
+                    key,
+                    pressed,
+                    modifiers,
+                    ..
+                } = event
+                {
+                    if *pressed && modifiers.ctrl {
+                        match key {
+                            egui::Key::F => state.panel_pinned = !state.panel_pinned,
+                            egui::Key::G => state.stats_visible = !state.stats_visible,
+                            egui::Key::O => self.open_midi_dialog(state),
+                            _ => {}
+                        }
+                    }
+                    if *pressed && modifiers.alt && key == &egui::Key::Enter {
+                        state.fullscreen = !state.fullscreen
+                    }
+                    if key == &egui::Key::Insert {
+                        state.synth.reset();
+                    }
+                }
+            }
+        });
+
+        // Render the panel
+        let panel_height = self.show_playback_panel(&ctx, settings, state);
 
         // Calculate available space left for keyboard and notes
         // We must render notes before keyboard because the notes
         // renderer tells us the key colors
         let available = ctx.available_rect();
         let height = available.height();
-        let panel_height = height_prev - height;
         let keyboard_height =
-            (11.6 / settings.midi.key_range.len() as f32 * available.width()).min(height / 2.0);
+            (11.6 / settings.scene.key_range.len() as f32 * available.width()).min(height / 2.0);
         let notes_height = height - keyboard_height;
 
         let key_view = self.keyboard_layout.get_view_for_keys(
-            *settings.midi.key_range.start() as usize,
-            *settings.midi.key_range.end() as usize,
+            *settings.scene.key_range.start() as usize,
+            *settings.scene.key_range.end() as usize,
         );
 
         let no_frame = Frame::default()
-            .inner_margin(Margin::same(0.0))
-            .fill(settings.visual.bg_color);
+            .inner_margin(egui::Margin::same(0.0))
+            .fill(settings.scene.bg_color);
 
         let mut stats = stats::GuiMidiStats::empty();
 
-        let mut render_result_data = None;
+        let mut render_result_data: Option<scene::RenderResultData> = None;
 
         // Render the notes
         egui::TopBottomPanel::top("Note panel")
@@ -130,31 +253,36 @@ impl GuiWasabiWindow {
             .show_separator_line(false)
             .show(&ctx, |ui| {
                 if let Some(midi_file) = self.midi_file.as_mut() {
-                    let one_sec = Duration::seconds(1);
-                    let time = midi_file.timer().get_time();
-
+                    // Set playback keyboard shortcuts
                     ui.input(|events| {
                         for event in &events.events {
                             if let egui::Event::Key { key, pressed, .. } = event {
                                 if pressed == &true {
+                                    let skip_dur = Duration::seconds_f64(settings.gui.skip_control);
+                                    let time = midi_file.timer().get_time();
+
                                     match key {
                                         egui::Key::ArrowRight => {
-                                            midi_file.timer_mut().seek(time + one_sec)
+                                            midi_file.timer_mut().seek(time + skip_dur)
                                         }
                                         egui::Key::ArrowLeft => {
                                             if midi_file.allows_seeking_backward() {
-                                                midi_file.timer_mut().seek(if time <= one_sec {
-                                                    Duration::seconds(0)
-                                                } else {
-                                                    time - one_sec
-                                                })
+                                                midi_file.timer_mut().seek((time - skip_dur).max(
+                                                    Duration::seconds_f64(
+                                                        -settings.midi.start_delay,
+                                                    ),
+                                                ))
                                             }
                                         }
                                         egui::Key::ArrowUp => {
-                                            settings.midi.note_speed += 0.05;
+                                            settings.scene.note_speed = (settings.scene.note_speed
+                                                + settings.gui.speed_control)
+                                                .min(*NOTE_SPEED_RANGE.start());
                                         }
                                         egui::Key::ArrowDown => {
-                                            settings.midi.note_speed -= 0.05;
+                                            settings.scene.note_speed = (settings.scene.note_speed
+                                                - settings.gui.speed_control)
+                                                .max(*NOTE_SPEED_RANGE.end());
                                         }
                                         egui::Key::Space => midi_file.timer_mut().toggle_pause(),
                                         _ => {}
@@ -164,12 +292,19 @@ impl GuiWasabiWindow {
                         }
                     });
 
+                    // If song is finished, pause
+                    let length = midi_file.midi_length().unwrap_or(0.0);
+                    let current = midi_file.timer().get_time().as_seconds_f64();
+                    if current > length {
+                        midi_file.timer_mut().pause();
+                    }
+
                     let result = self.render_scene.draw(
-                        state,
+                        gui_state,
                         ui,
                         &key_view,
                         midi_file,
-                        settings.midi.note_speed,
+                        settings.scene.note_speed,
                     );
                     stats.set_rendered_note_count(result.notes_rendered);
                     render_result_data = Some(result);
@@ -182,36 +317,6 @@ impl GuiWasabiWindow {
             .frame(no_frame)
             .show_separator_line(false)
             .show(&ctx, |ui| {
-                ui.input(|events| {
-                    for event in &events.events {
-                        if let egui::Event::Key {
-                            key,
-                            pressed,
-                            modifiers,
-                            ..
-                        } = event
-                        {
-                            if *pressed && modifiers.ctrl {
-                                match key {
-                                    egui::Key::F => {
-                                        settings.visual.show_top_pannel =
-                                            !settings.visual.show_top_pannel
-                                    }
-                                    egui::Key::G => {
-                                        settings.visual.show_statistics =
-                                            !settings.visual.show_statistics
-                                    }
-                                    //egui::Key::O => self.open_midi_dialog(wasabi_state),
-                                    _ => {}
-                                }
-                            }
-                            if *pressed && modifiers.alt && key == &egui::Key::Enter {
-                                wasabi_state.fullscreen = !wasabi_state.fullscreen
-                            }
-                        }
-                    }
-                });
-
                 let colors = if let Some(data) = render_result_data {
                     data.key_colors
                 } else {
@@ -219,69 +324,117 @@ impl GuiWasabiWindow {
                 };
 
                 self.keyboard
-                    .draw(ui, &key_view, &colors, &settings.visual.bar_color);
+                    .draw(ui, &key_view, &colors, &settings.scene.bar_color);
             });
 
         // Render the stats
-        if settings.visual.show_statistics {
-            let voice_count = self.synth.read().unwrap().get_voice_count();
+        if state.stats_visible {
+            let voice_count = state.synth.voice_count();
             stats.set_voice_count(voice_count);
 
-            let pos = egui::Pos2::new(10.0, panel_height + 10.0);
-            stats::draw_stats(self, &ctx, pos, stats);
+            let pad = if settings.scene.statistics.floating {
+                12.0
+            } else {
+                0.0
+            };
+            let pos = egui::Pos2::new(pad, panel_height + pad);
+            self.draw_stats(&ctx, pos, stats, settings);
         }
+
+        // Render errors
+        state.errors.show(&ctx);
+
+        self.fps.update();
     }
 
-    #[allow(unused_variables)]
-    pub fn open_midi_dialog(&mut self, settings: &mut WasabiSettings, state: &mut WasabiState) {
-        // If windows, just use the native dialog
-        let midi_path = rfd::FileDialog::new()
-            .add_filter("mid", &["mid"])
-            .pick_file();
-
-        if let Some(midi_path) = midi_path {
-            state.last_midi_file = Some(midi_path.clone());
-            self.load_midi(settings, midi_path);
+    pub fn open_midi_dialog(&mut self, state: &mut WasabiState) {
+        // Do not open if something is loading already
+        if state.loading_status.is_loading() {
+            return;
         }
+
+        let (tx, rx) = oneshot::channel();
+        self.midi_picker = Some(rx);
+        let last_location = state.last_midi_location.clone();
+
+        // Open the file picker in a thread so the main UI thread does not freeze
+        // and send the selected path via crossbeam
+        thread::spawn(move || {
+            let midi_path = rfd::FileDialog::new()
+                .add_filter("mid", &["mid", "MID"])
+                .set_title("Pick a MIDI file...")
+                .set_directory(last_location.parent().unwrap_or(Path::new("./")))
+                .pick_file();
+
+            if let Some(midi_path) = midi_path {
+                tx.send(midi_path).unwrap_or_default();
+            }
+        });
     }
 
-    pub fn load_midi(&mut self, settings: &mut WasabiSettings, midi_path: PathBuf) {
-        if let Some(midi_file) = self.midi_file.as_mut() {
+    pub fn load_midi(
+        &mut self,
+        midi_path: PathBuf,
+        settings: &mut WasabiSettings,
+        state: &WasabiState,
+    ) {
+        // Unload current MIDI to free resources while loading the new one
+        if let Some(mut midi_file) = self.midi_file.take() {
             midi_file.timer_mut().pause();
         }
-        self.synth.write().unwrap().reset();
-        self.midi_file = None;
 
-        if let Some(midi_path) = midi_path.to_str() {
-            match settings.midi.midi_loading {
-                MidiLoading::Ram => {
-                    let mut midi_file = MIDIFileUnion::InRam(InRamMIDIFile::load_from_file(
-                        midi_path,
-                        self.synth.clone(),
-                        settings.midi.random_colors,
-                    ));
-                    midi_file.timer_mut().play();
-                    self.midi_file = Some(midi_file);
-                }
-                MidiLoading::Live => {
-                    let mut midi_file = MIDIFileUnion::Live(LiveLoadMIDIFile::load_from_file(
-                        midi_path,
-                        self.synth.clone(),
-                        settings.midi.random_colors,
-                    ));
-                    midi_file.timer_mut().play();
-                    self.midi_file = Some(midi_file);
-                }
-                MidiLoading::Cake => {
-                    let mut midi_file = MIDIFileUnion::Cake(CakeMIDIFile::load_from_file(
-                        midi_path,
-                        self.synth.clone(),
-                        settings.midi.random_colors,
-                    ));
-                    midi_file.timer_mut().play();
-                    self.midi_file = Some(midi_file);
+        let filename = midi_path.file_name().unwrap_or_default().to_os_string();
+
+        state.loading_status.create(
+            loading::LoadingType::Midi,
+            format!("Parsing {:?}", filename),
+        );
+
+        let synth = state.synth.clone();
+        let settings = settings.midi.clone();
+        let loading_status = state.loading_status.clone();
+        let errors = state.errors.clone();
+
+        let (tx, rx) = oneshot::channel();
+        self.midi_loader = Some(rx);
+
+        // Load the MIDI in a thread so the UI doesn't freeze and send it
+        // via crossbeam
+        thread::spawn(move || {
+            if let Some(midi_path) = midi_path.to_str() {
+                match settings.parsing {
+                    MidiParsing::Ram => {
+                        match InRamMIDIFile::load_from_file(midi_path, synth, &settings) {
+                            Ok(midi) => {
+                                let midi_file = MIDIFileUnion::InRam(midi);
+                                tx.send(midi_file).ok();
+                            }
+                            Err(e) => errors.error(&e),
+                        }
+                        loading_status.clear();
+                    }
+                    MidiParsing::Live => {
+                        match LiveLoadMIDIFile::load_from_file(midi_path, synth, &settings) {
+                            Ok(midi) => {
+                                let midi_file = MIDIFileUnion::Live(midi);
+                                tx.send(midi_file).ok();
+                            }
+                            Err(e) => errors.error(&e),
+                        }
+                        loading_status.clear();
+                    }
+                    MidiParsing::Cake => {
+                        match CakeMIDIFile::load_from_file(midi_path, synth, &settings) {
+                            Ok(midi) => {
+                                let midi_file = MIDIFileUnion::Cake(midi);
+                                tx.send(midi_file).ok();
+                            }
+                            Err(e) => errors.error(&e),
+                        }
+                        loading_status.clear();
+                    }
                 }
             }
-        }
+        });
     }
 }

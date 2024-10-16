@@ -1,5 +1,5 @@
 use std::{
-    sync::{atomic::Ordering, Arc, RwLock},
+    sync::{atomic::Ordering, Arc},
     thread::{self, JoinHandle},
 };
 use time::Duration;
@@ -17,7 +17,7 @@ use midi_toolkit::{
 };
 
 use crate::{
-    audio_playback::SimpleTemporaryPlayer,
+    audio_playback::WasabiAudioPlayer,
     midi::{
         audio::live::LiveAudioPlayer,
         shared::timer::{TimeKeeper, WaitResult},
@@ -46,7 +46,7 @@ pub struct LiveMidiParser {
 impl LiveMidiParser {
     pub fn init(
         midi: &TKMIDIFile<DiskReader>,
-        player: Arc<RwLock<SimpleTemporaryPlayer>>,
+        player: Arc<WasabiAudioPlayer>,
         timer: &mut TimeKeeper,
     ) -> Self {
         let ppq = midi.ppq();

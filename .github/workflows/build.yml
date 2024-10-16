@@ -12,11 +12,11 @@ jobs:
       matrix:
         target:
           - name: x86_64-unknown-linux-gnu
-            arch: x64
+            arch: x86_64
           # - name: x86_64-unknown-linux-musl
           #   arch: x64-musl
           - name: aarch64-unknown-linux-gnu
-            arch: arm64
+            arch: aarch64
           # - name: aarch64-unknown-linux-musl
           #   arch: arm64-musl
 
@@ -50,9 +50,9 @@ jobs:
       matrix:
         target:
           - name: x86_64-apple-darwin
-            arch: x86
+            arch: x86_64
           - name: aarch64-apple-darwin
-            arch: arm64
+            arch: aarch64
 
     steps:
       - name: Checkout repository
@@ -83,10 +83,10 @@ jobs:
     strategy:
       matrix:
         target:
-          # - name: i686-pc-windows-msvc
-          #   arch: x86
           - name: x86_64-pc-windows-msvc
-            arch: x64
+            arch: x86_64
+          - name: aarch64-pc-windows-msvc
+            arch: aarch64
 
     steps:
       - name: Checkout repository

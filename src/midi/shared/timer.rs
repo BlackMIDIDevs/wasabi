@@ -3,8 +3,6 @@
 use std::time::Instant;
 use time::Duration;
 
-pub const START_DELAY: Duration = Duration::seconds(2);
-
 struct NotifySignal {
     new_state: TimerState,
     has_seeked: bool,
@@ -27,8 +25,8 @@ impl TimerState {
             TimerState::Running {
                 continue_time,
                 time_offset,
-            } => continue_time.elapsed() + *time_offset - START_DELAY,
-            TimerState::Paused { time_offset } => *time_offset - START_DELAY,
+            } => continue_time.elapsed() + *time_offset,
+            TimerState::Paused { time_offset } => *time_offset,
         }
     }
 
@@ -44,10 +42,11 @@ pub struct TimeKeeper {
 }
 
 impl TimeKeeper {
-    pub fn new() -> Self {
+    pub fn new(start_delay: f64) -> Self {
+        let start_delay = Duration::seconds_f64(start_delay);
         Self {
             current_state: TimerState::Paused {
-                time_offset: -START_DELAY,
+                time_offset: -start_delay,
             },
             listeners: Vec::new(),
         }
@@ -91,7 +90,7 @@ impl TimeKeeper {
     }
 
     pub fn toggle_pause(&mut self) {
-        let now = self.get_time() + START_DELAY;
+        let now = self.get_time();
         match self.current_state {
             TimerState::Paused { .. } => {
                 self.current_state = TimerState::Running {
@@ -108,22 +107,21 @@ impl TimeKeeper {
     }
 
     pub fn pause(&mut self) {
-        let now = self.get_time() + START_DELAY;
+        let now = self.get_time();
         self.current_state = TimerState::Paused { time_offset: now };
         self.notify_listeners(false);
     }
 
     pub fn play(&mut self) {
-        let now = self.get_time() + START_DELAY;
+        let now = self.get_time();
         self.current_state = TimerState::Running {
             continue_time: Instant::now(),
-            time_offset: now + START_DELAY,
+            time_offset: now,
         };
         self.notify_listeners(false);
     }
 
     pub fn seek(&mut self, time: Duration) {
-        let time = time + START_DELAY;
         if self.current_state.is_paused() {
             self.current_state = TimerState::Paused { time_offset: time };
         } else {

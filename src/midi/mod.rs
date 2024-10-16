@@ -8,16 +8,22 @@ mod ram;
 mod audio;
 
 mod shared;
-use std::{fs::File, time::UNIX_EPOCH};
+use std::{fs::File, path::PathBuf, time::UNIX_EPOCH};
 
 use enum_dispatch::enum_dispatch;
+use image::{DynamicImage, GenericImageView, ImageReader};
 use palette::{convert::FromColorUnclamped, Hsv, Srgb};
+use rand::seq::IteratorRandom;
 use rand::Rng;
 
 pub use cake::{blocks::CakeBlock, intvec4::IntVector4, CakeMIDIFile, CakeSignature};
 pub use live::LiveLoadMIDIFile;
 pub use ram::InRamMIDIFile;
-pub use shared::timer::START_DELAY;
+
+use crate::{
+    gui::window::WasabiError,
+    settings::{Colors, MidiSettings},
+};
 
 use self::shared::timer::TimeKeeper;
 
@@ -46,30 +52,33 @@ impl MIDIViewRange {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MIDIFileUniqueSignature {
-    pub filepath: String,
+    pub filepath: PathBuf,
     pub length_in_bytes: u64,
     pub last_modified: u128,
 }
 
-fn open_file_and_signature(path: &str) -> (File, MIDIFileUniqueSignature) {
-    let file = std::fs::File::open(path).unwrap();
-    let file_length = file.metadata().unwrap().len();
+fn open_file_and_signature(
+    path: impl Into<PathBuf>,
+) -> Result<(File, MIDIFileUniqueSignature), WasabiError> {
+    let path = path.into();
+    let file = std::fs::File::open(&path).map_err(WasabiError::FilesystemError)?;
+    let file_length = file.metadata().map_err(WasabiError::FilesystemError)?.len();
     let file_last_modified = file
         .metadata()
-        .unwrap()
+        .map_err(WasabiError::FilesystemError)?
         .modified()
-        .unwrap()
+        .map_err(WasabiError::FilesystemError)?
         .duration_since(UNIX_EPOCH)
-        .unwrap()
+        .map_err(|e: std::time::SystemTimeError| WasabiError::Other(e.to_string()))?
         .as_micros();
 
     let signature = MIDIFileUniqueSignature {
-        filepath: path.to_string(),
+        filepath: path,
         length_in_bytes: file_length,
         last_modified: file_last_modified,
     };
 
-    (file, signature)
+    Ok((file, signature))
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -91,7 +100,7 @@ impl MIDIColor {
         )
     }
 
-    pub fn new_vec_for_tracks(tracks: usize) -> Vec<Self> {
+    pub fn new_vec(tracks: usize) -> Vec<Self> {
         let count = tracks * 16;
 
         let mut vec = Vec::with_capacity(count);
@@ -105,7 +114,7 @@ impl MIDIColor {
         vec
     }
 
-    pub fn new_random_vec_for_tracks(tracks: usize) -> Vec<Self> {
+    pub fn new_random_vec(tracks: usize) -> Vec<Self> {
         let count = tracks * 16;
 
         let mut vec = Vec::with_capacity(count);
@@ -117,6 +126,63 @@ impl MIDIColor {
         }
 
         vec
+    }
+
+    pub fn new_vec_from_palette(tracks: usize, image: DynamicImage, randomize: bool) -> Vec<Self> {
+        let image = image.to_rgb8();
+        let all_colors = image.pixels().map(|p| Self::new(p.0[0], p.0[1], p.0[2]));
+
+        let num = tracks * 16;
+        if randomize {
+            let mut rng = rand::thread_rng();
+            all_colors
+                .choose_multiple(&mut rng, num)
+                .into_iter()
+                .cycle()
+                .take(num)
+                .collect()
+        } else {
+            all_colors.cycle().take(num).collect()
+        }
+    }
+
+    pub fn new_vec_from_settings(
+        tracks: usize,
+        settings: &MidiSettings,
+    ) -> Result<Vec<Self>, WasabiError> {
+        match settings.colors {
+            Colors::Rainbow => Ok(MIDIColor::new_vec(tracks)),
+            Colors::Random => Ok(MIDIColor::new_random_vec(tracks)),
+            Colors::Palette => {
+                let path = &settings.palette_path;
+                if path.exists() {
+                    let image = ImageReader::open(path)
+                        .map_err(|e| WasabiError::PaletteError(e.to_string()))?;
+                    let image = image
+                        .with_guessed_format()
+                        .map_err(|e| WasabiError::PaletteError(e.to_string()))?;
+                    let image = image
+                        .decode()
+                        .map_err(|e| WasabiError::PaletteError(e.to_string()))?;
+
+                    if image.dimensions().0 == 16 {
+                        Ok(MIDIColor::new_vec_from_palette(
+                            tracks,
+                            image,
+                            settings.randomize_palette,
+                        ))
+                    } else {
+                        Err(WasabiError::PaletteError(format!(
+                            "Palette has invalid dimensions: {path:?}"
+                        )))
+                    }
+                } else {
+                    Err(WasabiError::PaletteError(format!(
+                        "Palette does not exist: {path:?}"
+                    )))
+                }
+            }
+        }
     }
 
     pub fn as_u32(&self) -> u32 {
