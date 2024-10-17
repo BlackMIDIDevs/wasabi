@@ -1,3 +1,5 @@
+use std::{collections::VecDeque, time::Instant};
+
 use egui::{Context, Frame, Pos2};
 
 use crate::{
@@ -11,6 +13,7 @@ pub struct GuiMidiStats {
     time_passed: f64,
     time_total: f64,
     notes_on_screen: u64,
+    polyphony: u64,
     voice_count: Option<u64>,
 }
 
@@ -20,6 +23,7 @@ impl GuiMidiStats {
             time_passed: 0.0,
             time_total: 0.0,
             notes_on_screen: 0,
+            polyphony: 0,
             voice_count: None,
         }
     }
@@ -30,6 +34,10 @@ impl GuiMidiStats {
 
     pub fn set_rendered_note_count(&mut self, notes: u64) {
         self.notes_on_screen = notes;
+    }
+
+    pub fn set_polyphony(&mut self, polyphony: u64) {
+        self.polyphony = polyphony;
     }
 }
 
@@ -163,8 +171,65 @@ impl GuiWasabiWindow {
                                 ));
                             });
                         }
+                        Statistics::Nps => {
+                            ui.horizontal(|ui| {
+                                ui.monospace("NPS:");
+                                ui.with_layout(
+                                    egui::Layout::right_to_left(egui::Align::Center),
+                                    |ui| {
+                                        self.nps.tick(note_stats.passed_notes.unwrap_or(0) as i64);
+                                        ui.monospace(format!("{}", self.nps.read()));
+                                    },
+                                );
+                            });
+                        }
+                        Statistics::Polyphony => {
+                            ui.horizontal(|ui| {
+                                ui.monospace("Polyphony:");
+                                ui.with_layout(
+                                    egui::Layout::right_to_left(egui::Align::Center),
+                                    |ui| {
+                                        ui.monospace(format!("{}", stats.polyphony));
+                                    },
+                                );
+                            });
+                        }
                     };
                 }
             });
+    }
+}
+
+#[derive(Default)]
+pub struct NpsCounter(VecDeque<(Instant, i64)>);
+
+impl NpsCounter {
+    const NPS_WINDOW: f64 = 0.5;
+
+    pub fn tick(&mut self, passed: i64) {
+        self.0.push_back((Instant::now(), passed));
+        while let Some(front) = self.0.front() {
+            if front.0.elapsed().as_secs_f64() > Self::NPS_WINDOW {
+                self.0.pop_front();
+            } else {
+                break;
+            }
+        }
+    }
+
+    pub fn read(&self) -> u32 {
+        let old = if let Some(front) = self.0.front() {
+            front.1 as f64
+        } else {
+            0.0
+        };
+
+        let last = if let Some(back) = self.0.back() {
+            back.1 as f64
+        } else {
+            0.0
+        };
+
+        ((last - old).max(0.0) / Self::NPS_WINDOW).round() as u32
     }
 }

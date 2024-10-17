@@ -198,8 +198,13 @@ impl WasabiSettings {
         } else if let Ok(config) = fs::read_to_string(&config_path) {
             if config.starts_with(Self::VERSION_TEXT) {
                 let offset = Self::VERSION_TEXT.len();
-                match serde_json::from_str(&config[offset..]) {
-                    Ok(config) => return Ok(config),
+                match serde_json::from_str::<WasabiSettings>(&config[offset..]) {
+                    Ok(mut config) => {
+                        if config.scene.statistics.order.len() != Statistics::iter().len() {
+                            config.scene.statistics.order = StatisticsSettings::default().order;
+                        }
+                        return Ok(config);
+                    }
                     Err(e) => err = WasabiError::SettingsError(e.to_string()),
                 }
             } else if config.starts_with("# DON'T EDIT THIS LINE; Version: 1") {
