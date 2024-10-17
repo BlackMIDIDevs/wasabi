@@ -57,5 +57,5 @@ fn main() {
     icon_dir.write(File::create(icon_path).unwrap()).unwrap();
 
     #[cfg(not(windows))]
-    println!("cargo:rerun-if-changed=logo.svg")
+    println!("cargo:rerun-if-changed=assets/logo.svg")
 }

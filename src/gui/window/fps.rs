@@ -3,33 +3,25 @@ use std::{
     time::{Duration, Instant},
 };
 
-pub struct Fps {
-    frames: VecDeque<Instant>,
-    current: Instant,
-}
+pub struct Fps(VecDeque<Instant>);
 
 impl Fps {
     pub fn new() -> Self {
-        Self {
-            frames: VecDeque::new(),
-            current: Instant::now(),
-        }
+        Self(VecDeque::new())
     }
 
     pub fn update(&mut self) {
-        self.frames.push_back(Instant::now());
-        while let Some(front) = self.frames.front() {
+        self.0.push_back(Instant::now());
+        while let Some(front) = self.0.front() {
             if front.elapsed() > Duration::from_secs(1) {
-                self.frames.pop_front();
+                self.0.pop_front();
             } else {
                 break;
             }
         }
-
-        self.current = Instant::now();
     }
 
     pub fn get_fps(&self) -> usize {
-        self.frames.len()
+        self.0.len()
     }
 }
