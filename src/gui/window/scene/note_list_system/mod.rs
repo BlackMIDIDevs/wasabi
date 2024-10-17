@@ -108,6 +108,7 @@ impl NoteRenderer {
         }
 
         let mut notes_pushed = 0;
+        let mut polyphony = 0;
 
         let mut cycle = 0;
 
@@ -120,64 +121,69 @@ impl NoteRenderer {
                 let buffer_writer = UnsafeSyncCell::new(buffer.write().unwrap());
 
                 // A system to write multiple note columns into 1 large allocated array in parallel
-                let written_notes = self.thrad_pool.install(|| {
+                let (written_notes, poly) = self.thrad_pool.install(|| {
                     // For each note column, write it into the buffer
-                    let written_notes_per_key =
-                        columns_view_info.par_iter_mut().rev().map(|column| {
-                            if column.remaining == 0 {
-                                return 0;
-                            }
+                    let out_data = columns_view_info.par_iter_mut().rev().map(|column| {
+                        if column.remaining == 0 {
+                            return (0, 0);
+                        }
 
-                            let offset =
-                                (column.offset as i64 - notes_pushed as i64).max(0) as usize;
+                        let offset = (column.offset as i64 - notes_pushed as i64).max(0) as usize;
 
-                            if offset >= buffer_length {
-                                return 0;
-                            }
+                        if offset >= buffer_length {
+                            return (0, 0);
+                        }
 
-                            let remaining_buffer_space = buffer_length - offset;
-                            let iter_length = column.remaining;
+                        let remaining_buffer_space = buffer_length - offset;
+                        let iter_length = column.remaining;
 
-                            let allowed_to_write = if iter_length > remaining_buffer_space {
-                                remaining_buffer_space
-                            } else {
-                                iter_length
-                            };
+                        let allowed_to_write = if iter_length > remaining_buffer_space {
+                            remaining_buffer_space
+                        } else {
+                            iter_length
+                        };
 
-                            unsafe {
-                                let buffer = buffer_writer.get_mut();
+                        let mut poly = 0;
 
-                                for i in 0..allowed_to_write {
-                                    let next_note = column.iter.next();
-                                    if let Some(note) = next_note {
-                                        buffer[i + offset] = NoteVertex::new(
-                                            note.start,
-                                            note.len,
-                                            column.key,
-                                            note.color.as_u32(),
-                                            column.border_width as u32,
-                                        );
+                        unsafe {
+                            let buffer = buffer_writer.get_mut();
 
-                                        if note.start <= 0.0
-                                            && column.color.is_none()
-                                            && note.start + note.len > 0.0
-                                        {
+                            for i in 0..allowed_to_write {
+                                let next_note = column.iter.next();
+                                if let Some(note) = next_note {
+                                    buffer[i + offset] = NoteVertex::new(
+                                        note.start,
+                                        note.len,
+                                        column.key,
+                                        note.color.as_u32(),
+                                        column.border_width as u32,
+                                    );
+
+                                    if note.start <= 0.0 && note.start + note.len > 0.0 {
+                                        poly += 1;
+                                        if column.color.is_none() {
                                             column.color = Some(note.color);
                                         }
-                                    } else {
-                                        panic!("Invalid iterator length");
                                     }
+                                } else {
+                                    panic!("Invalid iterator length");
                                 }
                             }
+                        }
 
-                            column.remaining -= allowed_to_write;
+                        column.remaining -= allowed_to_write;
 
-                            allowed_to_write
-                        });
+                        (allowed_to_write, poly)
+                    });
 
-                    written_notes_per_key.sum::<usize>()
+                    let temp = out_data.collect::<Vec<_>>();
+                    (
+                        temp.iter().map(|v| v.0.clone()).sum::<usize>().clone(),
+                        temp.iter().map(|v| v.1.clone()).sum::<usize>().clone(),
+                    )
                 });
 
+                polyphony += poly;
                 notes_pushed += written_notes;
 
                 cycle += 1;
@@ -196,6 +202,7 @@ impl NoteRenderer {
 
         RenderResultData {
             notes_rendered: notes_pushed as u64,
+            polyphony: polyphony as u64,
             key_colors: columns_view_info
                 .iter()
                 .map(|column| column.color)
