@@ -178,8 +178,8 @@ impl NoteRenderer {
 
                     let temp = out_data.collect::<Vec<_>>();
                     (
-                        temp.iter().map(|v| v.0.clone()).sum::<usize>().clone(),
-                        temp.iter().map(|v| v.1.clone()).sum::<usize>().clone(),
+                        temp.iter().map(|v| v.0).sum::<usize>(),
+                        temp.iter().map(|v| v.1).sum::<usize>(),
                     )
                 });
 
