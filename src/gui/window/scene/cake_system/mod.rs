@@ -469,7 +469,7 @@ impl CakeRenderer {
 
         RenderResultData {
             notes_rendered: rendered_notes,
-            polyphony: 0,
+            polyphony: None,
             key_colors: colors,
         }
     }

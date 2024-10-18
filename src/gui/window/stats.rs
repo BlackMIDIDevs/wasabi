@@ -13,7 +13,7 @@ pub struct GuiMidiStats {
     time_passed: f64,
     time_total: f64,
     notes_on_screen: u64,
-    polyphony: u64,
+    polyphony: Option<u64>,
     voice_count: Option<u64>,
 }
 
@@ -23,7 +23,7 @@ impl GuiMidiStats {
             time_passed: 0.0,
             time_total: 0.0,
             notes_on_screen: 0,
-            polyphony: 0,
+            polyphony: None,
             voice_count: None,
         }
     }
@@ -36,7 +36,7 @@ impl GuiMidiStats {
         self.notes_on_screen = notes;
     }
 
-    pub fn set_polyphony(&mut self, polyphony: u64) {
+    pub fn set_polyphony(&mut self, polyphony: Option<u64>) {
         self.polyphony = polyphony;
     }
 }
@@ -184,15 +184,17 @@ impl GuiWasabiWindow {
                             });
                         }
                         Statistics::Polyphony => {
-                            ui.horizontal(|ui| {
-                                ui.monospace("Polyphony:");
-                                ui.with_layout(
-                                    egui::Layout::right_to_left(egui::Align::Center),
-                                    |ui| {
-                                        ui.monospace(format!("{}", stats.polyphony));
-                                    },
-                                );
-                            });
+                            if let Some(poly) = stats.polyphony {
+                                ui.horizontal(|ui| {
+                                    ui.monospace("Polyphony:");
+                                    ui.with_layout(
+                                        egui::Layout::right_to_left(egui::Align::Center),
+                                        |ui| {
+                                            ui.monospace(format!("{}", poly));
+                                        },
+                                    );
+                                });
+                            }
                         }
                     };
                 }

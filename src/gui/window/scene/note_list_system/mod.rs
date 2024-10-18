@@ -202,7 +202,7 @@ impl NoteRenderer {
 
         RenderResultData {
             notes_rendered: notes_pushed as u64,
-            polyphony: polyphony as u64,
+            polyphony: Some(polyphony as u64),
             key_colors: columns_view_info
                 .iter()
                 .map(|column| column.color)
