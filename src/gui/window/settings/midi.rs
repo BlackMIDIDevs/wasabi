@@ -33,7 +33,8 @@ impl SettingsWindow {
                     - Cake\n\
                   \0    The most efficient loading and displaying algorithm.\n\
                   \0    The notes will be stored in binary trees and will be\n\
-                  \0    displayed dynamically.\n\
+                  \0    displayed dynamically. This mode does not support\n\
+                  \0    polyphony statistics.\n\
                     - Standard (RAM)\n\
                   \0    The MIDI will be loaded in the RAM and all the notes\n\
                   \0    will be rendered normally by the GPU.\n\
