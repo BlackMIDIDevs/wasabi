@@ -5,7 +5,7 @@
 <img alt="GitHub repo size" src="https://img.shields.io/github/repo-size/BlackMIDIDevs/wasabi">
 <img alt="GitHub License" src="https://img.shields.io/github/license/BlackMIDIDevs/wasabi">
 <img alt="GitHub Release" src="https://img.shields.io/github/v/release/BlackMIDIDevs/wasabi">
-<a href="https://github.com/BlackMIDIDevs/wasabi/releases/"><img src="https://img.shields.io/github/v/downloads/BlackMIDIDevs/wasabi"></a>
+<a href="https://github.com/BlackMIDIDevs/wasabi/releases/"><img src="https://img.shields.io/github/downloads/BlackMIDIDevs/wasabi"></a>
 <img alt="GitHub contributors" src="https://img.shields.io/github/contributors/BlackMIDIDevs/wasabi">
 </p>
 
