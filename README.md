@@ -5,7 +5,6 @@
 <img alt="GitHub repo size" src="https://img.shields.io/github/repo-size/BlackMIDIDevs/wasabi">
 <img alt="GitHub License" src="https://img.shields.io/github/license/BlackMIDIDevs/wasabi">
 <img alt="GitHub Release" src="https://img.shields.io/github/v/release/BlackMIDIDevs/wasabi">
-<img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/w/BlackMIDIDevs/wasabi">
 <img alt="GitHub contributors" src="https://img.shields.io/github/contributors/BlackMIDIDevs/wasabi">
 </p>
 
