@@ -11,18 +11,18 @@
 
 ## Features
 
-- Multithreaded
-- Easy to use and configurable
-- Integrated MIDI synthesizer (XSynth)
+- **Multithreaded**
+- **Easy to use and configurable**
+- **Integrated MIDI synthesizer *(XSynth)***
 
 ## Usage
 
-To use Wasabi, your system must support Vulkan.
+To use Wasabi, ***your system [must support Vulkan.](https://developer.nvidia.com/vulkan-driver)***
 
-- Clone the code from this repo
-- Build it and run it
-- Configure wasabi through the settings
-- Select a MIDI by clicking `Open MIDI`
+- **Clone the code from this repo** (can be done using `git clone https://github.com/BlackMIDIDevs/wasabi.git`. [How to download git.](https://git-scm.com/downloads))
+- **Build it** and **execute.**
+- **Configure Wasabi through the settings**
+- **Select a `.MIDI` by clicking `Open MIDI`**
 
 ### Keyboard Shortcuts
 
