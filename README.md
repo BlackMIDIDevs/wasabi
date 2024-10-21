@@ -34,6 +34,3 @@ To use Wasabi, your system must support Vulkan.
 - **`Alt+Enter`** - Toggle fullscreen
 - **`Ctrl+F`** - Show/Hide top panel
 - **`Ctrl+G`** - Show/Hide statistics
-
-## License
-Wasabi is licensed under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html#license-text).
