@@ -14,8 +14,8 @@ vulkano = { git = "https://github.com/vulkano-rs/vulkano.git", rev = "4a77d39" }
 vulkano-shaders = { git = "https://github.com/vulkano-rs/vulkano.git", rev = "4a77d39" }
 vulkano-win = { git = "https://github.com/vulkano-rs/vulkano.git", rev = "4a77d39" }
 midi-toolkit-rs = "0.1.0"
-xsynth-core = { git = "https://github.com/BlackMIDIDevs/xsynth", rev = "0d1d11d", features = ["serde"] }
-xsynth-realtime = { git = "https://github.com/BlackMIDIDevs/xsynth", rev = "0d1d11d", features = ["serde"] }
+xsynth-core = { git = "https://github.com/BlackMIDIDevs/xsynth", rev = "818dbd6", features = ["serde"] }
+xsynth-realtime = { git = "https://github.com/BlackMIDIDevs/xsynth", rev = "818dbd6", features = ["serde"] }
 kdmapi-rs = { package = "kdmapi", git = "https://github.com/MyBlackMIDIScore/kdmapi-rs.git", rev = "e1db353" }
 serde = "1.0.210"
 serde_derive = "1.0.210"

@@ -1,8 +1,4 @@
-use std::{
-    ops::{Deref, DerefMut},
-    sync::Arc,
-    thread,
-};
+use std::{sync::Arc, thread};
 
 use crate::{
     gui::window::{LoadingType, WasabiError},
@@ -20,36 +16,16 @@ use xsynth_realtime::{
 
 use super::*;
 
-#[repr(transparent)]
-struct FuckYouImSend<T>(T);
-
-unsafe impl<T> Sync for FuckYouImSend<T> {}
-unsafe impl<T> Send for FuckYouImSend<T> {}
-
-impl<T> Deref for FuckYouImSend<T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<T> DerefMut for FuckYouImSend<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
 pub struct XSynthPlayer {
     sender: RealtimeEventSender,
     stats: RealtimeSynthStatsReader,
     stream_params: AudioStreamParams,
-    synth: FuckYouImSend<RealtimeSynth>,
+    synth: RealtimeSynth,
 }
 
 impl XSynthPlayer {
     pub fn new(config: XSynthRealtimeConfig) -> Self {
-        let synth = FuckYouImSend(RealtimeSynth::open_with_default_output(config));
+        let synth = RealtimeSynth::open_with_default_output(config);
         let sender = synth.get_sender_ref().clone();
         let stream_params = synth.stream_params();
         let stats = synth.get_stats();
