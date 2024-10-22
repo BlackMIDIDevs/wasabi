@@ -15,6 +15,12 @@ use self::notes_render_pass::{NotePassStatus, NoteRenderPass, NoteVertex};
 
 use super::RenderResultData;
 
+#[derive(Default)]
+struct ColumnReturnData {
+    polyphony: usize,
+    written_notes: usize,
+}
+
 pub struct NoteRenderer {
     render_pass: NoteRenderPass,
     thrad_pool: rayon::ThreadPool,
@@ -121,17 +127,17 @@ impl NoteRenderer {
                 let buffer_writer = UnsafeSyncCell::new(buffer.write().unwrap());
 
                 // A system to write multiple note columns into 1 large allocated array in parallel
-                let (written_notes, poly) = self.thrad_pool.install(|| {
+                let column_data = self.thrad_pool.install(|| {
                     // For each note column, write it into the buffer
                     let out_data = columns_view_info.par_iter_mut().rev().map(|column| {
                         if column.remaining == 0 {
-                            return (0, 0);
+                            return Default::default();
                         }
 
                         let offset = (column.offset as i64 - notes_pushed as i64).max(0) as usize;
 
                         if offset >= buffer_length {
-                            return (0, 0);
+                            return Default::default();
                         }
 
                         let remaining_buffer_space = buffer_length - offset;
@@ -173,24 +179,27 @@ impl NoteRenderer {
 
                         column.remaining -= allowed_to_write;
 
-                        (allowed_to_write, poly)
+                        ColumnReturnData {
+                            polyphony: poly,
+                            written_notes: allowed_to_write,
+                        }
                     });
 
                     let temp = out_data.collect::<Vec<_>>();
-                    (
-                        temp.iter().map(|v| v.0).sum::<usize>(),
-                        temp.iter().map(|v| v.1).sum::<usize>(),
-                    )
+                    ColumnReturnData {
+                        polyphony: temp.iter().map(|d| d.polyphony).sum::<usize>(),
+                        written_notes: temp.iter().map(|d| d.written_notes).sum::<usize>(),
+                    }
                 });
 
-                polyphony += poly;
-                notes_pushed += written_notes;
+                polyphony += column_data.polyphony;
+                notes_pushed += column_data.written_notes;
 
                 cycle += 1;
 
                 if notes_pushed >= total_notes {
                     NotePassStatus::Finished {
-                        remaining: written_notes as u32,
+                        remaining: column_data.written_notes as u32,
                     }
                 } else {
                     NotePassStatus::HasMoreNotes
