@@ -5981,7 +5981,7 @@ checksum = "ec7a2a501ed189703dba8b08142f057e887dfc4b2cc4db2d343ac6376ba3e0b9"
 [[package]]
 name = "xsynth-core"
 version = "0.3.1"
-source = "git+https://github.com/BlackMIDIDevs/xsynth?rev=0d1d11d#0d1d11d766faf9ef0aefd8a4d0cf2dfa1ed32dd6"
+source = "git+https://github.com/BlackMIDIDevs/xsynth?rev=818dbd6#818dbd68895d35c7dc87610503f0bbfefc87be69"
 dependencies = [
  "atomic_refcell",
  "biquad",
@@ -6002,7 +6002,7 @@ dependencies = [
 [[package]]
 name = "xsynth-realtime"
 version = "0.3.1"
-source = "git+https://github.com/BlackMIDIDevs/xsynth?rev=0d1d11d#0d1d11d766faf9ef0aefd8a4d0cf2dfa1ed32dd6"
+source = "git+https://github.com/BlackMIDIDevs/xsynth?rev=818dbd6#818dbd68895d35c7dc87610503f0bbfefc87be69"
 dependencies = [
  "atomic_refcell",
  "bytemuck",
@@ -6021,7 +6021,7 @@ dependencies = [
 [[package]]
 name = "xsynth-soundfonts"
 version = "0.3.1"
-source = "git+https://github.com/BlackMIDIDevs/xsynth?rev=0d1d11d#0d1d11d766faf9ef0aefd8a4d0cf2dfa1ed32dd6"
+source = "git+https://github.com/BlackMIDIDevs/xsynth?rev=818dbd6#818dbd68895d35c7dc87610503f0bbfefc87be69"
 dependencies = [
  "encoding_rs",
  "encoding_rs_io",
