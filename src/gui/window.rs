@@ -41,6 +41,7 @@ pub struct GuiWasabiWindow {
     keyboard: GuiKeyboard,
     midi_file: Option<MIDIFileUnion>,
     fps: fps::Fps,
+    nps: stats::NpsCounter,
 
     settings_win: SettingsWindow,
     midi_picker: Option<Receiver<PathBuf>>,
@@ -73,6 +74,7 @@ impl GuiWasabiWindow {
             keyboard: GuiKeyboard::new(),
             midi_file: None,
             fps: fps::Fps::new(),
+            nps: Default::default(),
 
             settings_win,
             midi_picker: None,
@@ -307,6 +309,7 @@ impl GuiWasabiWindow {
                         settings.scene.note_speed,
                     );
                     stats.set_rendered_note_count(result.notes_rendered);
+                    stats.set_polyphony(result.polyphony);
                     render_result_data = Some(result);
                 }
             });

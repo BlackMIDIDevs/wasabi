@@ -89,6 +89,8 @@ pub enum Statistics {
     VoiceCount = 2,
     Rendered = 3,
     NoteCount = 4,
+    Polyphony = 5,
+    Nps = 6,
 }
 
 impl Statistics {
@@ -100,15 +102,19 @@ impl Statistics {
             Statistics::VoiceCount => "Voice Count",
             Statistics::Rendered => "Rendered",
             Statistics::NoteCount => "Note Count",
+            Statistics::Polyphony => "Polyphony",
+            Statistics::Nps => "NPS",
         }
     }
 
     pub fn iter() -> Iter<'static, Statistics> {
-        static STATISTICS: [Statistics; 5] = [
+        static STATISTICS: [Statistics; 7] = [
             Statistics::Time,
             Statistics::Fps,
-            Statistics::VoiceCount,
             Statistics::Rendered,
+            Statistics::Nps,
+            Statistics::Polyphony,
+            Statistics::VoiceCount,
             Statistics::NoteCount,
         ];
         STATISTICS.iter()
@@ -125,6 +131,8 @@ impl FromStr for Statistics {
             "voicecount" => Ok(Statistics::VoiceCount),
             "rendered" => Ok(Statistics::Rendered),
             "notecount" => Ok(Statistics::NoteCount),
+            "polyphony" => Ok(Statistics::Polyphony),
+            "nps" => Ok(Statistics::Nps),
             s => Err(format!("{} was not expected.", s)),
         }
     }

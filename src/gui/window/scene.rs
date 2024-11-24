@@ -55,6 +55,7 @@ pub struct GuiRenderScene {
 
 pub struct RenderResultData {
     pub notes_rendered: u64,
+    pub polyphony: Option<u64>,
     pub key_colors: Vec<Option<MIDIColor>>,
 }
 
