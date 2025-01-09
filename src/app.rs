@@ -69,8 +69,18 @@ impl ApplicationHandler for WasabiApplication {
         event: WindowEvent,
     ) {
         if let Some(renderer) = self.renderer.as_mut() {
-            let _pass_events_to_game = !renderer.gui().update(&event);
+            // First process the redraw request
+            if matches!(event, WindowEvent::RedrawRequested) {
+                renderer.render(&mut self.settings, &mut self.state);
+                return;
+            }
 
+            if matches!(event, WindowEvent::CursorMoved { .. }) {
+                let _ = renderer.gui().update(&event);
+                return;
+            }
+
+            let _pass_events_to_game = !renderer.gui().update(&event);
             match event {
                 WindowEvent::Resized(size) => {
                     renderer.resize(Some(size));
@@ -85,9 +95,6 @@ impl ApplicationHandler for WasabiApplication {
                     renderer
                         .gui_window()
                         .load_midi(path, &mut self.settings, &self.state);
-                }
-                WindowEvent::RedrawRequested => {
-                    renderer.render(&mut self.settings, &mut self.state);
                 }
                 _ => (),
             }
