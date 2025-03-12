@@ -36,7 +36,7 @@ open = "5.3.0"
 midir = "0.10.0"
 time = "0.3.36"
 image = "0.25.2"
-reqwest = { version = "0.12.8", features = ["json", "blocking"] }
+reqwest = { version = "0.12.8", features = ["json", "blocking", "native-tls-vendored"] }
 spin_sleep = "1.2.1"
 tokio = { version = "1.40.0", features = ["sync"] }
 

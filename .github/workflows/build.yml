@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 jobs:
   build-linux:
@@ -39,7 +40,7 @@ jobs:
           args: --release --target=${{ matrix.target.name }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: "wasabi-linux-${{ matrix.target.arch }}"
           path: "target/${{ matrix.target.name }}/release/wasabi"
@@ -73,7 +74,7 @@ jobs:
           args: --release --target ${{ matrix.target.name }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wasabi-macos-${{ matrix.target.arch }}
           path: "target/${{ matrix.target.name }}/release/wasabi"
@@ -110,7 +111,7 @@ jobs:
           args: --release --target ${{ matrix.target.name }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: "wasabi-windows-${{ matrix.target.arch }}"
           path: "target/${{ matrix.target.name }}/release/wasabi.exe"
