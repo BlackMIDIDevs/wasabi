@@ -48,7 +48,7 @@ impl SettingsWindow {
                 ui.add(
                     egui::DragValue::new(&mut settings.synth.xsynth.config.render_window_ms)
                         .speed(0.1)
-                        .range(0.0001..=1000.0),
+                        .range(0.1..=1000.0),
                 );
                 ui.end_row();
                 if settings.synth.xsynth.config.render_window_ms != buffer_prev {
