@@ -42,7 +42,7 @@ num_enum = "0.7.3"
 palette = "0.7.6"
 colors-transform = "0.2"
 
-[target.'cfg(supported_os)'.dependencies]
+[target.'cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))'.dependencies]
 kdmapi-rs = { package = "kdmapi", git = "https://github.com/MyBlackMIDIScore/kdmapi-rs.git", rev = "e1db353" }
 midir = "0.10.0"
 
