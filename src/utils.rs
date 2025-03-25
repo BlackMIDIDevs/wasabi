@@ -3,6 +3,7 @@ use serde_json::Value;
 use std::thread;
 use std::{collections::HashMap, ops::RangeInclusive};
 
+#[cfg(supported_os)]
 use crate::settings::WasabiSoundfont;
 use crate::{gui::window::WasabiError, state::WasabiState};
 
@@ -75,6 +76,7 @@ pub fn check_for_updates(state: &WasabiState) {
     });
 }
 
+#[cfg(supported_os)]
 pub fn create_om_sf_list(list: &[WasabiSoundfont]) -> String {
     let mut out = String::new();
 
@@ -101,6 +103,7 @@ pub fn create_om_sf_list(list: &[WasabiSoundfont]) -> String {
     out
 }
 
+#[cfg(supported_os)]
 pub fn create_reset_midi_messages() -> Vec<u32> {
     let mut out = Vec::new();
 

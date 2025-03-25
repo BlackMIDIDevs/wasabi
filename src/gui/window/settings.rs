@@ -24,6 +24,7 @@ struct FilePalette {
     pub selected: bool,
 }
 
+#[cfg(supported_os)]
 #[derive(Clone)]
 struct MidiDevice {
     pub name: String,
@@ -32,6 +33,7 @@ struct MidiDevice {
 
 pub struct SettingsWindow {
     palettes: Vec<FilePalette>,
+    #[cfg(supported_os)]
     midi_devices: Vec<MidiDevice>,
     sf_list: EguiSFList,
 }
@@ -45,6 +47,7 @@ impl SettingsWindow {
 
         Self {
             palettes: Vec::new(),
+            #[cfg(supported_os)]
             midi_devices: Vec::new(),
             sf_list,
         }
@@ -100,11 +103,15 @@ impl SettingsWindow {
                                     "\u{1f3b9} Synth",
                                 )
                             });
+
+                            #[cfg(supported_os)]
+                            let sf_kdmapi_check = settings.synth.synth == Synth::Kdmapi
+                                && !settings.synth.kdmapi.use_om_sflist;
+                            #[cfg(not(supported_os))]
+                            let sf_kdmapi_check = false;
                             columns[3].vertical_centered_justified(|ui| {
                                 ui.add_enabled_ui(
-                                    settings.synth.synth == Synth::XSynth
-                                        || (settings.synth.synth == Synth::Kdmapi
-                                            && !settings.synth.kdmapi.use_om_sflist),
+                                    settings.synth.synth == Synth::XSynth || sf_kdmapi_check,
                                     |ui| {
                                         ui.selectable_value(
                                             &mut state.settings_tab,
@@ -183,6 +190,12 @@ impl SettingsWindow {
         Ok(())
     }
 
+    #[cfg(not(supported_os))]
+    pub fn load_midi_devices(&mut self, _settings: &mut WasabiSettings) -> Result<(), WasabiError> {
+        Ok(())
+    }
+
+    #[cfg(supported_os)]
     pub fn load_midi_devices(&mut self, settings: &mut WasabiSettings) -> Result<(), WasabiError> {
         self.midi_devices.clear();
         let con = midir::MidiOutput::new("wasabi")

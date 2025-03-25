@@ -7,14 +7,22 @@ use crate::{
 
 mod xsynth;
 pub use xsynth::*;
+
+#[cfg(supported_os)]
 mod kdmapi;
+#[cfg(supported_os)]
 pub use kdmapi::*;
+
+#[cfg(supported_os)]
 mod midiout;
+#[cfg(supported_os)]
 pub use midiout::*;
 
 enum MidiAudioPlayer {
     XSynth(XSynthPlayer),
+    #[cfg(supported_os)]
     Kdmapi(KdmapiPlayer),
+    #[cfg(supported_os)]
     MidiDevice(MidiDevicePlayer),
     None,
 }
@@ -36,7 +44,9 @@ impl WasabiAudioPlayer {
     pub fn push_events(&self, data: impl Iterator<Item = u32>) {
         match &mut *self.0.write().unwrap() {
             MidiAudioPlayer::XSynth(player) => player.push_events(data),
+            #[cfg(supported_os)]
             MidiAudioPlayer::Kdmapi(player) => player.push_events(data),
+            #[cfg(supported_os)]
             MidiAudioPlayer::MidiDevice(player) => player.push_events(data),
             _ => {}
         }
@@ -45,6 +55,7 @@ impl WasabiAudioPlayer {
     pub fn configure(&self, settings: &SynthSettings) {
         match &mut *self.0.write().unwrap() {
             MidiAudioPlayer::XSynth(player) => player.configure(&settings.xsynth),
+            #[cfg(supported_os)]
             MidiAudioPlayer::Kdmapi(player) => player.configure(&settings.kdmapi),
             _ => {}
         }
@@ -60,6 +71,7 @@ impl WasabiAudioPlayer {
             MidiAudioPlayer::XSynth(player) => {
                 player.set_soundfonts(soundfonts, loading_status, errors)
             }
+            #[cfg(supported_os)]
             MidiAudioPlayer::Kdmapi(player) => player.set_soundfonts(soundfonts, errors),
             _ => {}
         }
@@ -68,7 +80,9 @@ impl WasabiAudioPlayer {
     pub fn reset(&self) {
         match &mut *self.0.write().unwrap() {
             MidiAudioPlayer::XSynth(player) => player.reset(),
+            #[cfg(supported_os)]
             MidiAudioPlayer::Kdmapi(player) => player.reset(),
+            #[cfg(supported_os)]
             MidiAudioPlayer::MidiDevice(player) => player.reset(),
             _ => {}
         }
@@ -88,6 +102,7 @@ impl WasabiAudioPlayer {
             Synth::XSynth => {
                 MidiAudioPlayer::XSynth(XSynthPlayer::new(settings.xsynth.config.clone()))
             }
+            #[cfg(supported_os)]
             Synth::Kdmapi => match KdmapiPlayer::new() {
                 Ok(kdmapi) => MidiAudioPlayer::Kdmapi(kdmapi),
                 Err(e) => {
@@ -95,6 +110,7 @@ impl WasabiAudioPlayer {
                     MidiAudioPlayer::None
                 }
             },
+            #[cfg(supported_os)]
             Synth::MidiDevice => match MidiDevicePlayer::new(settings.midi_device.clone()) {
                 Ok(midiout) => MidiAudioPlayer::MidiDevice(midiout),
                 Err(e) => {

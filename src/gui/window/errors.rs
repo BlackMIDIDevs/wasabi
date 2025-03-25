@@ -14,6 +14,7 @@ use crate::utils;
 pub enum WasabiError {
     MidiLoadError(MIDILoadError),
     SoundFontLoadError(LoadSfError),
+    #[cfg(supported_os)]
     SynthError(String),
     FilesystemError(std::io::Error),
     SettingsError(String),
@@ -33,6 +34,7 @@ impl fmt::Display for WasabiError {
                 MIDILoadError::FileTooBig => write!(f, "MIDI Load Error: File Too Big"),
             },
             WasabiError::SoundFontLoadError(e) => write!(f, "Error Parsing SoundFont: {e}"),
+            #[cfg(supported_os)]
             WasabiError::SynthError(e) => write!(f, "Synth Error: {e}"),
             WasabiError::FilesystemError(e) => write!(f, "Filesystem Error: {e}"),
             WasabiError::SettingsError(e) => write!(f, "Settings Error: {e}"),
