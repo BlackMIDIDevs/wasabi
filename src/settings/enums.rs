@@ -45,7 +45,9 @@ impl FromStr for MidiParsing {
 pub enum Synth {
     #[default]
     XSynth = 0,
+    #[cfg(supported_os)]
     Kdmapi = 1,
+    #[cfg(supported_os)]
     MidiDevice = 2,
     None = 3,
 }
@@ -55,7 +57,9 @@ impl Synth {
     pub const fn as_str(self) -> &'static str {
         match self {
             Synth::XSynth => "Built-In (XSynth)",
+            #[cfg(supported_os)]
             Synth::Kdmapi => "KDMAPI",
+            #[cfg(supported_os)]
             Synth::MidiDevice => "MIDI Device",
             Synth::None => "None",
         }
@@ -68,7 +72,9 @@ impl FromStr for Synth {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "xsynth" => Ok(Synth::XSynth),
+            #[cfg(supported_os)]
             "kdmapi" => Ok(Synth::Kdmapi),
+            #[cfg(supported_os)]
             "mididevice" => Ok(Synth::MidiDevice),
             "none" => Ok(Synth::None),
             s => Err(format!(

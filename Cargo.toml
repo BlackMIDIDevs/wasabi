@@ -16,7 +16,6 @@ vulkano-win = { git = "https://github.com/vulkano-rs/vulkano.git", rev = "4a77d3
 midi-toolkit-rs = "0.1.0"
 xsynth-core = { git = "https://github.com/BlackMIDIDevs/xsynth", rev = "818dbd6", features = ["serde"] }
 xsynth-realtime = { git = "https://github.com/BlackMIDIDevs/xsynth", rev = "818dbd6", features = ["serde"] }
-kdmapi-rs = { package = "kdmapi", git = "https://github.com/MyBlackMIDIScore/kdmapi-rs.git", rev = "e1db353" }
 serde = "1.0.210"
 serde_derive = "1.0.210"
 serde_json = "1.0"
@@ -33,7 +32,6 @@ atomic_float = "1.1.0"
 ico = "0.3.0"
 rfd = "0.15.0"
 open = "5.3.0"
-midir = "0.10.0"
 time = "0.3.36"
 image = "0.25.2"
 reqwest = { version = "0.12.8", features = ["json", "blocking", "native-tls-vendored"] }
@@ -43,6 +41,10 @@ tokio = { version = "1.40.0", features = ["sync"] }
 num_enum = "0.7.3"
 palette = "0.7.6"
 colors-transform = "0.2"
+
+[target.'cfg(supported_os)'.dependencies]
+kdmapi-rs = { package = "kdmapi", git = "https://github.com/MyBlackMIDIScore/kdmapi-rs.git", rev = "e1db353" }
+midir = "0.10.0"
 
 [build-dependencies]
 resvg = { version = "0.31.0", default-features = false }

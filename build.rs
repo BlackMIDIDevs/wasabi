@@ -57,5 +57,9 @@ fn main() {
     icon_dir.write(File::create(icon_path).unwrap()).unwrap();
 
     #[cfg(not(windows))]
-    println!("cargo:rerun-if-changed=assets/logo.svg")
+    println!("cargo:rerun-if-changed=assets/logo.svg");
+
+    #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
+    println!("cargo:rustc-cfg=supported_os");
+    println!("cargo::rustc-check-cfg=cfg(supported_os)");
 }
