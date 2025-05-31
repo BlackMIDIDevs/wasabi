@@ -5,7 +5,9 @@ use crate::{
 
 use super::SettingsWindow;
 
+#[cfg(supported_os)]
 mod kdmapi;
+#[cfg(supported_os)]
 mod mididevice;
 mod xsynth;
 
@@ -34,11 +36,13 @@ impl SettingsWindow {
                                 Synth::XSynth,
                                 Synth::XSynth.as_str(),
                             );
+                            #[cfg(supported_os)]
                             ui.selectable_value(
                                 &mut settings.synth.synth,
                                 Synth::Kdmapi,
                                 Synth::Kdmapi.as_str(),
                             );
+                            #[cfg(supported_os)]
                             ui.selectable_value(
                                 &mut settings.synth.synth,
                                 Synth::MidiDevice,
@@ -80,7 +84,9 @@ impl SettingsWindow {
 
         match settings.synth.synth {
             Synth::XSynth => self.show_xsynth_settings(ui, settings, state, width),
+            #[cfg(supported_os)]
             Synth::Kdmapi => self.show_kdmapi_settings(ui, settings, state, width),
+            #[cfg(supported_os)]
             Synth::MidiDevice => self.show_mididevice_settings(ui, settings, state, width),
             Synth::None => {
                 ui.label("No Settings");
