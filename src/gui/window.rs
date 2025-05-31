@@ -54,6 +54,8 @@ impl GuiWasabiWindow {
         settings: &mut WasabiSettings,
         state: &WasabiState,
     ) -> GuiWasabiWindow {
+        // to here
+        Self::set_style(&renderer.gui.context());
         let mut settings_win = SettingsWindow::new(settings);
         settings_win
             .load_palettes(settings)
@@ -82,26 +84,8 @@ impl GuiWasabiWindow {
         }
     }
 
-    #[inline(always)]
-    fn set_style(ctx: &egui::Context, _settings: &WasabiSettings) {
-        // Set theme
-        ctx.style_mut(|style| {
-            style.visuals.panel_fill = egui::Color32::from_rgb(18, 18, 18);
-            style.visuals.window_fill = style.visuals.panel_fill;
-            style.visuals.widgets.inactive.weak_bg_fill = style.visuals.panel_fill;
-            style.visuals.widgets.hovered.bg_stroke = egui::Stroke::NONE;
-            style.visuals.widgets.active.bg_stroke = egui::Stroke::NONE;
-
-            style.visuals.selection.bg_fill = style.visuals.widgets.active.weak_bg_fill;
-            style.visuals.selection.stroke.color = egui::Color32::TRANSPARENT;
-
-            style.visuals.override_text_color = Some(egui::Color32::from_rgb(210, 210, 210));
-
-            style.spacing.menu_margin = egui::Margin::same(8.0);
-            style.spacing.interact_size.y = 22.0;
-        });
-
-        // Set fonts
+    // I think the set_style is not necessary to invoke every frame, it can be set just at init.
+    fn set_style(ctx: &egui::Context) {
         let mut fonts = egui::FontDefinitions::default();
 
         fonts.font_data.insert(
@@ -126,7 +110,6 @@ impl GuiWasabiWindow {
 
         ctx.set_fonts(fonts);
 
-        // Set font size
         let mut style = (*ctx.style()).clone();
         style.text_styles = [
             (egui::TextStyle::Heading, FontId::new(22.0, Proportional)),
@@ -140,6 +123,21 @@ impl GuiWasabiWindow {
             ),
         ]
         .into();
+
+        style.visuals.panel_fill = egui::Color32::from_rgb(18, 18, 18);
+        style.visuals.window_fill = style.visuals.panel_fill;
+        style.visuals.widgets.inactive.weak_bg_fill = style.visuals.panel_fill;
+        style.visuals.widgets.hovered.bg_stroke = egui::Stroke::NONE;
+        style.visuals.widgets.active.bg_stroke = egui::Stroke::NONE;
+
+        style.visuals.selection.bg_fill = style.visuals.widgets.active.weak_bg_fill;
+        style.visuals.selection.stroke.color = egui::Color32::TRANSPARENT;
+
+        style.visuals.override_text_color = Some(egui::Color32::from_rgb(210, 210, 210));
+
+        style.spacing.menu_margin = egui::Margin::same(8.0);
+        style.spacing.interact_size.y = 22.0;
+
         ctx.set_style(style);
     }
 
@@ -151,7 +149,7 @@ impl GuiWasabiWindow {
         state: &mut WasabiState,
     ) {
         let ctx = gui_state.renderer.gui.context();
-        Self::set_style(&ctx, settings);
+        // So it moved from here
 
         // Check for MIDIs selected by the file picker
         if let Some(recv) = self.midi_picker.as_mut() {
