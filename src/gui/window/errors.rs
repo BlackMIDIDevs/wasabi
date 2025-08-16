@@ -76,7 +76,7 @@ impl GuiMessageSystem {
 
     pub fn warning(&self, message: impl Into<WidgetText>) {
         self.add(GuiMessage {
-            id: Id::new(rand::random::<usize>()),
+            id: Id::new(rand::random::<u64>()),
             visible: true,
             errtype: MessageType::Warning,
             title: "Warning".into(),
@@ -86,7 +86,7 @@ impl GuiMessageSystem {
 
     pub fn error(&self, error: &WasabiError) {
         self.add(GuiMessage {
-            id: Id::new(rand::random::<usize>()),
+            id: Id::new(rand::random::<u64>()),
             visible: true,
             errtype: MessageType::Error,
             title: "Error".into(),
@@ -108,7 +108,7 @@ impl GuiMessageSystem {
         );
 
         self.add(GuiMessage {
-            id: Id::new(rand::random::<usize>()),
+            id: Id::new(rand::random::<u64>()),
             visible: true,
             errtype: MessageType::NewUpdate(link),
             title: "Update Available".into(),

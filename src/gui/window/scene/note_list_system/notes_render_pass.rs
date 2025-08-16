@@ -8,7 +8,7 @@ use vulkano::{
         RenderPassBeginInfo, SubpassBeginInfo, SubpassContents,
     },
     descriptor_set::{
-        allocator::StandardDescriptorSetAllocator, PersistentDescriptorSet, WriteDescriptorSet,
+        allocator::StandardDescriptorSetAllocator, DescriptorSet, WriteDescriptorSet,
     },
     device::{Device, Queue},
     format::Format,
@@ -122,8 +122,8 @@ pub struct NoteRenderPass {
     key_locations: Subbuffer<[[KeyPosition; 256]]>,
     depth_buffer: Arc<ImageView>,
     allocator: Arc<StandardMemoryAllocator>,
-    cb_allocator: StandardCommandBufferAllocator,
-    sd_allocator: StandardDescriptorSetAllocator,
+    cb_allocator: Arc<StandardCommandBufferAllocator>,
+    sd_allocator: Arc<StandardDescriptorSetAllocator>,
 }
 
 impl NoteRenderPass {
@@ -226,9 +226,7 @@ impl NoteRenderPass {
             .entry_point("main")
             .unwrap();
 
-        let vertex_input_state = NoteVertex::per_vertex()
-            .definition(&vs.info().input_interface)
-            .unwrap();
+        let vertex_input_state = NoteVertex::per_vertex().definition(&vs).unwrap();
         let stages = [
             PipelineShaderStageCreateInfo::new(vs),
             PipelineShaderStageCreateInfo::new(fs),
@@ -288,11 +286,13 @@ impl NoteRenderPass {
             cb_allocator: StandardCommandBufferAllocator::new(
                 renderer.device.clone(),
                 Default::default(),
-            ),
+            )
+            .into(),
             sd_allocator: StandardDescriptorSetAllocator::new(
                 renderer.device.clone(),
                 Default::default(),
-            ),
+            )
+            .into(),
         }
     }
 
@@ -352,7 +352,7 @@ impl NoteRenderPass {
             };
 
             let mut command_buffer_builder = AutoCommandBufferBuilder::primary(
-                &self.cb_allocator,
+                self.cb_allocator.clone(),
                 self.gfx_queue.queue_family_index(),
                 CommandBufferUsage::OneTimeSubmit,
             )
@@ -386,8 +386,8 @@ impl NoteRenderPass {
 
             let desc_layout = pipeline_layout.set_layouts().first().unwrap();
             let write_descriptor_set = WriteDescriptorSet::buffer(0, self.key_locations.clone());
-            let set = PersistentDescriptorSet::new(
-                &self.sd_allocator,
+            let set = DescriptorSet::new(
+                self.sd_allocator.clone(),
                 desc_layout.clone(),
                 [write_descriptor_set],
                 [],
@@ -415,32 +415,34 @@ impl NoteRenderPass {
                 win_height: img_dims[1] as f32,
             };
 
-            command_buffer_builder
-                .bind_pipeline_graphics(pipeline.clone())
-                .unwrap()
-                .set_viewport(
-                    0,
-                    vec![Viewport {
-                        offset: [0.0, 0.0],
-                        extent: [img_dims[0] as f32, img_dims[1] as f32],
-                        depth_range: 0.0..=1.0,
-                    }]
-                    .into(),
-                )
-                .unwrap()
-                .push_constants(pipeline_layout.clone().clone(), 0, push_constants)
-                .unwrap()
-                .bind_descriptor_sets(
-                    PipelineBindPoint::Graphics,
-                    pipeline_layout.clone(),
-                    0,
-                    set.clone(),
-                )
-                .unwrap()
-                .bind_vertex_buffers(0, buffer.clone())
-                .unwrap()
-                .draw(items_to_render, 1, 0, 0)
-                .unwrap();
+            unsafe {
+                command_buffer_builder
+                    .bind_pipeline_graphics(pipeline.clone())
+                    .unwrap()
+                    .set_viewport(
+                        0,
+                        vec![Viewport {
+                            offset: [0.0, 0.0],
+                            extent: [img_dims[0] as f32, img_dims[1] as f32],
+                            depth_range: 0.0..=1.0,
+                        }]
+                        .into(),
+                    )
+                    .unwrap()
+                    .push_constants(pipeline_layout.clone().clone(), 0, push_constants)
+                    .unwrap()
+                    .bind_descriptor_sets(
+                        PipelineBindPoint::Graphics,
+                        pipeline_layout.clone(),
+                        0,
+                        set.clone(),
+                    )
+                    .unwrap()
+                    .bind_vertex_buffers(0, buffer.clone())
+                    .unwrap()
+                    .draw(items_to_render, 1, 0, 0)
+                    .unwrap()
+            };
 
             command_buffer_builder
                 .end_render_pass(Default::default())

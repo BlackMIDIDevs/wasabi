@@ -11,7 +11,7 @@ use crate::{
     utils::{self, convert_seconds_to_time_string},
 };
 
-const SPACE: f32 = utils::WIN_MARGIN.left;
+const SPACE: f32 = utils::WIN_MARGIN.left as f32;
 const MAX_PANEL_HEIGHT: f32 = 60.0;
 
 impl GuiWasabiWindow {
@@ -68,7 +68,7 @@ impl GuiWasabiWindow {
                         egui::Image::new(egui::include_image!("../../../assets/folder.svg"))
                             .fit_to_exact_size(button_size)
                             .tint(icon_color)
-                            .rounding(button_rounding);
+                            .corner_radius(button_rounding);
 
                     if ui
                         .add(egui::ImageButton::new(folder_img))
@@ -83,7 +83,7 @@ impl GuiWasabiWindow {
                         egui::Image::new(egui::include_image!("../../../assets/stop.svg"))
                             .fit_to_exact_size(button_size)
                             .tint(icon_color)
-                            .rounding(button_rounding);
+                            .corner_radius(button_rounding);
 
                     if ui
                         .add(egui::ImageButton::new(stop_img))
@@ -108,7 +108,7 @@ impl GuiWasabiWindow {
                             egui::Image::new(egui::include_image!("../../../assets/pause.svg"))
                                 .fit_to_exact_size(button_size)
                                 .tint(icon_color)
-                                .rounding(button_rounding);
+                                .corner_radius(button_rounding);
 
                         if ui
                             .add(egui::ImageButton::new(pause_img))
@@ -124,7 +124,7 @@ impl GuiWasabiWindow {
                             egui::Image::new(egui::include_image!("../../../assets/play.svg"))
                                 .fit_to_exact_size(button_size)
                                 .tint(icon_color)
-                                .rounding(button_rounding);
+                                .corner_radius(button_rounding);
 
                         if ui
                             .add(egui::ImageButton::new(play_img))
@@ -216,7 +216,7 @@ impl GuiWasabiWindow {
                         egui::Image::new(egui::include_image!("../../../assets/options.svg"))
                             .fit_to_exact_size(button_size)
                             .tint(icon_color)
-                            .rounding(button_rounding);
+                            .corner_radius(button_rounding);
 
                     let options = ui.add(egui::ImageButton::new(options_img));
 
@@ -247,7 +247,7 @@ impl GuiWasabiWindow {
                     let pin_img = egui::Image::new(egui::include_image!("../../../assets/pin.svg"))
                         .fit_to_exact_size(button_size)
                         .tint(icon_color)
-                        .rounding(button_rounding);
+                        .corner_radius(button_rounding);
 
                     if ui
                         .add(egui::ImageButton::new(pin_img).selected(state.panel_pinned))

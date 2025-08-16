@@ -89,7 +89,7 @@ impl SettingsWindow {
             );
         });
         egui::Frame::default()
-            .rounding(egui::Rounding::same(8.0))
+            .corner_radius(egui::CornerRadius::same(8))
             .stroke(ui.style().visuals.widgets.noninteractive.bg_stroke)
             .show(ui, |ui| {
                 TableBuilder::new(ui)

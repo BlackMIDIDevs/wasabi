@@ -37,6 +37,7 @@ impl WasabiAudioPlayer {
     pub fn voice_count(&self) -> Option<u64> {
         match &*self.0.read().unwrap() {
             MidiAudioPlayer::XSynth(player) => Some(player.voice_count()),
+            MidiAudioPlayer::Kdmapi(player) => player.voice_count(),
             _ => None,
         }
     }

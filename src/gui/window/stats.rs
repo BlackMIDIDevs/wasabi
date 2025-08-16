@@ -61,19 +61,19 @@ impl GuiWasabiWindow {
         let opacity = settings.scene.statistics.opacity.clamp(0.0, 1.0);
         let alpha = (u8::MAX as f32 * opacity).round() as u8;
 
-        let round = 8.0;
+        let round = 8;
 
         let mut stats_frame = Frame::default()
-            .inner_margin(egui::Margin::same(7.0))
+            .inner_margin(egui::Margin::same(7))
             .fill(egui::Color32::from_black_alpha(alpha));
 
         if settings.scene.statistics.floating {
-            stats_frame = stats_frame.rounding(egui::Rounding::same(round));
+            stats_frame = stats_frame.corner_radius(egui::CornerRadius::same(round));
         } else {
-            stats_frame = stats_frame.rounding(egui::Rounding {
-                ne: 0.0,
-                nw: 0.0,
-                sw: 0.0,
+            stats_frame = stats_frame.corner_radius(egui::CornerRadius {
+                ne: 0,
+                nw: 0,
+                sw: 0,
                 se: round,
             });
         }

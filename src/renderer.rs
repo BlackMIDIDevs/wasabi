@@ -6,8 +6,8 @@ use egui_winit_vulkano::{Gui, GuiConfig};
 use raw_window_handle::RawDisplayHandle;
 use vulkano::{
     device::{
-        physical::PhysicalDeviceType, Device, DeviceCreateInfo, DeviceExtensions, Features, Queue,
-        QueueCreateInfo, QueueFlags,
+        physical::PhysicalDeviceType, Device, DeviceCreateInfo, DeviceExtensions, DeviceFeatures,
+        Queue, QueueCreateInfo, QueueFlags,
     },
     format::Format,
     instance::{Instance, InstanceCreateInfo, InstanceExtensions},
@@ -79,9 +79,9 @@ impl Renderer {
             khr_swapchain: true,
             ..DeviceExtensions::empty()
         };
-        let features = Features {
+        let features = DeviceFeatures {
             geometry_shader: true,
-            ..Features::empty()
+            ..DeviceFeatures::empty()
         };
 
         let (physical_device, queue_family_index) = instance

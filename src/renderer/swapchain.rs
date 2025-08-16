@@ -140,7 +140,7 @@ impl ManagedSwapchain {
         self.previous_frame_end.take()
     }
 
-    pub fn acquire_frame(&mut self) -> (SwapchainFrame, SwapchainAcquireFuture) {
+    pub fn acquire_frame(&'_ mut self) -> (SwapchainFrame<'_>, SwapchainAcquireFuture) {
         if self.recreate_on_next_frame {
             self.recreate();
             self.recreate_on_next_frame = false;

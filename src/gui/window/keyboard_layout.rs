@@ -165,7 +165,7 @@ impl KeyboardLayout {
         }
     }
 
-    pub fn get_view_for_keys(&self, first_key: usize, last_key: usize) -> KeyboardView {
+    pub fn get_view_for_keys(&'_ self, first_key: usize, last_key: usize) -> KeyboardView<'_> {
         let range = self.get_range_for_keys(first_key, last_key);
 
         let mut left_key = first_key;
@@ -185,7 +185,7 @@ impl KeyboardLayout {
         }
     }
 
-    pub fn get_view_for_range(&self, range: KeyboardRange) -> KeyboardView {
+    pub fn get_view_for_range(&'_ self, range: KeyboardRange) -> KeyboardView<'_> {
         let mut left_key = self
             .keys
             .iter()
