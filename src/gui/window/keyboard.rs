@@ -1,4 +1,4 @@
-use egui::{Color32, Mesh, Pos2, Rect, Sense, Ui};
+use egui::{emath::GuiRounding, Color32, Mesh, Pos2, Rect, Sense, Ui};
 
 use crate::midi::MIDIColor;
 
@@ -22,7 +22,7 @@ impl GuiKeyboard {
         let mut mesh = Mesh::default();
         let note_border =
             crate::utils::calculate_border_width(rect.width(), key_view.visible_range.len() as f32);
-        let key_border = ui.painter().round_to_pixel(note_border / 2.0);
+        let key_border = (note_border / 2.0).round_to_pixels(ui.painter().pixels_per_point());
 
         let md_height = rect.height() * 0.048;
         let bar = rect.height() * 0.06;

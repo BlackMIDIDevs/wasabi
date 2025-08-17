@@ -54,7 +54,10 @@ impl MIDIFileBase for InRamMIDIFile {
 }
 
 impl MIDIFile for InRamMIDIFile {
-    type ColumnsViews<'a> = InRamCurrentNoteViews<'a> where Self: 'a;
+    type ColumnsViews<'a>
+        = InRamCurrentNoteViews<'a>
+    where
+        Self: 'a;
 
     fn get_current_column_views(&mut self, range: f64) -> Self::ColumnsViews<'_> {
         let time = self.timer.get_time().as_seconds_f64();

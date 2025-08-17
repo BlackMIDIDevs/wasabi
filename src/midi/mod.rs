@@ -119,9 +119,9 @@ impl MIDIColor {
 
         let mut vec = Vec::with_capacity(count);
         for _ in 0..count {
-            let r = rand::thread_rng().gen_range(0..255) as u8;
-            let g = rand::thread_rng().gen_range(0..255) as u8;
-            let b = rand::thread_rng().gen_range(0..255) as u8;
+            let r = rand::rng().random_range(0..255) as u8;
+            let g = rand::rng().random_range(0..255) as u8;
+            let b = rand::rng().random_range(0..255) as u8;
             vec.push(MIDIColor::new(r, g, b));
         }
 
@@ -134,7 +134,7 @@ impl MIDIColor {
 
         let num = tracks * 16;
         if randomize {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             all_colors
                 .choose_multiple(&mut rng, num)
                 .into_iter()
@@ -208,6 +208,7 @@ impl MIDIColor {
 
 /// The basic shared functions in a midi file. The columns related functions are
 /// inside the [`MIDIFile`] trait.
+#[allow(dead_code)]
 #[enum_dispatch]
 pub trait MIDIFileBase {
     fn midi_length(&self) -> Option<f64>;

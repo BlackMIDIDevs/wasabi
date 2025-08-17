@@ -90,7 +90,7 @@ impl GuiWasabiWindow {
 
         fonts.font_data.insert(
             "poppins".to_owned(),
-            egui::FontData::from_static(include_bytes!("../../assets/Poppins-Medium.ttf")),
+            egui::FontData::from_static(include_bytes!("../../assets/Poppins-Medium.ttf")).into(),
         );
         fonts
             .families
@@ -100,7 +100,8 @@ impl GuiWasabiWindow {
 
         fonts.font_data.insert(
             "ubuntu".to_owned(),
-            egui::FontData::from_static(include_bytes!("../../assets/UbuntuSansMono-Medium.ttf")),
+            egui::FontData::from_static(include_bytes!("../../assets/UbuntuSansMono-Medium.ttf"))
+                .into(),
         );
         fonts
             .families
@@ -135,7 +136,7 @@ impl GuiWasabiWindow {
 
         style.visuals.override_text_color = Some(egui::Color32::from_rgb(210, 210, 210));
 
-        style.spacing.menu_margin = egui::Margin::same(8.0);
+        style.spacing.menu_margin = egui::Margin::same(8);
         style.spacing.interact_size.y = 22.0;
 
         ctx.set_style(style);
@@ -239,7 +240,7 @@ impl GuiWasabiWindow {
         );
 
         let no_frame = Frame::default()
-            .inner_margin(egui::Margin::same(0.0))
+            .inner_margin(egui::Margin::same(0))
             .fill(settings.scene.bg_color);
 
         let mut stats = stats::GuiMidiStats::empty();
