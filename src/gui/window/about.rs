@@ -90,11 +90,11 @@ impl GuiWasabiWindow {
                     .striped(true)
                     .show(ui, |ui| {
                         ui.label("Vulkano Version:");
-                        ui.label("0.34");
+                        ui.label("0.35");
                         ui.end_row();
 
                         ui.label("Egui Version:");
-                        ui.label("0.29");
+                        ui.label("0.31");
                         ui.end_row();
 
                         ui.label("Winit Version:");
@@ -102,7 +102,7 @@ impl GuiWasabiWindow {
                         ui.end_row();
 
                         ui.label("XSynth Version:");
-                        ui.label("0.3.1");
+                        ui.label("0.3.4");
                         ui.end_row();
 
                         ui.label("MIDI Toolkit Version:");

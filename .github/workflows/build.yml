@@ -28,7 +28,7 @@ jobs:
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2024-08-12
+          toolchain: nightly-2025-08-15
           target: ${{ matrix.target.name }}
           override: true
           profile: minimal
@@ -62,7 +62,7 @@ jobs:
       - name: Install target
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2024-08-12
+          toolchain: nightly-2025-08-15
           target: ${{ matrix.target.name }}
           override: true
           profile: minimal
@@ -99,7 +99,7 @@ jobs:
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2024-08-12
+          toolchain: nightly-2025-08-15
           target: ${{ matrix.target.name }}
           override: true
           profile: minimal

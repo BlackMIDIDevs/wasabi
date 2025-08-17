@@ -63,10 +63,9 @@ impl KdmapiPlayer {
                 });
             }
 
-            if self
+            if let Some(false) = self
                 .stream
                 .load_custom_soundfonts_list(path.to_str().unwrap_or_default())
-                != Some(true)
             {
                 let error = WasabiError::SynthError(
                     "Failed to load custom SoundFont list in OmniMIDI.".into(),
@@ -77,6 +76,6 @@ impl KdmapiPlayer {
     }
 
     pub fn voice_count(&self) -> Option<u64> {
-        Some(self.stream.get_voice_count().unwrap_or(0) as u64)
+        self.stream.get_voice_count()
     }
 }

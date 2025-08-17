@@ -2086,7 +2086,7 @@ dependencies = [
 [[package]]
 name = "kdmapi"
 version = "0.1.0"
-source = "git+https://github.com/BlackMIDIDevs/kdmapi-rs?branch=master#48b2938875992a0768b485c008469c8168a08b39"
+source = "git+https://github.com/BlackMIDIDevs/kdmapi-rs?rev=aa39558#aa395580d547583ff5fb968b6e6264efd9584f34"
 dependencies = [
  "lazy_static",
  "libloading 0.7.4",
@@ -5428,7 +5428,7 @@ dependencies = [
 
 [[package]]
 name = "wasabi"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "atomic_float",
  "bytemuck",
@@ -6440,7 +6440,8 @@ checksum = "ec7a2a501ed189703dba8b08142f057e887dfc4b2cc4db2d343ac6376ba3e0b9"
 [[package]]
 name = "xsynth-core"
 version = "0.3.4"
-source = "git+https://github.com/BlackMIDIDevs/xsynth?rev=c2e334e#c2e334e3ab31e8dd476018af8ab535695245357a"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4e3ed32f276e6de65a085af26811ec4640cc29bc2686270c3ba4a7f804998757"
 dependencies = [
  "atomic_refcell",
  "biquad",
@@ -6461,7 +6462,8 @@ dependencies = [
 [[package]]
 name = "xsynth-realtime"
 version = "0.3.4"
-source = "git+https://github.com/BlackMIDIDevs/xsynth?rev=c2e334e#c2e334e3ab31e8dd476018af8ab535695245357a"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c1865424c0761f829832248bd3b9b59e9b723106fa49a22de6efabe632f84459"
 dependencies = [
  "atomic_refcell",
  "bytemuck",
@@ -6480,7 +6482,8 @@ dependencies = [
 [[package]]
 name = "xsynth-soundfonts"
 version = "0.3.4"
-source = "git+https://github.com/BlackMIDIDevs/xsynth?rev=c2e334e#c2e334e3ab31e8dd476018af8ab535695245357a"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9bc5700f1bb7750cffb2f84c2e6735672c654241317edffba2e5ca505465a70b"
 dependencies = [
  "encoding_rs",
  "encoding_rs_io",
