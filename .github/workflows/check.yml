@@ -12,7 +12,7 @@ jobs:
         name: Initialize Cargo
         with:
           profile: minimal
-          toolchain: nightly-2024-08-12
+          toolchain: nightly-2025-08-15
           override: true
           components: rustfmt, clippy
           cache-on-failure: true
