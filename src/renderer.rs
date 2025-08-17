@@ -154,7 +154,7 @@ impl Renderer {
 
         // Vulkano & Winit & egui integration
         let mut gui = Gui::new(
-            &event_loop,
+            event_loop,
             surface.clone(),
             queue.clone(),
             swap_chain.state().images_state.format,
