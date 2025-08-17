@@ -114,7 +114,10 @@ impl MIDIFileBase for LiveLoadMIDIFile {
 }
 
 impl MIDIFile for LiveLoadMIDIFile {
-    type ColumnsViews<'a> = LiveCurrentNoteViews<'a> where Self: 'a;
+    type ColumnsViews<'a>
+        = LiveCurrentNoteViews<'a>
+    where
+        Self: 'a;
 
     fn get_current_column_views(&mut self, range: f64) -> Self::ColumnsViews<'_> {
         let time = self.timer.get_time().as_seconds_f64();

@@ -115,7 +115,10 @@ pub struct LiveNoteColumnView<'a> {
 }
 
 impl<'a> MIDINoteViews for LiveCurrentNoteViews<'a> {
-    type View<'b> = LiveNoteColumnView<'b> where Self: 'a + 'b;
+    type View<'b>
+        = LiveNoteColumnView<'b>
+    where
+        Self: 'a + 'b;
 
     fn get_column(&self, key: usize) -> Self::View<'_> {
         LiveNoteColumnView {
@@ -136,7 +139,10 @@ struct LiveNoteBlockIter<'a, Iter: Iterator<Item = DisplacedMIDINote>> {
 }
 
 impl<'a> MIDINoteColumnView for LiveNoteColumnView<'a> {
-    type Iter<'b> = impl 'b + ExactSizeIterator<Item = DisplacedMIDINote> where Self: 'b;
+    type Iter<'b>
+        = impl 'b + ExactSizeIterator<Item = DisplacedMIDINote>
+    where
+        Self: 'b;
 
     fn iterate_displaced_notes(&self) -> Self::Iter<'_> {
         let colors = &self.view.default_track_colors;

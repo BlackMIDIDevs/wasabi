@@ -139,7 +139,10 @@ impl InRamNoteViewData {
 }
 
 impl<'a> MIDINoteViews for InRamCurrentNoteViews<'a> {
-    type View<'b> = InRamNoteColumnView<'b> where Self: 'a + 'b;
+    type View<'b>
+        = InRamNoteColumnView<'b>
+    where
+        Self: 'a + 'b;
 
     fn get_column(&self, key: usize) -> Self::View<'_> {
         InRamNoteColumnView {
@@ -166,7 +169,10 @@ pub struct InRamNoteColumnView<'a> {
 }
 
 impl<'a> MIDINoteColumnView for InRamNoteColumnView<'a> {
-    type Iter<'b> = impl 'b + ExactSizeIterator<Item = DisplacedMIDINote> where Self: 'b;
+    type Iter<'b>
+        = impl 'b + ExactSizeIterator<Item = DisplacedMIDINote>
+    where
+        Self: 'b;
 
     fn iterate_displaced_notes(&self) -> Self::Iter<'_> {
         let colors = &self.view.default_track_colors;
