@@ -1,6 +1,7 @@
 use std::{collections::VecDeque, time::Instant};
 
 use egui::{Context, Frame, Pos2};
+use numfmt::{Formatter, Precision};
 
 use crate::{
     gui::window::GuiWasabiWindow,
@@ -38,14 +39,6 @@ impl GuiMidiStats {
 
     pub fn set_polyphony(&mut self, polyphony: Option<u64>) {
         self.polyphony = polyphony;
-    }
-}
-
-fn num_or_q(num: Option<impl ToString>) -> String {
-    if let Some(num) = num {
-        num.to_string()
-    } else {
-        "-".to_string()
     }
 }
 
@@ -96,6 +89,11 @@ impl GuiWasabiWindow {
             .show(ctx, |ui| {
                 ui.spacing_mut().interact_size.y = 16.0;
 
+                let mut f = Formatter::new()
+                    .separator(',')
+                    .unwrap()
+                    .precision(Precision::Decimals(0));
+
                 let mut note_stats = MIDIFileStats::default();
                 if let Some(midi_file) = self.midi_file.as_mut() {
                     stats.time_total = midi_file.midi_length().unwrap_or(0.0);
@@ -133,7 +131,7 @@ impl GuiWasabiWindow {
                                 ui.with_layout(
                                     egui::Layout::right_to_left(egui::Align::Center),
                                     |ui| {
-                                        ui.monospace(format!("{}", self.fps.get_fps()));
+                                        ui.monospace(f.fmt2(self.fps.get_fps()).to_string());
                                     },
                                 );
                             });
@@ -145,7 +143,7 @@ impl GuiWasabiWindow {
                                     ui.with_layout(
                                         egui::Layout::right_to_left(egui::Align::Center),
                                         |ui| {
-                                            ui.monospace(format!("{}", voice_count));
+                                            ui.monospace(f.fmt2(voice_count).to_string());
                                         },
                                     );
                                 });
@@ -157,7 +155,7 @@ impl GuiWasabiWindow {
                                 ui.with_layout(
                                     egui::Layout::right_to_left(egui::Align::Center),
                                     |ui| {
-                                        ui.monospace(format!("{}", stats.notes_on_screen));
+                                        ui.monospace(f.fmt2(stats.notes_on_screen).to_string());
                                     },
                                 );
                             });
@@ -166,8 +164,14 @@ impl GuiWasabiWindow {
                             ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
                                 ui.monospace(format!(
                                     "{} / {}",
-                                    num_or_q(note_stats.passed_notes),
-                                    num_or_q(note_stats.total_notes)
+                                    note_stats
+                                        .passed_notes
+                                        .map(|n| f.fmt2(n).to_string())
+                                        .unwrap_or_else(|| "-".to_string()),
+                                    note_stats
+                                        .total_notes
+                                        .map(|n| f.fmt2(n).to_string())
+                                        .unwrap_or_else(|| "-".to_string())
                                 ));
                             });
                         }
@@ -178,7 +182,7 @@ impl GuiWasabiWindow {
                                     egui::Layout::right_to_left(egui::Align::Center),
                                     |ui| {
                                         self.nps.tick(note_stats.passed_notes.unwrap_or(0) as i64);
-                                        ui.monospace(format!("{}", self.nps.read()));
+                                        ui.monospace(f.fmt2(self.nps.read()).to_string());
                                     },
                                 );
                             });
@@ -190,7 +194,7 @@ impl GuiWasabiWindow {
                                     ui.with_layout(
                                         egui::Layout::right_to_left(egui::Align::Center),
                                         |ui| {
-                                            ui.monospace(format!("{}", poly));
+                                            ui.monospace(f.fmt2(poly).to_string());
                                         },
                                     );
                                 });
