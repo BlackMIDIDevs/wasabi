@@ -45,6 +45,7 @@ tokio = { version = "1.47.1", features = ["sync"] }
 num_enum = "0.7.4"
 palette = "0.7.6"
 colors-transform = "0.2"
+numfmt = "1.2.0"
 
 [target.'cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))'.dependencies]
 kdmapi-rs = { package = "kdmapi", git = "https://github.com/BlackMIDIDevs/kdmapi-rs", rev = "aa39558" }
