@@ -24,7 +24,7 @@ struct FilePalette {
     pub selected: bool,
 }
 
-#[cfg(supported_os)]
+#[cfg(all(supported_os, not(target_os = "freebsd")))]
 #[derive(Clone)]
 struct MidiDevice {
     pub name: String,
@@ -33,7 +33,7 @@ struct MidiDevice {
 
 pub struct SettingsWindow {
     palettes: Vec<FilePalette>,
-    #[cfg(supported_os)]
+    #[cfg(all(supported_os, not(target_os = "freebsd")))]
     midi_devices: Vec<MidiDevice>,
     sf_list: EguiSFList,
 }
