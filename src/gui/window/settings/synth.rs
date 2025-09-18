@@ -7,7 +7,7 @@ use super::SettingsWindow;
 
 #[cfg(supported_os)]
 mod kdmapi;
-#[cfg(supported_os)]
+#[cfg(all(supported_os, not(target_os = "freebsd")))]
 mod mididevice;
 mod xsynth;
 
@@ -42,7 +42,7 @@ impl SettingsWindow {
                                 Synth::Kdmapi,
                                 Synth::Kdmapi.as_str(),
                             );
-                            #[cfg(supported_os)]
+                            #[cfg(all(supported_os, not(target_os = "freebsd")))]
                             ui.selectable_value(
                                 &mut settings.synth.synth,
                                 Synth::MidiDevice,
@@ -86,7 +86,7 @@ impl SettingsWindow {
             Synth::XSynth => self.show_xsynth_settings(ui, settings, state, width),
             #[cfg(supported_os)]
             Synth::Kdmapi => self.show_kdmapi_settings(ui, settings, state, width),
-            #[cfg(supported_os)]
+            #[cfg(all(supported_os, not(target_os = "freebsd")))]
             Synth::MidiDevice => self.show_mididevice_settings(ui, settings, state, width),
             Synth::None => {
                 ui.label("No Settings");

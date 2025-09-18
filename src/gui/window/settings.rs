@@ -190,12 +190,12 @@ impl SettingsWindow {
         Ok(())
     }
 
-    #[cfg(not(supported_os))]
+    #[cfg(any(not(supported_os), target_os = "freebsd"))]
     pub fn load_midi_devices(&mut self, _settings: &mut WasabiSettings) -> Result<(), WasabiError> {
         Ok(())
     }
 
-    #[cfg(supported_os)]
+    #[cfg(all(supported_os, not(target_os = "freebsd")))]
     pub fn load_midi_devices(&mut self, settings: &mut WasabiSettings) -> Result<(), WasabiError> {
         self.midi_devices.clear();
         let con = midir::MidiOutput::new("wasabi")
