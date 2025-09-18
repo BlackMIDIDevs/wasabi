@@ -67,9 +67,11 @@ jobs:
           override: true
           profile: minimal
 
+      - name: Set CMake environment variable
+        run: echo "CMAKE_ARGS=-DCMAKE_POLICY_MINIMUM_VERSION=3.5" >> $GITHUB_ENV
+        shell: bash
+
       - name: Build binary
-        env:
-          CMAKE_ARGS: -DCMAKE_MINIMUM_REQUIRED_VERSION=3.5
         uses: actions-rs/cargo@v1
         with:
           command: build
