@@ -68,7 +68,7 @@ jobs:
           profile: minimal
 
       - name: Set CMake environment variable
-        run: echo "CMAKE_ARGS=-DCMAKE_POLICY_MINIMUM_VERSION=3.5" >> $GITHUB_ENV
+        run: echo "CMAKE_POLICY_MINIMUM_VERSION=3.5" >> $GITHUB_ENV
         shell: bash
 
       - name: Build binary
