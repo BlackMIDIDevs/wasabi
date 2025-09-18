@@ -59,7 +59,12 @@ fn main() {
     #[cfg(not(windows))]
     println!("cargo:rerun-if-changed=assets/logo.svg");
 
-    #[cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))]
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "freebsd",
+        target_os = "windows",
+        target_os = "macos"
+    ))]
     println!("cargo:rustc-cfg=supported_os");
     println!("cargo::rustc-check-cfg=cfg(supported_os)");
 }

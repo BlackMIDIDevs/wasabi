@@ -47,7 +47,7 @@ pub enum Synth {
     XSynth = 0,
     #[cfg(supported_os)]
     Kdmapi = 1,
-    #[cfg(supported_os)]
+    #[cfg(all(supported_os, not(target_os = "freebsd")))]
     MidiDevice = 2,
     None = 3,
 }
@@ -59,7 +59,7 @@ impl Synth {
             Synth::XSynth => "Built-In (XSynth)",
             #[cfg(supported_os)]
             Synth::Kdmapi => "KDMAPI",
-            #[cfg(supported_os)]
+            #[cfg(all(supported_os, not(target_os = "freebsd")))]
             Synth::MidiDevice => "MIDI Device",
             Synth::None => "None",
         }
@@ -74,7 +74,7 @@ impl FromStr for Synth {
             "xsynth" => Ok(Synth::XSynth),
             #[cfg(supported_os)]
             "kdmapi" => Ok(Synth::Kdmapi),
-            #[cfg(supported_os)]
+            #[cfg(all(supported_os, not(target_os = "freebsd")))]
             "mididevice" => Ok(Synth::MidiDevice),
             "none" => Ok(Synth::None),
             s => Err(format!(

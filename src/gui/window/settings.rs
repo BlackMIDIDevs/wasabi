@@ -24,7 +24,7 @@ struct FilePalette {
     pub selected: bool,
 }
 
-#[cfg(supported_os)]
+#[cfg(all(supported_os, not(target_os = "freebsd")))]
 #[derive(Clone)]
 struct MidiDevice {
     pub name: String,
@@ -33,7 +33,7 @@ struct MidiDevice {
 
 pub struct SettingsWindow {
     palettes: Vec<FilePalette>,
-    #[cfg(supported_os)]
+    #[cfg(all(supported_os, not(target_os = "freebsd")))]
     midi_devices: Vec<MidiDevice>,
     sf_list: EguiSFList,
 }
@@ -47,7 +47,7 @@ impl SettingsWindow {
 
         Self {
             palettes: Vec::new(),
-            #[cfg(supported_os)]
+            #[cfg(all(supported_os, not(target_os = "freebsd")))]
             midi_devices: Vec::new(),
             sf_list,
         }
@@ -190,12 +190,12 @@ impl SettingsWindow {
         Ok(())
     }
 
-    #[cfg(not(supported_os))]
+    #[cfg(any(not(supported_os), target_os = "freebsd"))]
     pub fn load_midi_devices(&mut self, _settings: &mut WasabiSettings) -> Result<(), WasabiError> {
         Ok(())
     }
 
-    #[cfg(supported_os)]
+    #[cfg(all(supported_os, not(target_os = "freebsd")))]
     pub fn load_midi_devices(&mut self, settings: &mut WasabiSettings) -> Result<(), WasabiError> {
         self.midi_devices.clear();
         let con = midir::MidiOutput::new("wasabi")

@@ -13,16 +13,16 @@ mod kdmapi;
 #[cfg(supported_os)]
 pub use kdmapi::*;
 
-#[cfg(supported_os)]
+#[cfg(all(supported_os, not(target_os = "freebsd")))]
 mod midiout;
-#[cfg(supported_os)]
+#[cfg(all(supported_os, not(target_os = "freebsd")))]
 pub use midiout::*;
 
 enum MidiAudioPlayer {
     XSynth(XSynthPlayer),
     #[cfg(supported_os)]
     Kdmapi(KdmapiPlayer),
-    #[cfg(supported_os)]
+    #[cfg(all(supported_os, not(target_os = "freebsd")))]
     MidiDevice(MidiDevicePlayer),
     None,
 }
@@ -47,7 +47,7 @@ impl WasabiAudioPlayer {
             MidiAudioPlayer::XSynth(player) => player.push_events(data),
             #[cfg(supported_os)]
             MidiAudioPlayer::Kdmapi(player) => player.push_events(data),
-            #[cfg(supported_os)]
+            #[cfg(all(supported_os, not(target_os = "freebsd")))]
             MidiAudioPlayer::MidiDevice(player) => player.push_events(data),
             _ => {}
         }
@@ -83,7 +83,7 @@ impl WasabiAudioPlayer {
             MidiAudioPlayer::XSynth(player) => player.reset(),
             #[cfg(supported_os)]
             MidiAudioPlayer::Kdmapi(player) => player.reset(),
-            #[cfg(supported_os)]
+            #[cfg(all(supported_os, not(target_os = "freebsd")))]
             MidiAudioPlayer::MidiDevice(player) => player.reset(),
             _ => {}
         }
@@ -111,7 +111,7 @@ impl WasabiAudioPlayer {
                     MidiAudioPlayer::None
                 }
             },
-            #[cfg(supported_os)]
+            #[cfg(all(supported_os, not(target_os = "freebsd")))]
             Synth::MidiDevice => match MidiDevicePlayer::new(settings.midi_device.clone()) {
                 Ok(midiout) => MidiAudioPlayer::MidiDevice(midiout),
                 Err(e) => {
