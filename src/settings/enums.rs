@@ -74,7 +74,7 @@ impl FromStr for Synth {
             "xsynth" => Ok(Synth::XSynth),
             #[cfg(supported_os)]
             "kdmapi" => Ok(Synth::Kdmapi),
-            #[cfg(supported_os)]
+            #[cfg(all(supported_os, not(target_os = "freebsd")))]
             "mididevice" => Ok(Synth::MidiDevice),
             "none" => Ok(Synth::None),
             s => Err(format!(
