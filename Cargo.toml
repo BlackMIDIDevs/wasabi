@@ -47,8 +47,10 @@ palette = "0.7.6"
 colors-transform = "0.2"
 numfmt = "1.2.0"
 
+[target.'cfg(any(target_os = "linux", target_os = "freebsd", target_os = "windows", target_os = "macos"))'.dependencies]
+kdmapi-rs = { package = "kdmapi", git = "https://github.com/BlackMIDIDevs/kdmapi-rs", branch = "bsd-support" }
+
 [target.'cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))'.dependencies]
-kdmapi-rs = { package = "kdmapi", git = "https://github.com/BlackMIDIDevs/kdmapi-rs", rev = "aa39558" }
 midir = "0.10.2"
 
 [build-dependencies]

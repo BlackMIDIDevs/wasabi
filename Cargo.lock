@@ -2092,7 +2092,7 @@ dependencies = [
 [[package]]
 name = "kdmapi"
 version = "0.1.0"
-source = "git+https://github.com/BlackMIDIDevs/kdmapi-rs?rev=aa39558#aa395580d547583ff5fb968b6e6264efd9584f34"
+source = "git+https://github.com/BlackMIDIDevs/kdmapi-rs?branch=bsd-support#57c36f57ed659ab705e265dbb27c5167f6c34766"
 dependencies = [
  "lazy_static",
  "libloading 0.7.4",
