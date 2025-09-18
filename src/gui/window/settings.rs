@@ -47,7 +47,7 @@ impl SettingsWindow {
 
         Self {
             palettes: Vec::new(),
-            #[cfg(supported_os)]
+            #[cfg(all(supported_os, not(target_os = "freebsd")))]
             midi_devices: Vec::new(),
             sf_list,
         }
