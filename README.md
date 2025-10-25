@@ -28,7 +28,12 @@ You can download and run a pre-built binary of Wasabi from the [releases page.](
 You can build Wasabi yourself by following these steps:
 
 - Clone the repository using `git clone https://github.com/BlackMIDIDevs/wasabi.git` (or [download as a ZIP from GitHub](https://github.com/BlackMIDIDevs/wasabi/archive/refs/heads/master.zip))
-- Make sure that the [Rust toolchain](https://rustup.rs/) and the [Vulkan SDK](https://vulkan.lunarg.com/) are both installed on your system
+- Required tools:
+    - [Rust toolchain](https://rustup.rs/)
+    - [Vulkan SDK](https://vulkan.lunarg.com/)
+    - [CMake **3.X**](https://cmake.org/)
+    - [Ninja](https://ninja-build.org/)
+    - (C++ build tools for-)[Visual Studio 17+](https://visualstudio.microsoft.com/) (Windows only)
 - Inside the project directory run the following command to build Wasabi: `cargo build --release`
     - Optionally you can add `RUSTFLAGS="-C target-cpu=native"` to your environment before compiling to optimize XSynth for your specific CPU
 - After the compilation is finished, you will find the binary under `./target/release`
