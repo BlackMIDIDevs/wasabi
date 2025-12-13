@@ -45,44 +45,6 @@ jobs:
           name: "wasabi-linux-${{ matrix.target.arch }}"
           path: "target/${{ matrix.target.name }}/release/wasabi"
 
-  build-macos:
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        target:
-          - name: x86_64-apple-darwin
-            arch: x86_64
-          - name: aarch64-apple-darwin
-            arch: aarch64
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Install target
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly-2025-08-15
-          target: ${{ matrix.target.name }}
-          override: true
-          profile: minimal
-
-      - name: Set CMake environment variable
-        run: echo "CMAKE_POLICY_MINIMUM_VERSION=3.5" >> $GITHUB_ENV
-        shell: bash
-
-      - name: Build binary
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --target ${{ matrix.target.name }}
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: wasabi-macos-${{ matrix.target.arch }}
-          path: "target/${{ matrix.target.name }}/release/wasabi"
-
   build-windows:
     runs-on: windows-latest
     strategy:
@@ -125,7 +87,6 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     needs:
       - build-linux
-      - build-macos
       - build-windows
 
     steps:
