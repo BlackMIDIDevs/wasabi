@@ -13,6 +13,11 @@ mod kdmapi;
 #[cfg(supported_os)]
 pub use kdmapi::*;
 
+#[cfg(supported_os)]
+mod maestroapi;
+#[cfg(supported_os)]
+pub use maestroapi::*;
+
 #[cfg(all(supported_os, not(target_os = "freebsd")))]
 mod midiout;
 #[cfg(all(supported_os, not(target_os = "freebsd")))]
@@ -20,6 +25,8 @@ pub use midiout::*;
 
 enum MidiAudioPlayer {
     XSynth(XSynthPlayer),
+    #[cfg(supported_os)]
+    MaestroAPI(MaestroPlayer),
     #[cfg(supported_os)]
     Kdmapi(KdmapiPlayer),
     #[cfg(all(supported_os, not(target_os = "freebsd")))]
@@ -38,6 +45,7 @@ impl WasabiAudioPlayer {
         match &*self.0.read().unwrap() {
             MidiAudioPlayer::XSynth(player) => Some(player.voice_count()),
             MidiAudioPlayer::Kdmapi(player) => player.voice_count(),
+            MidiAudioPlayer::MaestroAPI(player) => player.voice_count(),
             _ => None,
         }
     }
@@ -45,6 +53,8 @@ impl WasabiAudioPlayer {
     pub fn push_events(&self, data: impl Iterator<Item = u32>) {
         match &mut *self.0.write().unwrap() {
             MidiAudioPlayer::XSynth(player) => player.push_events(data),
+            #[cfg(supported_os)]
+            MidiAudioPlayer::MaestroAPI(player) => player.push_events(data),
             #[cfg(supported_os)]
             MidiAudioPlayer::Kdmapi(player) => player.push_events(data),
             #[cfg(all(supported_os, not(target_os = "freebsd")))]
@@ -82,6 +92,8 @@ impl WasabiAudioPlayer {
         match &mut *self.0.write().unwrap() {
             MidiAudioPlayer::XSynth(player) => player.reset(),
             #[cfg(supported_os)]
+            MidiAudioPlayer::MaestroAPI(player) => player.reset(),
+            #[cfg(supported_os)]
             MidiAudioPlayer::Kdmapi(player) => player.reset(),
             #[cfg(all(supported_os, not(target_os = "freebsd")))]
             MidiAudioPlayer::MidiDevice(player) => player.reset(),
@@ -100,9 +112,15 @@ impl WasabiAudioPlayer {
 
         // Create the new synth object based on the settings
         let synth = match settings.synth {
-            Synth::XSynth => {
-                MidiAudioPlayer::XSynth(XSynthPlayer::new(settings.xsynth.config.clone()))
-            }
+            Synth::XSynth => MidiAudioPlayer::XSynth(XSynthPlayer::new(&settings.xsynth)),
+            #[cfg(supported_os)]
+            Synth::MaestroAPI => match MaestroPlayer::new(&settings.maestro) {
+                Ok(maestro) => MidiAudioPlayer::MaestroAPI(maestro),
+                Err(e) => {
+                    errors.error(&e);
+                    MidiAudioPlayer::None
+                }
+            },
             #[cfg(supported_os)]
             Synth::Kdmapi => match KdmapiPlayer::new() {
                 Ok(kdmapi) => MidiAudioPlayer::Kdmapi(kdmapi),

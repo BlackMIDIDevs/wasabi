@@ -28,13 +28,14 @@ impl KdmapiPlayer {
     }
 
     pub fn reset(&mut self) {
-        let reset = utils::create_reset_midi_messages();
-        self.push_events(reset.into_iter());
+        self.stream.send_direct_data(0xFF);
         self.stream.reset();
     }
 
     pub fn push_events(&mut self, data: impl Iterator<Item = u32>) {
         for ev in data {
+            // Remove port data
+            let ev = ev & 0x00FFFFFF;
             self.stream.send_direct_data(ev);
         }
     }

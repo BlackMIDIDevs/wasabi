@@ -118,6 +118,8 @@ pub struct XSynthSettings {
     pub config: XSynthRealtimeConfig,
     pub limit_layers: bool,
     pub layers: usize,
+    pub num_ports: u8,
+    pub use_ports: bool,
 }
 
 impl Default for XSynthSettings {
@@ -126,6 +128,8 @@ impl Default for XSynthSettings {
             config: Default::default(),
             limit_layers: true,
             layers: 4,
+            num_ports: 1,
+            use_ports: false,
         }
     }
 }
@@ -134,6 +138,22 @@ impl Default for XSynthSettings {
 #[serde(default)]
 pub struct KdmapiSettings {
     pub use_om_sflist: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(default)]
+pub struct MaestroSettings {
+    pub num_ports: u8,
+    pub use_ports: bool,
+}
+
+impl Default for MaestroSettings {
+    fn default() -> Self {
+        Self {
+            num_ports: 1,
+            use_ports: false,
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
@@ -151,6 +171,7 @@ pub struct SynthSettings {
     pub soundfonts: Vec<WasabiSoundfont>,
 
     pub xsynth: XSynthSettings,
+    pub maestro: MaestroSettings,
     pub kdmapi: KdmapiSettings,
     pub midi_device: String,
 }
@@ -161,6 +182,7 @@ impl Default for SynthSettings {
             synth: Synth::XSynth,
             soundfonts: Vec::new(),
             xsynth: Default::default(),
+            maestro: Default::default(),
             kdmapi: Default::default(),
             midi_device: String::new(),
         }

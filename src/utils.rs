@@ -102,20 +102,3 @@ pub fn create_om_sf_list(list: &[WasabiSoundfont]) -> String {
 
     out
 }
-
-#[cfg(supported_os)]
-pub fn create_reset_midi_messages() -> Vec<u32> {
-    let mut out = Vec::new();
-
-    for ch in 0..16 {
-        let code: u32 = 0xB << 4 | ch;
-        for cc in [120, 121] {
-            let z = 0 << 8;
-            let cc = cc << 8 | z;
-            let cc = cc | code;
-            out.push(cc);
-        }
-    }
-
-    out
-}

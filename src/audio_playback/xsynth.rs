@@ -6,7 +6,7 @@ use crate::{
 };
 
 use xsynth_core::{
-    channel::{ChannelConfigEvent, ChannelEvent},
+    channel::{ChannelAudioEvent, ChannelConfigEvent, ChannelEvent, ControlEvent},
     soundfont::{SampleSoundfont, SoundfontBase},
     AudioStreamParams,
 };
@@ -21,20 +21,44 @@ pub struct XSynthPlayer {
     stats: RealtimeSynthStatsReader,
     stream_params: AudioStreamParams,
     synth: RealtimeSynth,
+    port_data: bool,
+    num_ports: u32,
 }
 
 impl XSynthPlayer {
-    pub fn new(config: XSynthRealtimeConfig) -> Self {
-        let synth = RealtimeSynth::open_with_default_output(config);
+    pub fn new(settings: &XSynthSettings) -> Self {
+        let ports = if settings.use_ports {
+            settings.num_ports as u32
+        } else {
+            1
+        };
+
+        let config = XSynthRealtimeConfig {
+            format: xsynth_realtime::SynthFormat::Custom {
+                channels: ports * 16,
+            },
+            ..settings.config.clone()
+        };
+        let mut synth = RealtimeSynth::open_with_default_output(config);
         let sender = synth.get_sender_ref().clone();
         let stream_params = synth.stream_params();
         let stats = synth.get_stats();
+
+        for i in 0..ports {
+            let chan = i * 16 + 9;
+            synth.send_event(SynthEvent::Channel(
+                chan,
+                ChannelEvent::Config(ChannelConfigEvent::SetPercussionMode(true)),
+            ));
+        }
 
         XSynthPlayer {
             sender,
             stats,
             stream_params,
             synth,
+            port_data: settings.use_ports,
+            num_ports: ports,
         }
     }
 
@@ -44,7 +68,58 @@ impl XSynthPlayer {
 
     pub fn push_events(&mut self, data: impl Iterator<Item = u32>) {
         for ev in data {
-            self.sender.send_event_u32(ev);
+            let port = if self.port_data { (ev >> 24) & 0xFF } else { 0 };
+            if port >= self.num_ports {
+                continue;
+            }
+
+            let channel = 16 * port + (ev & 0xF);
+
+            match ev & 0xF0 {
+                0x80 => self.sender.send_event(SynthEvent::Channel(
+                    channel,
+                    ChannelEvent::Audio(ChannelAudioEvent::NoteOff {
+                        key: (ev >> 8) as u8,
+                    }),
+                )),
+                0x90 => self.sender.send_event(SynthEvent::Channel(
+                    channel,
+                    ChannelEvent::Audio(ChannelAudioEvent::NoteOn {
+                        key: (ev >> 8) as u8,
+                        vel: (ev >> 16) as u8,
+                    }),
+                )),
+                0xB0 => self.sender.send_event(SynthEvent::Channel(
+                    channel,
+                    ChannelEvent::Audio(ChannelAudioEvent::Control(ControlEvent::Raw(
+                        (ev >> 8) as u8,
+                        (ev >> 16) as u8,
+                    ))),
+                )),
+                0xC0 => {
+                    self.sender.send_event(SynthEvent::Channel(
+                        channel,
+                        ChannelEvent::Audio(ChannelAudioEvent::ProgramChange((ev >> 8) as u8)),
+                    ));
+                }
+                0xE0 => {
+                    let value =
+                        (((((ev >> 16) as u8) as i16) << 7) | ((ev >> 8) as u8) as i16) - 8192;
+                    let value = value as f32 / 8192.0;
+                    self.sender.send_event(SynthEvent::Channel(
+                        channel,
+                        ChannelEvent::Audio(ChannelAudioEvent::Control(
+                            ControlEvent::PitchBendValue(value),
+                        )),
+                    ));
+                }
+                0xF0 => {
+                    if ev == 0xFF {
+                        self.sender.reset_synth();
+                    }
+                }
+                _ => {}
+            }
         }
     }
 
