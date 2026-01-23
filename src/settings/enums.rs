@@ -49,9 +49,7 @@ pub enum Synth {
     Kdmapi = 1,
     #[cfg(all(supported_os, not(target_os = "freebsd")))]
     MidiDevice = 2,
-    #[cfg(supported_os)]
-    MaestroAPI = 3,
-    None = 128,
+    None = 3,
 }
 
 impl Synth {
@@ -61,8 +59,6 @@ impl Synth {
             Synth::XSynth => "Built-In (XSynth)",
             #[cfg(supported_os)]
             Synth::Kdmapi => "KDMAPI",
-            #[cfg(supported_os)]
-            Synth::MaestroAPI => "Maestro API",
             #[cfg(all(supported_os, not(target_os = "freebsd")))]
             Synth::MidiDevice => "MIDI Device",
             Synth::None => "None",
