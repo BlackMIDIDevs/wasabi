@@ -117,7 +117,7 @@ impl InRamMIDIFile {
         let (audio_snd, audio_rcv) = crossbeam_channel::bounded::<Arc<Ev>>(1000);
 
         let key_join_handle = thread::spawn(|| {
-            let mut keys: Vec<Key> = (0..257).map(|_| Key::new()).collect();
+            let mut keys: Vec<Key> = (0..256).map(|_| Key::new()).collect();
 
             let mut time = 0.0;
 

@@ -34,11 +34,11 @@ pub struct ThreadedTreeSerializers {
 
 impl ThreadedTreeSerializers {
     fn make_vecs() -> Vec<Vec<NoteEvent>> {
-        (0..257).map(|_| Vec::new()).collect()
+        (0..256).map(|_| Vec::new()).collect()
     }
 
     pub fn new() -> ThreadedTreeSerializers {
-        let trees = (0..257).map(|_| TreeSerializer::new()).collect::<Vec<_>>();
+        let trees = (0..256).map(|_| TreeSerializer::new()).collect::<Vec<_>>();
         let trees = Arc::new(Mutex::new(trees));
 
         let (snd_in, rcv_in) = crossbeam_channel::unbounded::<Vec<Vec<NoteEvent>>>();

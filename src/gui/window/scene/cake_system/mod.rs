@@ -45,7 +45,7 @@ use crate::{
 
 use super::RenderResultData;
 
-const BUFFER_ARRAY_LEN: u64 = 257;
+const BUFFER_ARRAY_LEN: u64 = 256;
 
 struct CakeBuffer {
     data: Subbuffer<[IntVector4]>,

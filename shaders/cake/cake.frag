@@ -20,7 +20,7 @@ layout(push_constant) uniform PushConstants {
 layout(set = 0, binding = 0) readonly buffer BufferArray
 {
     ivec4 BinTree[];
-} buffers[257];
+} buffers[256];
 
 const float pi = 3.1415926535897;
 

@@ -25,7 +25,7 @@ struct KeyPosition {
 };
 
 layout(set = 0, binding = 0) uniform Keys {
-    KeyPosition key_positions[257];
+    KeyPosition key_positions[256];
 };
 
 void main()
