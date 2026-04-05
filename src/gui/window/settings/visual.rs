@@ -65,11 +65,11 @@ impl SettingsWindow {
                 let mut firstkey = *settings.scene.key_range.start();
                 let mut lastkey = *settings.scene.key_range.end();
                 ui.horizontal(|ui| {
-                    ui.add(egui::DragValue::new(&mut firstkey).speed(1).range(0..=253));
+                    ui.add(egui::DragValue::new(&mut firstkey).speed(1).range(0..=254));
                     ui.add(
                         egui::DragValue::new(&mut lastkey)
                             .speed(1)
-                            .range(firstkey + 1..=254),
+                            .range(firstkey + 1..=255),
                     );
                 });
                 ui.end_row();
