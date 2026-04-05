@@ -40,8 +40,8 @@ impl KeyPosition {
 }
 
 pub struct KeyboardLayout {
-    keys: [KeyPosition; 257],
-    notes: [KeyPosition; 257],
+    keys: [KeyPosition; 256],
+    notes: [KeyPosition; 256],
 }
 
 const fn is_black(key: usize) -> bool {
@@ -69,8 +69,8 @@ fn load_key_numbers() -> [usize; 257] {
 
 impl KeyboardLayout {
     pub fn new(params: &KeyboardParams) -> KeyboardLayout {
-        let mut keys = [Default::default(); 257];
-        let mut notes = [Default::default(); 257];
+        let mut keys = [Default::default(); 256];
+        let mut notes = [Default::default(); 256];
 
         // let mut key_numbers = Vec::new();
 
@@ -78,7 +78,7 @@ impl KeyboardLayout {
 
         match params {
             KeyboardParams::SameWidth => {
-                for i in 0..257 {
+                for i in 0..256 {
                     let left = i as f32 / last_key;
                     let right = (i + 1) as f32 / last_key;
 
@@ -122,7 +122,7 @@ impl KeyboardLayout {
             } => {
                 let key_numbers = load_key_numbers();
 
-                for i in 0..257 {
+                for i in 0..256 {
                     if !is_black(i) {
                         let left = key_numbers[i] as f32;
                         let right = left + 1.0;
@@ -174,9 +174,11 @@ impl KeyboardLayout {
         if self.keys[left_key].black {
             left_key -= 1;
         }
-        if self.keys[right_key - 1].black {
+        if right_key > 0 && right_key < 256 && self.keys[right_key - 1].black {
             right_key += 1;
         }
+
+        right_key = right_key.min(256);
 
         KeyboardView {
             layout: self,
@@ -190,19 +192,21 @@ impl KeyboardLayout {
             .keys
             .iter()
             .position(|x| x.right >= range.left)
-            .unwrap_or(257);
+            .unwrap_or(256);
         let mut right_key = self
             .keys
             .iter()
             .position(|x| x.left >= range.right)
-            .unwrap_or(257);
+            .unwrap_or(256);
 
-        if self.keys[left_key].black {
+        if left_key > 0 && left_key < 256 && self.keys[left_key].black {
             left_key -= 1;
         }
-        if self.keys[right_key - 1].black {
+        if right_key > 0 && right_key < 256 && self.keys[right_key - 1].black {
             right_key += 1;
         }
+
+        right_key = right_key.min(256);
 
         if left_key > right_key {
             std::mem::swap(&mut left_key, &mut right_key);
@@ -262,7 +266,7 @@ impl<'a> KeyboardView<'a> {
     }
 
     pub fn iter_all_keys(&self) -> impl '_ + Iterator<Item = KeyPosition> {
-        (0..257).map(|i| self.key(i))
+        (0..256).map(|i| self.key(i))
     }
 
     pub fn iter_visible_notes(&self) -> impl '_ + Iterator<Item = (usize, KeyPosition)> {
@@ -270,6 +274,6 @@ impl<'a> KeyboardView<'a> {
     }
 
     pub fn iter_all_notes(&self) -> impl '_ + Iterator<Item = KeyPosition> {
-        (0..257).map(|i| self.note(i))
+        (0..256).map(|i| self.note(i))
     }
 }
