@@ -26,8 +26,8 @@ impl<'a> LiveCurrentNoteViews<'a> {
 
 impl LiveNoteViewData {
     pub fn new(parser: LiveMidiParser, colors: Vec<MIDIColor>) -> Self {
-        let mut columns = Vec::with_capacity(256);
-        columns.resize_with(256, LiveNoteColumn::new);
+        let mut columns = Vec::with_capacity(257);
+        columns.resize_with(257, LiveNoteColumn::new);
         LiveNoteViewData {
             parser,
             columns,

@@ -119,7 +119,7 @@ pub struct NoteRenderPass {
     pipeline_draw_over: Arc<GraphicsPipeline>,
     render_pass_clear: Arc<RenderPass>,
     render_pass_draw_over: Arc<RenderPass>,
-    key_locations: Subbuffer<[[KeyPosition; 256]]>,
+    key_locations: Subbuffer<[[KeyPosition; 257]]>,
     depth_buffer: Arc<ImageView>,
     allocator: Arc<StandardMemoryAllocator>,
     cb_allocator: Arc<StandardCommandBufferAllocator>,
@@ -209,7 +209,7 @@ impl NoteRenderPass {
                 memory_type_filter: MemoryTypeFilter::HOST_SEQUENTIAL_WRITE,
                 ..Default::default()
             },
-            [[Default::default(); 256]],
+            [[Default::default(); 257]],
         )
         .unwrap();
 

@@ -38,7 +38,7 @@ impl GuiKeyboard {
 
         for (i, key) in key_view.iter_visible_keys() {
             if !key.black {
-                if let Some(color) = colors.get(i).copied().flatten().map(map_color) {
+                if let Some(color) = colors[i].map(map_color) {
                     // Pressed
                     let darkened = Color32::from_rgb(
                         (color.r() as f32 * 0.6) as u8,
@@ -208,7 +208,7 @@ impl GuiKeyboard {
 
         for (i, key) in key_view.iter_visible_keys() {
             if key.black {
-                if let Some(color) = colors.get(i).copied().flatten().map(map_color) {
+                if let Some(color) = colors[i].map(map_color) {
                     // Pressed
                     let darkened = Color32::from_rgb(
                         (color.r() as f32 * 0.76) as u8,

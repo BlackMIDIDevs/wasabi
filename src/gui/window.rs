@@ -322,7 +322,7 @@ impl GuiWasabiWindow {
                 let colors = if let Some(data) = render_result_data {
                     data.key_colors
                 } else {
-                    vec![None; 256]
+                    vec![None; 257]
                 };
 
                 self.keyboard

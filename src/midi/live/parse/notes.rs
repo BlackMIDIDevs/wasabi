@@ -94,8 +94,8 @@ struct ParserState {
 
 impl ParserState {
     fn new(sender: Sender<LiveNoteBlockWithKey>) -> Self {
-        let mut keys = Vec::with_capacity(256);
-        for _ in 0..256 {
+        let mut keys = Vec::with_capacity(257);
+        for _ in 0..257 {
             keys.push(Vec::new());
         }
         ParserState {

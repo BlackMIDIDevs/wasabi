@@ -70,7 +70,7 @@ impl NoteRenderer {
 
         let mut total_notes = 0;
 
-        let columns: Vec<_> = (0..256).map(|i| note_views.get_column(i)).collect();
+        let columns: Vec<_> = (0..257).map(|i| note_views.get_column(i)).collect();
 
         let mut columns_view_info = Vec::new();
 
