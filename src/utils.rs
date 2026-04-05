@@ -8,7 +8,7 @@ use crate::settings::WasabiSoundfont;
 use crate::{gui::window::WasabiError, state::WasabiState};
 
 pub const WIN_MARGIN: egui::Margin = egui::Margin::same(12);
-pub const NOTE_SPEED_RANGE: RangeInclusive<f64> = 8.0..=0.05;
+pub const NOTE_SPEED_RANGE: RangeInclusive<f64> = 10.0..=0.01;
 
 pub fn calculate_border_width(width_pixels: f32, keys_len: f32) -> f32 {
     ((width_pixels / keys_len) / 12.0).clamp(1.0, 5.0).round() * 2.0
