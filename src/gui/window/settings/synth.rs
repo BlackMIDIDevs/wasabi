@@ -88,7 +88,7 @@ impl SettingsWindow {
             Synth::Kdmapi => self.show_kdmapi_settings(ui, settings, state, width),
             #[cfg(all(supported_os, not(target_os = "freebsd")))]
             Synth::MidiDevice => self.show_mididevice_settings(ui, settings, state, width),
-            Synth::None => {
+            _ => {
                 ui.label("No Settings");
             }
         }

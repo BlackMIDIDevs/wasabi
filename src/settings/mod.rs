@@ -118,6 +118,8 @@ pub struct XSynthSettings {
     pub config: XSynthRealtimeConfig,
     pub limit_layers: bool,
     pub layers: usize,
+    pub num_ports: u8,
+    pub use_ports: bool,
 }
 
 impl Default for XSynthSettings {
@@ -126,6 +128,8 @@ impl Default for XSynthSettings {
             config: Default::default(),
             limit_layers: true,
             layers: 4,
+            num_ports: 1,
+            use_ports: false,
         }
     }
 }

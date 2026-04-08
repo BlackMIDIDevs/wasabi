@@ -29,6 +29,7 @@ impl CompressedAudio {
     ) -> impl Iterator<Item = CompressedAudio> {
         let mut builder_vec: Vec<u8> = Vec::new();
         let mut control_builder_vec: Vec<u8> = Vec::new();
+        let mut ports = vec![0; u16::MAX.into()];
         GenIter(
             #[coroutine]
             move || {
@@ -42,48 +43,57 @@ impl CompressedAudio {
                     builder_vec.reserve(min_len);
                     builder_vec.clear();
 
+                    let track = block.track as usize;
+
                     for event in block.iter_events() {
                         match event.as_event() {
                             Event::NoteOn(e) => {
                                 let head = EV_ON | e.channel;
-                                let events = &[head, e.key, e.velocity];
+                                let events = &[head, e.key, e.velocity, ports[track]];
                                 builder_vec.extend_from_slice(events);
                             }
                             Event::NoteOff(e) => {
                                 let head = EV_OFF | e.channel;
-                                let events = &[head, e.key];
+                                let events = &[head, e.key, ports[track]];
                                 builder_vec.extend_from_slice(events);
                             }
                             Event::PolyphonicKeyPressure(e) => {
                                 let head = EV_POLYPHONIC | e.channel;
-                                let events = &[head, e.key, e.velocity];
+                                let events = &[head, e.key, e.velocity, ports[track]];
                                 builder_vec.extend_from_slice(events);
                             }
                             Event::ControlChange(e) => {
                                 let head = EV_CONTROL | e.channel;
-                                let events = &[head, e.controller, e.value];
+                                let events = &[head, e.controller, e.value, ports[track]];
                                 builder_vec.extend_from_slice(events);
                                 control_builder_vec.extend_from_slice(events);
                             }
                             Event::ProgramChange(e) => {
                                 let head = EV_PROGRAM | e.channel;
-                                let events = &[head, e.program];
+                                let events = &[head, e.program, ports[track]];
                                 builder_vec.extend_from_slice(events);
                                 control_builder_vec.extend_from_slice(events);
                             }
                             Event::ChannelPressure(e) => {
                                 let head = EV_CHAN_PRESSURE | e.channel;
-                                let events = &[head, e.pressure];
+                                let events = &[head, e.pressure, ports[track]];
                                 builder_vec.extend_from_slice(events);
                                 control_builder_vec.extend_from_slice(events);
                             }
                             Event::PitchWheelChange(e) => {
                                 let head = EV_PITCH_BEND | e.channel;
                                 let value = e.pitch + 8192;
-                                let events =
-                                    &[head, (value & 0x7F) as u8, ((value >> 7) & 0x7F) as u8];
+                                let events = &[
+                                    head,
+                                    (value & 0x7F) as u8,
+                                    ((value >> 7) & 0x7F) as u8,
+                                    ports[track],
+                                ];
                                 builder_vec.extend_from_slice(events);
                                 control_builder_vec.extend_from_slice(events);
+                            }
+                            Event::MIDIPort(e) => {
+                                ports[track] = e.channel;
                             }
                             _ => {}
                         }
@@ -129,12 +139,14 @@ impl CompressedAudio {
                     let val = match ev {
                         EV_OFF | EV_PROGRAM | EV_CHAN_PRESSURE => {
                             let val2 = iter.next().unwrap() as u32;
-                            (next as u32) | (val2 << 8)
+                            let port = iter.next().unwrap() as u32;
+                            (next as u32) | (val2 << 8) | (port << 24)
                         }
                         EV_ON | EV_POLYPHONIC | EV_CONTROL | EV_PITCH_BEND => {
                             let val2 = iter.next().unwrap() as u32;
                             let val3 = iter.next().unwrap() as u32;
-                            (next as u32) | (val2 << 8) | (val3 << 16)
+                            let port = iter.next().unwrap() as u32;
+                            (next as u32) | (val2 << 8) | (val3 << 16) | (port << 24)
                         }
                         _ => panic!("Can't reach {next:#x}"),
                     };

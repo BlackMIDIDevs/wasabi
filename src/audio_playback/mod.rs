@@ -100,9 +100,7 @@ impl WasabiAudioPlayer {
 
         // Create the new synth object based on the settings
         let synth = match settings.synth {
-            Synth::XSynth => {
-                MidiAudioPlayer::XSynth(XSynthPlayer::new(settings.xsynth.config.clone()))
-            }
+            Synth::XSynth => MidiAudioPlayer::XSynth(XSynthPlayer::new(&settings.xsynth)),
             #[cfg(supported_os)]
             Synth::Kdmapi => match KdmapiPlayer::new() {
                 Ok(kdmapi) => MidiAudioPlayer::Kdmapi(kdmapi),

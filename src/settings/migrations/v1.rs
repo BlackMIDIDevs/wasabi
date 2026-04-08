@@ -92,6 +92,7 @@ impl WasabiConfigFileV1 {
                         ignore_range: cfg.synth.vel_ignore,
                         ..Default::default()
                     },
+                    ..Default::default()
                 },
                 ..Default::default()
             },
