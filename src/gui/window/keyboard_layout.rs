@@ -45,6 +45,9 @@ pub struct KeyboardLayout {
 }
 
 const fn is_black(key: usize) -> bool {
+    if key == 255 {
+        return false;
+    }
     let key = key % 12;
     key == 1 || key == 3 || key == 6 || key == 8 || key == 10
 }
