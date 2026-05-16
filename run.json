@@ -1,0 +1,212 @@
+{
+  "spec": {
+    "run_id": "01KRR18HGNDXCC2J72GQQX38HK",
+    "settings": {
+      "project": {
+        "name": null,
+        "description": null,
+        "directory": ".",
+        "metadata": {}
+      },
+      "workflow": {
+        "name": null,
+        "description": null,
+        "graph": "workflow.fabro",
+        "metadata": {}
+      },
+      "run": {
+        "goal": {
+          "type": "inline",
+          "value": "Say hello and demonstrate a basic Fabro workflow"
+        },
+        "working_dir": null,
+        "metadata": {},
+        "inputs": {},
+        "model": {
+          "provider": "openai",
+          "name": "gpt-5.4",
+          "fallbacks": []
+        },
+        "git": {
+          "author": null
+        },
+        "prepare": {
+          "commands": [],
+          "timeout_ms": 300000
+        },
+        "execution": {
+          "mode": "normal",
+          "approval": "prompt",
+          "retros": true
+        },
+        "checkpoint": {
+          "exclude_globs": []
+        },
+        "sandbox": {
+          "provider": "local",
+          "preserve": false,
+          "devcontainer": false,
+          "env": {},
+          "local": {
+            "worktree_mode": "always"
+          },
+          "docker": {
+            "image": "buildpack-deps:noble",
+            "network_mode": null,
+            "memory_limit": 4000000000,
+            "cpu_quota": 200000,
+            "env_vars": {},
+            "skip_clone": false
+          },
+          "daytona": null
+        },
+        "notifications": {},
+        "interviews": {
+          "provider": null,
+          "slack": null,
+          "discord": null,
+          "teams": null
+        },
+        "agent": {
+          "permissions": null,
+          "mcps": {}
+        },
+        "hooks": [],
+        "scm": {
+          "provider": null,
+          "owner": null,
+          "repository": null,
+          "github": null
+        },
+        "pull_request": {
+          "enabled": true,
+          "draft": true,
+          "auto_merge": false,
+          "merge_strategy": "squash"
+        },
+        "artifacts": {
+          "include": []
+        },
+        "integrations": {
+          "github": {
+            "permissions": {}
+          }
+        }
+      }
+    },
+    "graph": {
+      "name": "Hello",
+      "nodes": {
+        "start": {
+          "id": "start",
+          "attrs": {
+            "shape": {
+              "String": "Mdiamond"
+            },
+            "label": {
+              "String": "Start"
+            }
+          }
+        },
+        "greet": {
+          "id": "greet",
+          "attrs": {
+            "label": {
+              "String": "Greet"
+            },
+            "prompt": {
+              "String": "Say hello! Introduce yourself and explain that this is a test of the Fabro workflow engine."
+            }
+          }
+        },
+        "exit": {
+          "id": "exit",
+          "attrs": {
+            "shape": {
+              "String": "Msquare"
+            },
+            "label": {
+              "String": "Exit"
+            }
+          }
+        }
+      },
+      "edges": [
+        {
+          "from": "start",
+          "to": "greet",
+          "attrs": {}
+        },
+        {
+          "from": "greet",
+          "to": "exit",
+          "attrs": {}
+        }
+      ],
+      "attrs": {
+        "rankdir": {
+          "String": "LR"
+        },
+        "goal": {
+          "String": "Say hello and demonstrate a basic Fabro workflow"
+        }
+      }
+    },
+    "workflow_slug": "hello",
+    "source_directory": "/home/arduano/programming/wasabi",
+    "provenance": {
+      "server": {
+        "version": "0.227.0"
+      },
+      "client": {
+        "user_agent": "fabro-cli/0.227.0",
+        "name": "fabro-cli",
+        "version": "0.227.0"
+      },
+      "subject": {
+        "kind": "user",
+        "identity": {
+          "issuer": "fabro:dev",
+          "subject": "dev"
+        },
+        "login": "dev",
+        "auth_method": "dev_token"
+      }
+    },
+    "manifest_blob": "304dadf30a9db8089cb32eef339fc226796474508a95cdb71c87208380c42575",
+    "definition_blob": "3fec7a16f29840019daf22af40b71b2d16df6ef083eb4aa232fb216a944ed9da",
+    "git": {
+      "origin_url": "https://github.com/arduano/wasabi",
+      "branch": "dev",
+      "sha": "6ae43af0c841cf193694f73969c6d30af788f219",
+      "dirty": "dirty",
+      "push_outcome": {
+        "type": "not_attempted"
+      }
+    },
+    "in_place": false
+  },
+  "graph_source": "digraph Hello {\n    graph [goal=\"Say hello and demonstrate a basic Fabro workflow\"]\n    rankdir=LR\n\n    start [shape=Mdiamond, label=\"Start\"]\n    exit  [shape=Msquare, label=\"Exit\"]\n\n    greet [label=\"Greet\", prompt=\"Say hello! Introduce yourself and explain that this is a test of the Fabro workflow engine.\"]\n\n    start -> greet -> exit\n}\n",
+  "start": null,
+  "status": {
+    "kind": "starting"
+  },
+  "status_updated_at": "2026-05-16T09:18:15.598748491Z",
+  "last_event_at": "2026-05-16T09:18:15.642975770Z",
+  "pending_control": null,
+  "checkpoint": null,
+  "checkpoints": [],
+  "conclusion": null,
+  "retro": null,
+  "retro_prompt": null,
+  "retro_response": null,
+  "sandbox": {
+    "provider": "local",
+    "working_directory": "/home/arduano/.fabro/storage/scratch/20260516-01KRR18HGNDXCC2J72GQQX38HK/worktree"
+  },
+  "final_patch": null,
+  "pull_request": null,
+  "superseded_by": null,
+  "pending_interviews": {},
+  "stages": {}
+}
