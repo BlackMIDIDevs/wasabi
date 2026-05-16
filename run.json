@@ -197,10 +197,10 @@
     "kind": "running"
   },
   "status_updated_at": "2026-05-16T09:18:15.697480653Z",
-  "last_event_at": "2026-05-16T09:18:21.619609754Z",
+  "last_event_at": "2026-05-16T09:18:25.839033316Z",
   "pending_control": null,
   "checkpoint": {
-    "timestamp": "2026-05-16T09:18:21.624285666Z",
+    "timestamp": "2026-05-16T09:18:25.838844241Z",
     "current_node": "greet",
     "completed_nodes": [
       "start",
@@ -208,23 +208,23 @@
     ],
     "node_retries": {},
     "context_values": {
+      "failure_signature": "",
       "response.greet": "Hello! I’m your OpenAI-powered coding assistant running inside Fabro.\n\nThis is a simple test of the Fabro workflow engine, and everything appears to be working: I can receive instructions, reason about tasks, inspect and modify code when needed, and report progress back clearly.\n\nReady for the next step whenever you are.",
+      "thread.start.current_node": "greet",
       "internal.run_id": "01KRR18HGNDXCC2J72GQQX38HK",
       "outcome": "succeeded",
-      "last_stage": "greet",
-      "thread.start.current_node": "greet",
-      "internal.node_visit_count": 1,
       "graph.goal": "Say hello and demonstrate a basic Fabro workflow",
-      "current_node": "greet",
-      "internal.thread_id": "start",
-      "failure_signature": "",
       "last_response": "Hello! I’m your OpenAI-powered coding assistant running inside Fabro.\n\nThis is a simple test of the Fabro workflow engine, and everything appears to be working: I can receive instructions, reason ab",
-      "internal.work_dir": "/home/arduano/.fabro/storage/scratch/20260516-01KRR18HGNDXCC2J72GQQX38HK/worktree",
-      "failure_class": "",
       "internal.fidelity": "compact",
+      "internal.node_visit_count": 1,
+      "internal.thread_id": "start",
+      "failure_class": "",
+      "current_node": "greet",
+      "internal.work_dir": "/home/arduano/.fabro/storage/scratch/20260516-01KRR18HGNDXCC2J72GQQX38HK/worktree",
+      "internal.retry_count.greet": 0,
+      "last_stage": "greet",
       "graph.rankdir": "LR",
-      "internal.retry_count.start": 0,
-      "internal.retry_count.greet": 0
+      "internal.retry_count.start": 0
     },
     "node_outcomes": {
       "start": {
@@ -263,9 +263,10 @@
       }
     },
     "next_node_id": "exit",
+    "git_commit_sha": "7b24515be017a0f889e5ee26ac099c9b4cbd876d",
     "node_visits": {
-      "start": 1,
-      "greet": 1
+      "greet": 1,
+      "start": 1
     }
   },
   "checkpoints": [
@@ -303,9 +304,112 @@
           "start": 1
         }
       }
+    ],
+    [
+      30,
+      {
+        "timestamp": "2026-05-16T09:18:25.838844241Z",
+        "current_node": "greet",
+        "completed_nodes": [
+          "start",
+          "greet"
+        ],
+        "node_retries": {},
+        "context_values": {
+          "failure_signature": "",
+          "response.greet": "Hello! I’m your OpenAI-powered coding assistant running inside Fabro.\n\nThis is a simple test of the Fabro workflow engine, and everything appears to be working: I can receive instructions, reason about tasks, inspect and modify code when needed, and report progress back clearly.\n\nReady for the next step whenever you are.",
+          "thread.start.current_node": "greet",
+          "internal.run_id": "01KRR18HGNDXCC2J72GQQX38HK",
+          "outcome": "succeeded",
+          "graph.goal": "Say hello and demonstrate a basic Fabro workflow",
+          "last_response": "Hello! I’m your OpenAI-powered coding assistant running inside Fabro.\n\nThis is a simple test of the Fabro workflow engine, and everything appears to be working: I can receive instructions, reason ab",
+          "internal.fidelity": "compact",
+          "internal.node_visit_count": 1,
+          "internal.thread_id": "start",
+          "failure_class": "",
+          "current_node": "greet",
+          "internal.work_dir": "/home/arduano/.fabro/storage/scratch/20260516-01KRR18HGNDXCC2J72GQQX38HK/worktree",
+          "internal.retry_count.greet": 0,
+          "last_stage": "greet",
+          "graph.rankdir": "LR",
+          "internal.retry_count.start": 0
+        },
+        "node_outcomes": {
+          "start": {
+            "status": "succeeded",
+            "usage": null
+          },
+          "greet": {
+            "status": "succeeded",
+            "context_updates": {
+              "last_stage": "greet",
+              "last_response": "Hello! I’m your OpenAI-powered coding assistant running inside Fabro.\n\nThis is a simple test of the Fabro workflow engine, and everything appears to be working: I can receive instructions, reason ab",
+              "response.greet": "Hello! I’m your OpenAI-powered coding assistant running inside Fabro.\n\nThis is a simple test of the Fabro workflow engine, and everything appears to be working: I can receive instructions, reason about tasks, inspect and modify code when needed, and report progress back clearly.\n\nReady for the next step whenever you are."
+            },
+            "notes": "Stage completed: greet",
+            "usage": {
+              "input": {
+                "usage": {
+                  "model": {
+                    "provider": "openai",
+                    "model_id": "gpt-5.4"
+                  },
+                  "tokens": {
+                    "input_tokens": 1711,
+                    "output_tokens": 71,
+                    "reasoning_tokens": 67,
+                    "cache_read_tokens": 0,
+                    "cache_write_tokens": 0
+                  }
+                },
+                "facts": {
+                  "provider": "open_ai"
+                }
+              },
+              "total_usd_micros": 6347
+            }
+          }
+        },
+        "next_node_id": "exit",
+        "git_commit_sha": "7b24515be017a0f889e5ee26ac099c9b4cbd876d",
+        "node_visits": {
+          "greet": 1,
+          "start": 1
+        }
+      }
     ]
   ],
-  "conclusion": null,
+  "conclusion": {
+    "timestamp": "2026-05-16T09:18:25.850232003Z",
+    "status": "succeeded",
+    "duration_ms": 10141,
+    "final_git_commit_sha": "7b24515be017a0f889e5ee26ac099c9b4cbd876d",
+    "stages": [
+      {
+        "stage_id": "start",
+        "stage_label": "start",
+        "duration_ms": 0,
+        "retries": 0
+      },
+      {
+        "stage_id": "greet",
+        "stage_label": "greet",
+        "duration_ms": 4180,
+        "billing_usd_micros": 6347,
+        "retries": 0
+      }
+    ],
+    "billing": {
+      "input_tokens": 1711,
+      "output_tokens": 71,
+      "total_tokens": 1849,
+      "reasoning_tokens": 67,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "total_usd_micros": 6347
+    },
+    "total_retries": 0
+  },
   "retro": null,
   "retro_prompt": null,
   "retro_response": null,
@@ -314,6 +418,11 @@
     "working_directory": "/home/arduano/.fabro/storage/scratch/20260516-01KRR18HGNDXCC2J72GQQX38HK/worktree"
   },
   "final_patch": null,
+  "diff_summary": {
+    "files_changed": 0,
+    "additions": 0,
+    "deletions": 0
+  },
   "pull_request": null,
   "superseded_by": null,
   "pending_interviews": {},
@@ -342,7 +451,12 @@
       "first_event_seq": 17,
       "prompt": null,
       "response": null,
-      "completion": null,
+      "completion": {
+        "outcome": "succeeded",
+        "notes": "Stage completed: greet",
+        "failure_reason": null,
+        "timestamp": "2026-05-16T09:18:21.624198643Z"
+      },
       "provider_used": {
         "mode": "agent",
         "provider": "openai",
@@ -354,7 +468,28 @@
       "parallel_results": null,
       "output": null,
       "started_at": "2026-05-16T09:18:17.443998808Z",
-      "state": "running"
+      "duration_ms": 4180,
+      "state": "succeeded"
+    },
+    "exit@1": {
+      "first_event_seq": 33,
+      "prompt": null,
+      "response": null,
+      "completion": {
+        "outcome": "succeeded",
+        "notes": null,
+        "failure_reason": null,
+        "timestamp": "2026-05-16T09:18:25.839033316Z"
+      },
+      "provider_used": null,
+      "diff": null,
+      "script_invocation": null,
+      "script_timing": null,
+      "parallel_results": null,
+      "output": null,
+      "started_at": "2026-05-16T09:18:25.838997469Z",
+      "duration_ms": 0,
+      "state": "succeeded"
     }
   }
 }
