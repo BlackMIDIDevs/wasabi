@@ -187,15 +187,124 @@
     "in_place": false
   },
   "graph_source": "digraph Hello {\n    graph [goal=\"Say hello and demonstrate a basic Fabro workflow\"]\n    rankdir=LR\n\n    start [shape=Mdiamond, label=\"Start\"]\n    exit  [shape=Msquare, label=\"Exit\"]\n\n    greet [label=\"Greet\", prompt=\"Say hello! Introduce yourself and explain that this is a test of the Fabro workflow engine.\"]\n\n    start -> greet -> exit\n}\n",
-  "start": null,
-  "status": {
-    "kind": "starting"
+  "start": {
+    "run_id": "01KRR124S6J70M7J6WY0DVKZ3E",
+    "start_time": "2026-05-16T09:14:46.043663279Z",
+    "run_branch": "fabro/run/01KRR124S6J70M7J6WY0DVKZ3E",
+    "base_sha": "6ae43af0c841cf193694f73969c6d30af788f219"
   },
-  "status_updated_at": "2026-05-16T09:14:45.956609043Z",
-  "last_event_at": "2026-05-16T09:14:46.025829621Z",
+  "status": {
+    "kind": "running"
+  },
+  "status_updated_at": "2026-05-16T09:14:46.043686723Z",
+  "last_event_at": "2026-05-16T09:14:52.049756381Z",
   "pending_control": null,
-  "checkpoint": null,
-  "checkpoints": [],
+  "checkpoint": {
+    "timestamp": "2026-05-16T09:14:52.054919968Z",
+    "current_node": "greet",
+    "completed_nodes": [
+      "start",
+      "greet"
+    ],
+    "node_retries": {},
+    "context_values": {
+      "graph.rankdir": "LR",
+      "internal.work_dir": "/home/arduano/.fabro/storage/scratch/20260516-01KRR124S6J70M7J6WY0DVKZ3E/worktree",
+      "internal.thread_id": "start",
+      "last_stage": "greet",
+      "outcome": "succeeded",
+      "failure_class": "",
+      "failure_signature": "",
+      "thread.start.current_node": "greet",
+      "current_node": "greet",
+      "internal.fidelity": "compact",
+      "internal.run_id": "01KRR124S6J70M7J6WY0DVKZ3E",
+      "internal.retry_count.start": 0,
+      "internal.retry_count.greet": 0,
+      "last_response": "Hello! I’m your coding assistant, and this is a test of the Fabro workflow engine.\n\nI can help inspect code, make targeted changes, run commands, and validate results inside this workspace. For this",
+      "graph.goal": "Say hello and demonstrate a basic Fabro workflow",
+      "internal.node_visit_count": 1,
+      "response.greet": "Hello! I’m your coding assistant, and this is a test of the Fabro workflow engine.\n\nI can help inspect code, make targeted changes, run commands, and validate results inside this workspace. For this test, the main point is just to confirm the workflow is operating and that I’m responding correctly within it."
+    },
+    "node_outcomes": {
+      "start": {
+        "status": "succeeded",
+        "usage": null
+      },
+      "greet": {
+        "status": "succeeded",
+        "context_updates": {
+          "last_response": "Hello! I’m your coding assistant, and this is a test of the Fabro workflow engine.\n\nI can help inspect code, make targeted changes, run commands, and validate results inside this workspace. For this",
+          "response.greet": "Hello! I’m your coding assistant, and this is a test of the Fabro workflow engine.\n\nI can help inspect code, make targeted changes, run commands, and validate results inside this workspace. For this test, the main point is just to confirm the workflow is operating and that I’m responding correctly within it.",
+          "last_stage": "greet"
+        },
+        "notes": "Stage completed: greet",
+        "usage": {
+          "input": {
+            "usage": {
+              "model": {
+                "provider": "openai",
+                "model_id": "gpt-5.4"
+              },
+              "tokens": {
+                "input_tokens": 1717,
+                "output_tokens": 70,
+                "reasoning_tokens": 24,
+                "cache_read_tokens": 0,
+                "cache_write_tokens": 0
+              }
+            },
+            "facts": {
+              "provider": "open_ai"
+            }
+          },
+          "total_usd_micros": 5702
+        }
+      }
+    },
+    "next_node_id": "exit",
+    "node_visits": {
+      "greet": 1,
+      "start": 1
+    }
+  },
+  "checkpoints": [
+    [
+      16,
+      {
+        "timestamp": "2026-05-16T09:14:47.911994112Z",
+        "current_node": "start",
+        "completed_nodes": [
+          "start"
+        ],
+        "node_retries": {},
+        "context_values": {
+          "internal.thread_id": null,
+          "internal.work_dir": "/home/arduano/.fabro/storage/scratch/20260516-01KRR124S6J70M7J6WY0DVKZ3E/worktree",
+          "outcome": "succeeded",
+          "graph.rankdir": "LR",
+          "internal.node_visit_count": 1,
+          "failure_class": "",
+          "current_node": "start",
+          "failure_signature": "",
+          "internal.run_id": "01KRR124S6J70M7J6WY0DVKZ3E",
+          "internal.fidelity": "compact",
+          "graph.goal": "Say hello and demonstrate a basic Fabro workflow",
+          "internal.retry_count.start": 0
+        },
+        "node_outcomes": {
+          "start": {
+            "status": "succeeded",
+            "usage": null
+          }
+        },
+        "next_node_id": "greet",
+        "node_visits": {
+          "start": 1
+        }
+      }
+    ]
+  ],
   "conclusion": null,
   "retro": null,
   "retro_prompt": null,
@@ -208,5 +317,44 @@
   "pull_request": null,
   "superseded_by": null,
   "pending_interviews": {},
-  "stages": {}
+  "stages": {
+    "start@1": {
+      "first_event_seq": 13,
+      "prompt": null,
+      "response": null,
+      "completion": {
+        "outcome": "succeeded",
+        "notes": null,
+        "failure_reason": null,
+        "timestamp": "2026-05-16T09:14:47.911921836Z"
+      },
+      "provider_used": null,
+      "diff": null,
+      "script_invocation": null,
+      "script_timing": null,
+      "parallel_results": null,
+      "output": null,
+      "started_at": "2026-05-16T09:14:47.911860160Z",
+      "duration_ms": 0,
+      "state": "succeeded"
+    },
+    "greet@1": {
+      "first_event_seq": 17,
+      "prompt": null,
+      "response": null,
+      "completion": null,
+      "provider_used": {
+        "mode": "agent",
+        "provider": "openai",
+        "model": "gpt-5.4"
+      },
+      "diff": null,
+      "script_invocation": null,
+      "script_timing": null,
+      "parallel_results": null,
+      "output": null,
+      "started_at": "2026-05-16T09:14:47.912053554Z",
+      "state": "running"
+    }
+  }
 }
